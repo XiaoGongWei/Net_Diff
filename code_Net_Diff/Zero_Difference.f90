@@ -18,6 +18,9 @@ use MOD_STA
 use MOD_VAR
 use MOD_FileID
 use MOD_CycleSlip
+use MOD_Ant
+use MOD_EOP
+use MOD_Rotation
 use MOD_GLO_Fre
 use MOD_constant
 use MOD_NavData
@@ -27,10 +30,13 @@ implicit none
     type(type_ObsData) :: ObsData
     integer :: k
     ! Local variables
-    real(8) :: AppCoor(3),ZHD, ZWD, Lat, Lon, Hgt, Rotation(3,3)
+    real(8) :: AppCoor(3),ZHD, ZWD, Lat, Lon, Hgt
     integer :: Obsweek
     real(8) :: Obssec
     real(8) :: Rec_Clk
+    real(8) :: FHR, dx_SolTide(3), dx_Ocean(3), dx_CMC(3), dx_pole(3)
+    real(8) :: xpm, ypm, coLat
+    real(8) :: StaPCO(2)=0.d0,SatPCO(2)=0.d0,SatPCV(2)=0.d0, StaPCV(2)=0.d0, Ele_Sat
 
     integer :: i, j, N, PRN, PRN_S, Kk, PRNOUT(10), PRNOUTn=0, freq, N_DP
     integer(1) :: Sys, LLI1, LLI2
@@ -66,12 +72,50 @@ implicit none
                     -dsind(Lat)*dsind(Lon), dcosd(Lon) ,dcosd(Lat)*dsind(Lon),  dcosd(Lat) ,0D0, dsind(Lat)/), (/3,3/))
     end if
 
-    ! 说明：
-    ! （1）固体潮，海潮，测站PCO,PCV不需考虑，在星间差中
-    ! （2）卫星PCO,PCV,卫星相位缠绕不需考虑，在站间差中,但如果测站太远可能有点影响？
+    ! 说明(对于long baseline RTK, 这些都需要考虑)：
+    ! （1）固体潮，海潮，测站PCO,PCV不需考虑，在星间差中（已改正）
+    ! （2）卫星PCO,PCV（已改正）,卫星相位缠绕不需考虑，在站间差中,但如果测站太远可能有点影响？
     ! （4）测站钟差不需考虑，可以在星间差中消除，但需要估计概略值。
     ! （5）电离层公共部分可以在站间差中消除，其他受测站间距离影响
     ! （6）对流层用模型改(不改可能也可以，在站间差中消除)，其他受测站间距离影响
+    
+    if (If_Est_Iono) then  ! For long baseline RTK, should consider solid tide and ocean load correction
+        ! 1. Calculate the solid tide correction
+    !  Reference :  http://www.navipedia.net/index.php/Solid_Tides
+        FHR=(ObsData%hour+ObsData%min/60.d0+ObsData%sec/3600.d0)
+        dx_SolTide=0.d0
+        call Tide(AppCoor,ObsData%year,ObsData%mon,ObsData%day,FHR, &
+                &     MATMUL(Rota_C2T,SunCoor(1:3)), MATMUL(Rota_C2T,MoonCoor(1:3)), dx_SolTide)  ! In TRS
+        
+            ! 2. Calculate the ocean tide correction
+        !   Reference : http://www.navipedia.net/index.php/Ocean_loading
+        dx_Ocean=0.d0
+        call OceanLoad('***',ObsData%year, int_doy+FHR/24.d0,STA%STA(k)%OLC%OLC, dx_Ocean) ! In NEU
+        ! Orbits is always referred to geocenter, so cmc must be added to station.
+        ! If l_olc_with_cmc (coefficients with CMC), then no additional CMC correction is needed.  ! Reference: A_RTK: tide_displace.f90
+        ! For satellite techniques, the crust-fixed stations should include the 'geocenter motion'.
+        ! For VLBI, neglect of geocenter motion have no observable consequences. ! Reference: IERS 2010,p:109
+        dx_CMC=0.d0
+
+        ! 3. Calculate the poe tide correction
+        ! Displacement in east, south and radial in mm
+        ! Reference : IERS Conventions (2003),pp84
+        ! Reference : A_RTK MOD_others..f90
+        ! Reference : http://www.navipedia.net/index.php/Pole_Tide
+        dx_pole=0.d0
+        xpm=MP%xp0 + MP%xp_rate*(mjd-MP%tref)/365.25d0  ! in arcseconds
+        ypm=MP%yp0 + MP%yp_rate*(mjd-MP%tref)/365.25d0
+        xpm=EOP%Xp*2.062648062470964d5-xpm   ! in second of arc
+        ypm=ypm-EOP%Yp*2.062648062470964d5
+        colat=90.d0-Lat
+        dx_pole(2)=  9.d0*dcosd(colat)     *(xpm*dsind(Lon)-ypm*dcosd(Lon))     ! lambda, East
+        dx_pole(1)=  - 9.d0*dcosd(2.d0*colat)*(xpm*dcosd(Lon)+ypm*dsind(Lon))   ! phi, North
+        dx_pole(3)= -32.d0*dsind(2.d0*colat)*(xpm*dcosd(Lon)+ypm*dsind(Lon))   ! Up
+        ! unit to meters
+        dx_pole=dx_pole*1d-3
+
+        AppCoor=AppCoor +  dx_SolTide + +MATMUL(dx_Ocean+dx_pole, Rotation) ! dx_Ocean from NEU to XYZ
+    end if
 
     ! ********* Calculate the initial value of reciver clock corrrection *********
 !    call Cal_Rec_Clk(Obsweek, Obssec, ObsData, AppCoor, Rotation, Rec_Clk)
@@ -223,7 +267,7 @@ implicit none
             cycle
         end if   ! if ((P1 /=0.0) .and. (P2 /=0))
         t1=Range/c
-
+        
         ! ********Satellite coordinate and clcok ********
         call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor, t1, .true.,Sat_Coor0, Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
         if ( all(dabs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
@@ -246,6 +290,28 @@ implicit none
             write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
             cycle
         end if
+
+        ! **************** Satellite and Receiver PCO PCV ***************
+        StaPCO(1)=DOT_PRODUCT(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCO(1:3,1), (/cosd(Ele)*cosd(Azi), cosd(Ele)*sind(Azi), sind(Ele)/) ) ! in L1
+        StaPCO(2)=DOT_PRODUCT(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCO(1:3,2), (/cosd(Ele)*cosd(Azi), cosd(Ele)*sind(Azi), sind(Ele)/) )  ! in L2
+        StaPCV=0.d0; SatPCV=0.d0; SatPCO=0.d0;
+        if (allocated(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCV)) then
+            call PCV_Corr(GNum+RNum+CNum+NumE+JNum+INum+k, 90.d0-Ele, Azi, StaPCV)  ! Station PCV, zenith and azimuth depended
+        end if
+        if (Orbit=="SP3") then
+            ! We simply consider the Z-PCO difference
+             Ele_Sat=dasind(sind(Ele+90.d0)*6378137.d0/dsqrt(DOT_PRODUCT(Sat_Coor,Sat_Coor)))
+            SatPCO(1)=Ant(PRN)%PCO(3,1)*cosd(Ele_Sat)
+            SatPCO(2)=Ant(PRN)%PCO(3,2)*cosd(Ele_Sat)
+            call PCV_Corr(PRN, Ele_Sat, 0.d0, SatPCV)  ! Satllite PCV, zenith depended
+        end if
+        ! Note:
+        ! The difference of satellite satellite zenith angle on double difference is dis(km)/26000*180/pi
+        ! -------For 1000km baseline, the satellite zenith angle difference is 2.2deg
+        ! For PCO of 2m(precise orbit), it is 7cm; For PCV, it is within 1cm
+        ! -------For 100km baseline, the satellite zenith angle difference is 0.22deg
+        ! For PCO of 2m(precise orbit), it is 0.7cm; For PCV, it can be ignored
+        ! ----------------------------------------------------------------------------------------------------
 
         ! ************STD(Slant Tropsphere Delay)*************
         if  (cmap(1:4)=='SAAS') then
@@ -332,8 +398,8 @@ implicit none
         corr                =    s+STD-Sat_Clk*c+Rec_Clk*c-Rela 
         ZD%Corr(N)   =        STD-Sat_Clk*c+Rec_Clk*c-Rela
         ZD%s(N)        =     s
-        if (P1/=0.d0)      ZD%P1(N)=P1-corr-Ion1
-        if (P2/=0.d0)      ZD%P2(N)=P2-corr-Ion2
+        if (P1/=0.d0)      ZD%P1(N)=P1-corr-Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)
+        if (P2/=0.d0)      ZD%P2(N)=P2-corr-Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)
         ZD%P1CS(N)=ZD%P1(N);    ZD%P2CS(N)=ZD%P2(N)
 
         if ( (P1/=0.d0) .and. (P2/=0.d0)  .and. (b1*f1+b2*f2==0.d0) .and. (mod(a1,1.d0)/=0.d0) ) then   ! PC combination
@@ -357,9 +423,9 @@ implicit none
             ZD%EWL(N)=(c*L2+Ion2*f2-c*L3-Ion3*f3)/(f2 - f3)-corr
         end if
 
-        if (L1/=0.d0)      ZD_L1=L1*c/f1-corr+Ion1    ! in distance
-        if (L2/=0.d0)      ZD_L2=L2*c/f2-corr+Ion2    ! in distance
-        if (L3/=0.d0)      ZD_L3=L3*c/f3-corr+Ion3    ! in distance
+        if (L1/=0.d0)      ZD_L1=L1*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
+        if (L2/=0.d0)      ZD_L2=L2*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
+        if (L3/=0.d0)      ZD_L3=L3*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
         if ( (a1/=0.d0) .and. (a2/=0.d0) ) then  ! If two frequency combination
             if ( (L1/=0.d0) .and. (L2/=0.d0) ) then
                 ZD%WL(N)=(a1*f1*ZD_L1+a2*f2*ZD_L2)/(a1*f1+a2*f2)
