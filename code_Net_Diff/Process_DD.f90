@@ -15,6 +15,8 @@ use MOD_Var
 use MOD_ObsHead
 use MOD_ObsData
 use MOD_CycleSlip
+use MOD_EOP
+use MOD_Rotation
 use MOD_STA
 use MOD_ZD
 use MOD_SD
@@ -29,9 +31,12 @@ implicit none
     type(type_DD) :: DD
     type(type_NEQ) :: NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
+    ! CRS to TRS
+    real(8) :: MJD,kmjd, Xp,Yp,dUT1,DX00,DY00
+    real(8) :: TT
     logical :: flag
-    integer :: epoch,Obsweek, Arcweek
-    real(8) :: Obssec, Arcsec
+    integer :: epoch,Obsweek
+    real(8) :: Obssec
     integer :: error, data_flag
     integer(1) :: Flag_Sln
     integer :: i, j, RefSat(5), sys
@@ -98,7 +103,25 @@ implicit none
         end if
         if ( (Obsweek-GPSweek_st)*604800.0d0+Obssec-GPSsec_st<0.d0 ) cycle
         if ( (Obsweek-GPSweek_end)*604800.0d0+Obssec-GPSsec_end>0.d0 ) exit
-
+        
+        if (If_Est_Iono) then  ! For long baseline RTK, should consider solid tide and ocean load correction
+            ! Calculate the transfor matrix between TRS and CRS
+            MJD=Obsweek*7.d0+44244.0d0+Obssec/86400.d0 !-Leap_sec/86400.d0 ! In GPST
+            kmjd=mod(Obssec,86400.d0)/86400.d0
+            EOP%Xp=EOP%X(1)+kmjd*(EOP%X(2)-EOP%X(1))
+            EOP%Yp=EOP%Y(1)+kmjd*(EOP%Y(2)-EOP%Y(1))
+            dUT1=EOP%dUT1(1)+kmjd*(EOP%dUT1(2)-EOP%dUT1(1))
+            DX00=EOP%dX(1)+kmjd*(EOP%dX(2)-EOP%dX(1))
+            DY00=EOP%dY(1)+kmjd*(EOP%dY(2)-EOP%dY(1))
+            call CRS2TRS(Leap_sec, MJD,EOP%Xp,EOP%Yp,dUT1,DX00,DY00,Rota_C2T,Rota_T2C)
+        
+            ! Calculate the position of Sun and Moon in CRS
+            TT=MJD+2400000.5d0+(19.d0+32.184d0)/86400.d0  ! 地球动力学时
+            call PLEPH (TT, 11, 3, SunCoor)
+            SunCoor=SunCoor*1000.d0   ! Unit in meter
+            call PLEPH (TT, 10, 3, MoonCoor)
+            MoonCoor=MoonCoor*1000.d0   ! Unit in meter
+        end if
         
         ! ============= Read obs data at the given time ================
         Data_flag=0

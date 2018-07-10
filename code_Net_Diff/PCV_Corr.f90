@@ -28,7 +28,7 @@ implicit none
     integer :: PRN
     real(8) :: Ele, Azi
     ! Intent out
-    real(8) :: PCV
+    real(8) :: PCV(2)
     ! Local variables
     integer :: i
     real(8) :: PCV11, PCV12, PCV21, PCV22, PCV1, PCV2, dazi
@@ -52,7 +52,8 @@ implicit none
         end do
         PCV1=PCV12+dazi/Ant(PRN)%dazi*(PCV12-PCV11)
         PCV2=PCV22+dazi/Ant(PRN)%dazi*(PCV22-PCV21)
-        PCV=(f1*f1*PCV1-f2*f2*PCV2)/(f1+f2)/(f1-f2)
+        PCV(1)=PCV1
+        PCV(2)=PCV2
     end if
 end subroutine
 

@@ -33,8 +33,9 @@ implicit none
     type(type_ObsData) ObsData
     ! CRS to TRS
     real(8) :: MJD,kmjd, Xp,Yp,dUT1,DX00,DY00
-    real(8) :: TT, SunCoor(6), MoonCoor(6)
-    real(8) :: FHR, dx_SolTide(3)
+    real(8) :: TT
+    real(8) :: FHR, dx_SolTide(3), dx_Ocean(3), dx_CMC(3), dx_pole(3)
+    real(8) :: xpm, ypm, coLat
     integer :: i, N, NN, Num,j, k, freq, GLOIFB=0
     integer :: PRN, PRN_S, PRNPRN(MaxPRN*2), PRNOUT(10), PRNOUTn=0, ObsNum
     character(1) :: System
@@ -42,7 +43,7 @@ implicit none
     integer(1) :: LLI1, LLI2
     real(8) ::Amb(SatNum,STA%Num)
     real(8) :: RecPCO(3),SatPCO(3)
-    real(8) :: Azi, Ele_Sat, SatPCV=0.d0, StaPCV=0.d0
+    real(8) :: Azi, Ele_Sat, SatPCV(3)=0.d0, StaPCV(3)=0.d0
     real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor0(3),  Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
     real(8) :: STD, Ion=0.d0, Ion1
     real(8) :: Rec_Clk, Sat_Clk, Ele, EleEle(MaxPRN*2)
@@ -62,6 +63,16 @@ implicit none
     real(8) ::Phi, Lam, RcIono,RElevation, RAzimuth,VDelay ,IGP_Delay0(320) , IGP_Delay_SiGma0(320)
     integer(4) :: ierr
 
+!    integer :: year, mon, day, hour, min
+!    real(8) :: sec
+!    integer :: RefWeek
+!    real(8) :: RefSow, RefBLH(3)
+!    character(100) :: line
+!
+!    AmbID(1)=FileID_Mark
+!    FileID_Mark=FileID_Mark+1
+!    open(unit=AmbID(1), file='E:\TUMSAT\data\20170607-Ãû¹ÅÎÝ1_POSLV - ¸±±¾.pos',action="read")
+!    read(unit=AmbID(1),fmt='(A)') line
     
     flag=.true.
     epoch=0
@@ -157,15 +168,58 @@ implicit none
                 Lon=STA%STA(k)%BLH(2)
                 Hgt=STA%STA(k)%BLH(3)
             end if
+!            ! Get reference position from POSLV.pos
+!            do while(.true.)
+!                read(unit=AmbID(1),fmt='(I4,4(1X,I2),1X,F6.3,2F15.9,F11.4)') year, mon, day, hour, min, sec, RefBLH(1),RefBLH(2),RefBLH(3)
+!                call UTC2GPST(year, mon, day, hour, min, sec, RefWeek, RefSow)
+!                if ((Obsweek-RefWeek)*604800.d0+ObsSec-RefSow> -0.01d0 .and. (Obsweek-RefWeek)*604800.d0+ObsSec-RefSow< 0.01d0)  then
+!                    call BLH2XYZ(RefBLH(1),RefBLH(2),RefBLH(3), AppCoor(1),AppCoor(2),AppCoor(3))  ! If coordinate find, set as the approximate coordinate
+!                    exit
+!                elseif ((Obsweek-RefWeek)*604800.d0+ObsSec-RefSow< -0.01d0) then
+!                    backspace(AmbID(1))
+!                    exit
+!                end if
+!            end do
             
             ! 1. Calculate the solid tide correction
             FHR=(ObsData%hour+ObsData%min/60.d0+ObsData%sec/3600.d0)
             dx_SolTide=0.d0
             call Tide(AppCoor,ObsData%year,ObsData%mon,ObsData%day,FHR, &
-     &     MATMUL(Rota_C2T,SunCoor(1:3)), MATMUL(Rota_C2T,MoonCoor(1:3)), dx_SolTide)  ! In TRS
+                    &     MATMUL(Rota_C2T,SunCoor(1:3)), MATMUL(Rota_C2T,MoonCoor(1:3)), dx_SolTide)  ! In TRS
             
             if ( (ObsType=='X71') .or. (ObsType=='x71') ) dx_SolTide=0.d0
-            AppCoor1=AppCoor +  dx_SolTide
+            ! 2. Calculate the ocean tide correction
+            !   Reference : http://www.navipedia.net/index.php/Ocean_loading
+            dx_Ocean=0.d0
+            call OceanLoad('***',ObsData%year, int_doy+FHR/24.d0,STA%STA(k)%OLC%OLC, dx_Ocean) ! In NEU
+            ! Orbits is always referred to geocenter, so cmc must be added to station.
+            ! If l_olc_with_cmc (coefficients with CMC), then no additional CMC correction is needed.  ! Reference: A_RTK: tide_displace.f90
+            ! For satellite techniques, the crust-fixed stations should include the 'geocenter motion'.
+            ! For VLBI, neglect of geocenter motion have no observable consequences. ! Reference: IERS 2010,p:109
+            dx_CMC=0.d0
+        !    write(LogID,'(A5,3F10.4)') 'OLT', dx_Ocean
+            !call OceanLoad('CMC',ObsData%year,dble(idoy)+FHR/24.d0,OLC%OLC, dx_CMC) ! Already in TRS
+                ! 3. Calculate the poe tide correction
+                ! Displacement in east, south and radial in mm
+            ! Reference : IERS Conventions (2003),pp84
+            ! Reference : A_RTK MOD_others..f90
+            ! Reference : http://www.navipedia.net/index.php/Pole_Tide
+            dx_pole=0.d0
+            xpm=MP%xp0 + MP%xp_rate*(mjd-MP%tref)/365.25d0  ! in arcseconds
+            ypm=MP%yp0 + MP%yp_rate*(mjd-MP%tref)/365.25d0
+            xpm=EOP%Xp*2.062648062470964d5-xpm   ! in second of arc
+            ypm=ypm-EOP%Yp*2.062648062470964d5
+            colat=90.d0-Lat
+            dx_pole(2)=  9.d0*dcosd(colat)     *(xpm*dsind(Lon)-ypm*dcosd(Lon))     ! lambda, East
+            dx_pole(1)=  - 9.d0*dcosd(2.d0*colat)*(xpm*dcosd(Lon)+ypm*dsind(Lon))   ! phi, North
+            dx_pole(3)= -32.d0*dsind(2.d0*colat)*(xpm*dcosd(Lon)+ypm*dsind(Lon))   ! Up
+            ! unit to meters
+            dx_pole=dx_pole*1d-3
+        !    dx_pole=0.d0
+        !     write(LogID,'(A10,I5,3F10.4)') 'Pole tide', dx_pole
+        
+            ! Approximate coordinate  after correction of Solid Tide and Ocean tide
+            AppCoor1=AppCoor +dx_SolTide +MATMUL(dx_Ocean+dx_pole, Rotation) ! dx_Ocean from NEU to XYZ
 
              ! ********* Calculate the initial value of reciver clock corrrection *********
              !call Cal_Rec_Clk(Obsweek, Obssec, ObsData,AppCoor1, Rotation, Rec_Clk)
@@ -388,7 +442,17 @@ implicit none
                             if (allocated(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCV)) then
                                 call PCV_Corr(GNum+RNum+CNum+NumE+JNum+INum+k, 90.d0-Ele, Azi, StaPCV)  ! Station PCV, zenith and azimuth depended
                             end if
-                            s=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor2),(Sat_Coor-AppCoor2))) +SatPCV+StaPCV     ! real distance
+                            if ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0)) then
+                                SatPCV(3)=SatPCV(1)
+                                StaPCV(3)=StaPCV(1)
+                            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) then
+                                SatPCV(3)=SatPCV(2)    ! For satellite, PCV on L1 and L2 is the same, actually
+                                StaPCV(3)=StaPCV(2)
+                            else
+                                SatPCV(3)=(f1*f1*SatPCV(1)-f2*f2*SatPCV(2))/(f1+f2)/(f1-f2)
+                                StaPCV(3)=(f1*f1*StaPCV(1)-f2*f2*StaPCV(2))/(f1+f2)/(f1-f2)
+                            end if
+                            s=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor2),(Sat_Coor-AppCoor2))) +SatPCV(3)+StaPCV(3)     ! real distance
                         end if
                     end if
 
@@ -605,7 +669,7 @@ implicit none
 
                     ! *********The initial value of ambiguity*********
                     if (Amb(PRN,k)==0.d0) then
-                        Amb(PRN,k)=(Phase-dx_windup*lambda-Range)   ! Phase-s-STD+Sat_Clk*c-c*Rec_Clk+Rela -dx_windup*c/(f1+f2) ! In meter    ! randa=c/(f1+f2)
+                        Amb(PRN,k)=Phase-s-STD+Sat_Clk*c-c*Rec_Clk+Rela -dx_windup*c/(f1+f2) ! (Phase-dx_windup*lambda-Range)   !  In meter    ! randa=c/(f1+f2)
                     end if
             
                     if (Phase/=0.d0) then

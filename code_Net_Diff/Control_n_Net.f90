@@ -44,6 +44,8 @@ implicit none
             read(line,"(12X,A)") AntFile
         elseif (index(line,"planetfile") /= 0)   then
             read(line,"(12X,A)") PlanetFile
+        elseif (index(line,"tidefile") /= 0)   then
+            read(line,"(12X,A)") TideFile
         elseif (index(line,"glofrefile") /= 0)   then
             read(line,"(12X,A)") GloFreFile
         elseif (index(line,"gpt2griddir") /= 0)   then

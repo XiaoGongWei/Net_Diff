@@ -62,7 +62,7 @@ implicit none
             end if
         
             read(unit=line,fmt="(1X,I2,4(1X,I2),F11.7)") year, mon, day, hour, min, sec
-            int_sec=real(nint(sec*10.d0))/10.d0   ! nint: nearest integer, for 1~10Hz data
+            int_sec=real(nint(sec*100.d0))/100.d0   ! nint: nearest integer, for 1~100Hz data
             ObsData%Clk_Bias=sec-int_sec   ! station receiver clock correction
             ! int_sec=int_sec+14.d0 ! 精密星历时间为GPST，观测时间为BDT
         
@@ -229,7 +229,7 @@ implicit none
             end if
 
             read(unit=line,fmt="(2X,I4,4(1X,I2),F11.7)") year, mon, day, hour, min, sec
-            int_sec=real(nint(sec*10.d0))/10.d0   ! nint: nearest integer, for 1~10Hz data
+            int_sec=real(nint(sec*100.d0))/100.d0   ! nint: nearest integer, for 1~100Hz data
             ObsData%Clk_Bias=sec-int_sec   ! station receiver clock correction
             ! int_sec=int_sec-14.d0  ! 精密星历时间为BDT，观测时间为GPST
 

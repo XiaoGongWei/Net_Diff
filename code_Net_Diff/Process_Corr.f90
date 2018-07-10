@@ -36,8 +36,8 @@ implicit none
     type(type_ObsData) ObsData
     ! CRS to TRS
     real(8) :: MJD,kmjd, Xp,Yp,dUT1,DX00,DY00
-    real(8) :: TT, SunCoor(6), MoonCoor(6)
-    real(8) :: FHR, dx_SolTide(3)
+    real(8) :: TT
+    real(8) :: FHR, dx_SolTide(3), dx_Ocean(3), dx_CMC(3), dx_pole(3)
     integer :: i, N, NN, Num,j, k, freq, GLOIFB=0
     integer :: PRN, PRN_S, PRNPRN(MaxPRN*2), PRNOUT(10), PRNOUTn=0, ObsNum
     character(1) :: System
@@ -45,7 +45,7 @@ implicit none
     integer(1) :: LLI1, LLI2
     real(8) ::Amb(SatNum,STA%Num)
     real(8) :: RecPCO(3),SatPCO(3)
-    real(8) :: Azi, Ele_Sat, SatPCV, StaPCV
+    real(8) :: Azi, Ele_Sat, SatPCV(3)=0.d0, StaPCV(3)=0.d0
     real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor0(3),  Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
     real(8) :: STD, Ion=0.d0, Ion1=0.d0
     real(8) :: Rec_Clk, Sat_Clk, Ele, EleEle(MaxPRN*2)
@@ -309,7 +309,7 @@ implicit none
      &     MATMUL(Rota_C2T,SunCoor(1:3)), MATMUL(Rota_C2T,MoonCoor(1:3)), dx_SolTide)  ! In TRS
             
             if ( (ObsType=='X71') .or. (ObsType=='x71') ) dx_SolTide=0.d0
-            AppCoor1=AppCoor +  dx_SolTide 
+            AppCoor1=AppCoor +  dx_SolTide    ! For Process_Corr, we don't add ocean load tide and pole tide corrections
 
              ! ********* Calculate the initial value of reciver clock corrrection *********
              !call Cal_Rec_Clk(Obsweek, Obssec, ObsData,AppCoor1, Rotation, Rec_Clk)
@@ -543,7 +543,17 @@ implicit none
                             if (allocated(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCV)) then
                                 call PCV_Corr(GNum+RNum+CNum+NumE+JNum+INum+k, 90.d0-Ele, Azi, StaPCV)  ! Station PCV, zenith and azimuth depended
                             end if
-                            s=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor2),(Sat_Coor-AppCoor2))) +SatPCV+StaPCV     ! real distance
+                            if ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0)) then
+                                SatPCV(3)=SatPCV(1)
+                                StaPCV(3)=StaPCV(1)
+                            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) then
+                                SatPCV(3)=SatPCV(2)    ! For satellite, PCV on L1 and L2 is the same, actually
+                                StaPCV(3)=StaPCV(2)
+                            else
+                                SatPCV(3)=(f1*f1*SatPCV(1)-f2*f2*SatPCV(2))/(f1+f2)/(f1-f2)
+                                StaPCV(3)=(f1*f1*StaPCV(1)-f2*f2*StaPCV(2))/(f1+f2)/(f1-f2)
+                            end if
+                            s=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor2),(Sat_Coor-AppCoor2))) +SatPCV(3)+StaPCV(3)     ! real distance
                         end if
                     end if
                     

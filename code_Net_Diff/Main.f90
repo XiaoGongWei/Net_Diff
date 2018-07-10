@@ -194,6 +194,12 @@ implicit none
     ! Get GLONASS frequency and leap second
     call Get_GLO_Fre 
     
+    ! Get Ocean load coefficient. If coordinate is 0.000, it will be 0.000. But this is usually in kinematic mode, it is OK we ignore ocean load correction.
+    ! Or we can give a initial coordinate
+    do i=1,STA%Num
+        call Get_OceanLoad_Coe(STA%STA(i)%BLH(1), STA%STA(i)%BLH(2), STA%STA(i)%Name, STA%STA(i)%OLC%CMC, STA%STA(i)%OLC%OLC,STA%STA(i)%OLC%found)
+    end do
+
     CoorID=FileID_Mark
     FileID_Mark=FileID_Mark+1
     write(temp,"(I1)") Sta%FixNum
@@ -230,7 +236,7 @@ implicit none
     if (index(Clk,"CLK")/=0) then
         write(CoorID,"(A12,A)") 'clkfile:  ',trim(ClkFile)
     end if
-    write(CoorID,"(A12,5X,I5)") 'interva(s):  ', int(interval)
+    write(CoorID,"(A12,5X,F5.1)") 'interva(s):  ', interval
     write(CoorID,"(A12,5X,I5)") 'limele:  ', int(limele)
     write(CoorID,"(A12,5X,I5)") 'limSNR:  ', int(limSNR)
     write(CoorID,"(A12,5X,I5)") 'maxpdop:  ', int(MaxPDOP)
@@ -368,7 +374,7 @@ implicit none
     call CPU_time(t%t_end)!(time_end1)
     write(*,"(A16F10.4)") "Total time:" , t%t_end - t%t_begin
     stop
-    100 write(*,*) '写文件错误，请检查outdir路径。'
+    100 write(*,*) '-------ERROR------: Opening output file error, please check if the file exist or it can be read.'
     pause
     stop
 

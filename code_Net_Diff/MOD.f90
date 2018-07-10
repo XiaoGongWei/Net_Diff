@@ -72,7 +72,7 @@ implicit none
     character(200), save ::  ClkFile
     character(200), save ::  EOPFile
     character(200), save ::  AntFile
-!    character(200), save ::  TideFile  !
+    character(200), save ::  TideFile  !
     character(200), save ::  PlanetFile
     character(200), save ::  GloFreFile
     character(200), save ::  P1C1File
@@ -100,6 +100,7 @@ implicit none
     integer(1), save :: GLOFreID    ! GLONASS Frequency file(Input)
     integer(1), save :: EOPID    ! Earth Orientation Parameter(Input)
     integer(1), save :: AntID     ! Antenna information, mainly the PCO(Phase Center Offset)(Input)
+    integer(2), save :: OLCID   ! Ocean Load Coefficient(Input)
     integer(2), save :: GPTID      ! GPT grid file (input)
     integer(2), save :: P1C1ID      ! P1C1 DCB file (input)
     integer(2), save :: DCBID      ! DCB file (input)
@@ -133,11 +134,14 @@ module MOD_EOP
 implicit none
     type type_EOP
         real(8) :: MJD(2), X(2)=0.d0, Y(2)=0.d0, dUT1(2)=0.d0, dX(2)=0.d0, dY(2)=0.d0
+        real(8) :: Xp, Yp
     end type
     type(type_EOP), save :: EOP
     type type_MP
-    ! mean pole and their rates at J2000. Values from IERS Conventions (2003)
-    ! Reference :: A_RTK MOD_others..f90
+    ! mean pole and their rates at J2000. Values from IERS Conventions (2003),pp84
+    ! Used to calculate Pole Tide
+    ! Reference :: A_RTK MOD_others.f90
+    ! Reference :: http://www.navipedia.net/index.php/Pole_Tide
          real (8) :: xp0 = 0.054d0              ! unit : arcseconds
          real (8) :: yp0 = 0.357d0              ! unit : arcseconds
          real (8) :: xp_rate = 0.00083d0       ! unit : arcseconds per year
@@ -171,7 +175,7 @@ implicit none
     real(8) :: Rota_T2C(3,3)   ! Rotation from TRS to CRS
     real(8) :: Rota_C2T(3,3)   ! Rotation from CRS to TRS
     real(8) :: Rotation(3,3)      ! Appropriate from XYZ to NEU
-!    real(8) :: True_Rota(3,3)   ! True rotation from XYZ to NEU
+    real(8)  :: SunCoor(6), MoonCoor(6)
 end module
 
 ! ======Navigation header module======
@@ -388,6 +392,11 @@ use MOD_constant
         real(8) :: Range=0.d0, PrePhase=0.d0, HisPhase(60)=99.d0,HisRange(60)=99.d0
         real(8) :: n1=0.d0, n2=0.d0, P1=0.d0, P2=0.d0, DP=0.d0, Sow1=0.d0, Sow2=0.d0
     end type
+    type type_OLC
+        real(8) :: OLC(11,6)
+        real(8) :: CMC(11,6)
+        logical :: found
+    end type
     type type_STA_STA
         character(4) :: Name ! Station Name
         character(4) :: SKD  ! Station coordinate status, fix or not
@@ -399,7 +408,8 @@ use MOD_constant
         character(20) :: Ant_Type  ! antenna type
         real(8) :: Rotation(3,3)
         type(type_Trop) :: Trop
-        type(type_Pre) :: Pre(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)   ! Pseudorange smmoth
+        type(type_Pre) :: Pre(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)   ! Pseudorange smooth
+        type(type_OLC) :: OLC    ! ocean load coefficient
     end type
     type type_STA
         integer :: Num=0 ! total station number
