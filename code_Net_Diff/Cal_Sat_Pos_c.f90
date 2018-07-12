@@ -60,19 +60,22 @@ implicit none
     tkr=(GPSweek-NavData_C(PRN)%Nav(1)%GPSweek)*604800.d0+GPSsec-NavData_C(PRN)%Nav(1)%GPSsec
     do i=2,Ubound(NavData_C(PRN)%Nav,dim=1)
         t=(GPSweek-NavData_C(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-NavData_C(PRN)%Nav(i)%GPSsec
-        if ((t-delaytmp>=-0.2d0)  .and. (abs(t-delaytmp)<=abs(tkr))  .and. (NavData_C(PRN)%Nav(i)%Health==0.d0) ) then
-            if ((proc_mod/=5) .and. (NavData_C(PRN)%Nav(i)%IODE<10.d0))  cycle
-            tkr=t   ! 取最新的星历,t扣除了接收机钟差
-            tempNav=NavData_C(PRN)%Nav(i)
-        elseif (t<-0.2d0) then
-            exit
+        if (delaytmp/=0.d0) then  ! If for BDS SBAS
+            if ((t-delaytmp>=-0.2d0)  .and. (abs(t-delaytmp)<=abs(tkr))  .and. (NavData_C(PRN)%Nav(i)%Health==0.d0) ) then
+                if ((proc_mod/=5) .and. (NavData_C(PRN)%Nav(i)%IODE<10.d0))  cycle
+                tkr=t   ! 取最新的星历,t扣除了接收机钟差
+                tempNav=NavData_C(PRN)%Nav(i)
+            elseif (t<-0.2d0) then
+                exit
+            end if
+        else
+            if (dabs(t)<=dabs(tkr) .and. (NavData_C(PRN)%Nav(i)%Health==0.d0)) then
+                tkr=t ! 取距离最近时刻的星历
+                tempNav=NavData_C(PRN)%Nav(i)
+            else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
+                exit
+            end if
         end if
-!        if (dabs(t)<=dabs(tkr)) then
-!            tkr=t ! 取距离最近时刻的星历
-!            tempNav=NavData_C(PRN)%Nav(i)
-!        else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
-!            exit
-!        end if
     end do
     if ( (dabs(tkr-delaytmp)>3600.2d0) ) then
         Sat_Coor2=9999.d0

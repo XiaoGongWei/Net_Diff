@@ -362,7 +362,7 @@ implicit none
         close(ObsID(i))
     end do
     close(LogID)  ! 平差后的参数改正数及卫星
-    close(CSID)  ! 周跳探测中间输出
+    close(CSID,status='delete')  ! 周跳探测中间输出
     if ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         close(ResO_CID,status='delete') ! O-C
         close(X38ID,status='delete') ! X38
@@ -375,7 +375,6 @@ implicit none
     write(*,"(A16F10.4)") "Total time:" , t%t_end - t%t_begin
     stop
     100 write(*,*) '-------ERROR------: Opening output file error, please check if the file exist or it can be read.'
-    pause
     stop
 
 end program

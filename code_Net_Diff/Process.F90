@@ -157,7 +157,7 @@ implicit none
             ! Calculate the appropriate position if unknown
 !            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K') ) then
 !            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. ((Pos_State=='K') .and. .not.(STA%STA(k)%flag_InitialCoor))  ) then
-            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(k)%TrueCoor-STA%STA(k)%Coor)>50.d0))  ) then
+            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(k)%TrueCoor-STA%STA(k)%XYZ)>50.d0))  ) then
                 call Bancroft(ObsData, k, STA%STA(k)%Coor)
                 AppCoor=STA%STA(k)%Coor
                 if (any(AppCoor==0.d0)) cycle
@@ -895,7 +895,7 @@ implicit none
                 end do
                 !write(LogID,"(A5, 5F8.3)") "dx:", dx(1:5)
                 Coor=STA%STA(k)%Coor(1:3)+dx(1:3)
-                if (Pos_State=='K') STA%STA(k)%Coor(1:3)=Coor    ! If kinematic, update the approximate coordinate
+                if (Pos_State=='K') STA%STA(k)%XYZ=Coor    ! If kinematic, update the approximate coordinate
                 call XYZ2BLH(Coor(1), Coor(2), Coor(3), BLH(1), BLH(2), BLH(3))
                 Rec_Clk=Rec_Clk+dx(5)/c
                 if ((If_ISB))  ISB(1)=dx(6)/c*1.d9

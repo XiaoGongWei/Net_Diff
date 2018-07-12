@@ -73,18 +73,18 @@ implicit none
     tkr=(GPSweek-NavData_R(PRN)%Nav(1)%GPSweek)*604800.d0+GPSsec-NavData_R(PRN)%Nav(1)%GPSsec
     do i=2,Ubound(NavData_R(PRN)%Nav,dim=1)
         t=(GPSweek-NavData_R(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-NavData_R(PRN)%Nav(i)%GPSsec
-!        if (dabs(t)<dabs(tkr)) then
-!            tkr=t   ! 取距离最近时刻的星历
-!            tempNav=NavData_R(PRN)%Nav(i)
-!        else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
-!            exit
-!        end if
-        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_R(PRN)%Nav(i)%Health==0.d0)) then 
-            tkr=t   ! 取最新的星历
+        if (dabs(t)<dabs(tkr) .and. (NavData_R(PRN)%Nav(i)%Health==0.d0)) then
+            tkr=t   ! 取距离最近时刻的星历
             tempNav=NavData_R(PRN)%Nav(i)
-        elseif (t<-0.2d0) then
+        else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
             exit
         end if
+!        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_R(PRN)%Nav(i)%Health==0.d0)) then 
+!            tkr=t   ! 取最新的星历
+!            tempNav=NavData_R(PRN)%Nav(i)
+!        elseif (t<-0.2d0) then
+!            exit
+!        end if
     end do
     
    if ( (dabs(tkr)>1800.1d0) .or. (tempNav%X==0.d0) .or. (tempNav%Y==0.d0) .or. (tempNav%Z==0.d0) ) then

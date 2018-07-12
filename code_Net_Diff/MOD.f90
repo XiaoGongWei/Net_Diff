@@ -400,8 +400,9 @@ use MOD_constant
     type type_STA_STA
         character(4) :: Name ! Station Name
         character(4) :: SKD  ! Station coordinate status, fix or not
-        real(8) :: Coor(3) ! Appropriate Station Coordinate
+        real(8) :: Coor(3) ! Approximate Station Coordinate
         real(8) :: TrueCoor(3) ! True Station Coordinate
+        real(8) :: XYZ(3) ! Positioning coordiante of each epoch
         logical :: flag_InitialCoor=.false. ! Flag of initial Station Coordinate
         real(8) :: BLH(3) ! Station BLH
         real(8) :: NEU(3) ! Antenna

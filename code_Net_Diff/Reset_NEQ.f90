@@ -62,7 +62,7 @@ implicit none
                     end if
                 end if
 
-                if ((i/=RefSat(sys)+ParaNum) .and. (Epo_NEQ%dx(i)/=0.d0) .and. If_Est_Iono .and. IonoNum>0) then
+                if ((i/=RefSat(sys)+ParaNum) .and. If_Est_Iono .and. IonoNum>0 .and. (Epo_NEQ%dx(i)/=0.d0)) then
                     Epo_NEQ%dx(i)=Epo_NEQ%dx(i)-Epo_NEQ%dx(RefSat(sys)+ParaNum)  ! other satellite
                     Epo_NEQ%InvN(:,i)=Epo_NEQ%InvN(:,i)-Epo_NEQ%InvN(:,RefSat(sys)+ParaNum)
                     Epo_NEQ%InvN(i,:)=Epo_NEQ%InvN(i,:)-Epo_NEQ%InvN(RefSat(sys)+ParaNum,:)
@@ -88,7 +88,7 @@ implicit none
                     end if
                 end if
                 
-                if ((i/=RefSat(sys)+MaxPRN+ParaNum) .and. (Epo_NEQ%dx(i)/=0.d0) .and. If_Est_Iono .and. IonoNum>0) then
+                if ((i/=RefSat(sys)+MaxPRN+ParaNum) .and. If_Est_Iono .and. IonoNum>0 .and. (Epo_NEQ%dx(i)/=0.d0)) then
                     Epo_NEQ%dx(i)=Epo_NEQ%dx(i)-Epo_NEQ%dx(RefSat(sys)+MaxPRN+ParaNum)  ! other satellite
                     Epo_NEQ%InvN(:,i)=Epo_NEQ%InvN(:,i)-Epo_NEQ%InvN(:,RefSat(sys)+MaxPRN+ParaNum)
                     Epo_NEQ%InvN(i,:)=Epo_NEQ%InvN(i,:)-Epo_NEQ%InvN(RefSat(sys)+MaxPRN+ParaNum,:)

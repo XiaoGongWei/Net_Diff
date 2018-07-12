@@ -130,8 +130,8 @@ implicit none
             read(unit=ObsID(i),fmt="(2X)",iostat=error)
             backspace(ObsID(i))
             if (error /=0) flag=.false.  ! Check that if reach the end of observation file.
-            if (i==1 .and. dabs((Obsweek-ObsData(i)%Week)*604800.d0+Obssec-ObsData(i)%Sow)<Interval) then
-                ObsData(i).Flag=0 ! If reference staiton and time difference less than Interval
+            if (i==1 .and. dabs((Obsweek-ObsData(i)%Week)*604800.d0+Obssec-ObsData(i)%Sow)<1.d0) then
+                ObsData(i).Flag=0 ! If reference staiton and time difference less than 1s
             end if
             if (ObsData(i).Flag /=0) then
                 Data_flag=1
@@ -153,16 +153,21 @@ implicit none
                        ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec
 
         ! ===== For each station, form zero difference ========
-        if (Pos_State=='K') STA%STA(2)%Coor=Coor  ! If kinematic, update the approximate coordinate
         do i=1,STA%Num  ! STA%Num=2 in double difference
-!            if (any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K')) then
-!            if (any(STA%STA(i)%TrueCoor==0.d0) .or. ((Pos_State=='K') .and. .not.(STA%STA(i)%flag_InitialCoor)) ) then
-            if ( any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(i)%TrueCoor-STA%STA(i)%Coor)>50.d0))  ) then
-!            if (any(STA%STA(i)%TrueCoor==0.d0)) then
-                if (.not. Combination(3)) then  ! If no doppler velocity
+            if (.not. Combination(3)) then ! If no doppler
+                ! if (any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K')) then
+                ! if (any(STA%STA(i)%TrueCoor==0.d0) .or. ((Pos_State=='K') .and. .not.(STA%STA(i)%flag_InitialCoor)) ) then
+                if ( any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(i)%TrueCoor-STA%STA(i)%XYZ)>50.d0))  ) then
+                    ! The relationship of TrueCoor, Coor, and XYZ:
+                    !  TrueCoor is to get true coordinate for comparison NEU, if it is zero, the Bancroft of first epoch will set as TrueCoor. It will only set one time.
+                    ! Coor is for approximate coordinate of each epoch, if it is not real kinematic, we expect it keep the same.
+                    ! But if it is real kinematic and initial coordiante coordinate from Coor_Table is not zero, we should change Coor. So we set the XYZ to detect  
+                    ! whether it is real kinematic.
+                    ! XYZ is the positioning coordinate of last epoch. So it should be given a initial coordinate and update each epoch.
                     call Bancroft(ObsData(i), i, STA%STA(i)%Coor)   ! If Kinematic
                     if (any(STA%STA(i)%Coor==0.d0)) cycle
-                elseif (i>1 .and. Combination(3)) then
+                end if
+            elseif (Combination(3)) then
 !                    call polyfit(NEQ_DP%Sow(2:5)-ObsSec, NEQ_DP%Vel(:,2:5), 4, NEQ_DP%Flag_Sln(2:5), 0.d0, Vel, j)  ! Predict velocity by Quadratic polyfit doppler velocity
 !                    if (all(Vel/=0.d0)) then
 !                        NEQ_DP%dt=Obssec-NEQ_DP%Sow(j)
@@ -176,7 +181,6 @@ implicit none
                         if (any(STA%STA(i)%Coor==0.d0)) cycle
                         Vel_Used=0
                     end if
-                end if
             end if
             call Zero_Difference(ObsData(i), i, ZD(i))
         end do
@@ -240,6 +244,7 @@ implicit none
 
         ! ================= Write the result ===============
         Coor=STA%STA(2)%Coor+dx_Coor(1:3)
+        if (Pos_State=='K' ) STA%STA(2)%XYZ=Coor    ! If kinematic, update the approximate coordinate
         call XYZ2BLH(Coor(1), Coor(2), Coor(3), BLH(1), BLH(2), BLH(3))
         if (Flag_Sln<=3) then
             NEQ_DP%Coor=Coor

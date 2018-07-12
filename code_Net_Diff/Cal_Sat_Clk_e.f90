@@ -42,21 +42,21 @@ implicit none
     tkr=(GPSweek-Navdata_E(PRN)%Nav(1)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(1)%GPSsec
     do i=2,Ubound(Navdata_E(PRN)%Nav,dim=1)
         t=(GPSweek-Navdata_E(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(i)%GPSsec
-!        if (dabs(t)<=dabs(tkr)-0.1d0) then
-!            tkr=t    ! 取距离最近时刻的星历
-!            tempNav=Navdata_E(PRN)%Nav(i)
-!        else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
-!            exit
-!        end if
-        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_E(PRN)%Nav(i)%Health==0.d0) ) then
-            tkr=t   ! 取最新的星历,t扣除了接收机钟差，! .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
+        if (dabs(t)<=dabs(tkr)-0.1d0 .and. (NavData_E(PRN)%Nav(i)%Health==0.d0)) then
+            tkr=t    ! 取距离最近时刻的星历
             tempNav=Navdata_E(PRN)%Nav(i)
-            if ((dabs(tkr)<3620.d0)  .and. (tempNav%Health==0.d0)  .and. (tempNav%a0/=0.d0) ) then
-                exit
-            end if
-!        elseif (t<-0.2d0) then
-!            exit
+        else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
+            exit
         end if
+!        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_E(PRN)%Nav(i)%Health==0.d0) ) then
+!            tkr=t   ! 取最新的星历,t扣除了接收机钟差，! .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
+!            tempNav=Navdata_E(PRN)%Nav(i)
+!            if ((dabs(tkr)<3620.d0)  .and. (tempNav%Health==0.d0)  .and. (tempNav%a0/=0.d0) ) then
+!                exit
+!            end if
+!!        elseif (t<-0.2d0) then
+!!            exit
+!        end if
     end do
     if ((dabs(tkr)>3620.d0) ) then
         Sat_Clk=9999.d0

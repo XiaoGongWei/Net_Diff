@@ -108,6 +108,7 @@ implicit none
             STA%STA(k)%Rotation=reshape((/ -dsind(Lat)*dcosd(Lon),  -dsind(Lon),  dcosd(Lat)*dcosd(Lon),  &
                     -dsind(Lat)*dsind(Lon), dcosd(Lon) ,dcosd(Lat)*dsind(Lon),  dcosd(Lat) ,0D0, dsind(Lat)/), (/3,3/))
             STA%STA(k)%Coor(1:3)=Coor !+MATMUL(STA%STA(k)%NEU, STA%STA(k)%Rotation)
+            STA%STA(k)%XYZ(1:3)=Coor
             STA%STA(k)%TrueCoor(1:3)=Coor
             STA%STA(k)%flag_InitialCoor=.true.
 !            call XYZ2BLH(STA%STA(k)%Coor(1), STA%STA(k)%Coor(2), STA%STA(k)%Coor(3),Lat,Lon,Hgt)  ! Lat and Lon is In degree
