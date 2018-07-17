@@ -1,5 +1,5 @@
 
-subroutine LAMBDA(log, n,ahat,Qahat,method,afixed,sqnorm,Ps,Qzhat,Z,nfixed,mu)
+subroutine LAMBDA(log, n,ahat,Qahat,method,afixed,sqnorm,Ps,Qzhat,Z,nfixed,mu,dz)
 !%
 !%   [afixed,sqnorm,Ps,Qzhat,Z,nfixed,mu]=LAMBDA(ahat,Qahat,method,varargin)
 !%
@@ -115,7 +115,7 @@ integer :: log
 integer :: n, method
 real(8) :: ahat(n),  Qahat(n,n)
 ! Intents out:
-real(8) :: afixed(n), sqnorm(2), Ps, Qzhat(n,n), Z(n,n), mu
+real(8) :: afixed(n), sqnorm(2), Ps, Qzhat(n,n), Z(n,n), mu, dz(n)
 integer :: nfixed
 ! Local variables:
 integer :: ncands
@@ -269,6 +269,7 @@ end select
 !%Perform the back-transformation and add the increments
 afixed = matmul(iZt, zfixed)
 afixed = afixed + incr
+dz=zhat-zfixed
 
 return
 
