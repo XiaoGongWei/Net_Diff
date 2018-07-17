@@ -44,7 +44,7 @@ implicit none
     integer :: npar, npar2, nfixed
     real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
     real(8) :: Q(2*MaxPRN, 2*maxPRN), Q2(2*MaxPRN, 2*maxPRN), P(MaxPRN, maxPRN)
-    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN)
+    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN), dz(2*MAxPRN)
     real(8) :: dx(2*MaxPRN), temp_Nbb(ParaNum+MaxPRN,ParaNum+MaxPRN), temp_InvN(ParaNum+MaxPRN,ParaNum+MaxPRN)
     real(8) :: temp_U(ParaNum+MaxPRN), temp_dx(ParaNum+MaxPRN), temp_Nbb2(2*MaxPRN,ParaNum+MaxPRN)
     real(8) :: temp_QR(MaxPRN+ParaNum,2*MaxPRN), temp_QQ(2*MaxPRN, 2*MaxPRN)
@@ -161,7 +161,7 @@ implicit none
         end do
         write(unit=LogID,fmt='(A)') ''
         
-        if ( (dabs(maxV)>.1d0)  ) then
+        if ( dabs(maxV)>.4d0*a1*154.d0/(a1*154.d0+a2*120.d0)  ) then
             if ((maxL)==1) then   ! maxV in P1
                 call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap1(1:N,:), NEQ%Lp1(1:N), &
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(1), NEQ%SumN)
@@ -263,7 +263,7 @@ implicit none
 !        write(LambdaID,'(14F11.3)') Q(1:npar, 1:npar)
 !        write(LambdaID,'(14F11.3)') amb(1:npar)
 !        call LAMBDA_zhang(lambdaID, npar, Q(1:npar, 1:npar), amb(1:npar), disall)
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu)
+        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -670,7 +670,7 @@ implicit none
     write(LogID,'(A)') ''
 
     200 if (npar>1) then
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu)
+        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -821,6 +821,13 @@ implicit none
 !    temp_dx(1:3)=Epo_NEQ%dx(1:3)
 !    temp_dx(4:3+MaxPRN)=Epo_NEQ%dx(ParaNum+2*MaxPRN+1:ParaNum+3*MaxPRN)
 !    temp_dx=temp_dx-MATMUL(MATMUL(temp_QR, temp_QQ), dx)
+!    do i=1, npar
+!        PRN=iPOS2(i)
+!        do j=1, ParaNum
+!            U(j)=U(j) - amb(i)*EPO_NEQ%Al1(,j
+!        end do
+!
+!    end do
 
     dx(1:MaxPRN)=Epo_NEQ%amb_L1
     dx(MaxPRN+1:2*MaxPRN)=Epo_NEQ%amb_L2

@@ -344,7 +344,7 @@ implicit none
                 A=0.d0
                 L=0.d0
                 Range=0.d0
-                CuParaNum=ParaNum-1
+                CuParaNum=0
                 write(CSID,"(A6,I5)")  "epoch:", epoch
                 if ((STA%STA(k)%SKD=="F") .or. (STA%STA(k)%SKD=="f")) then
                     if (delay0==0.d0) then
@@ -841,11 +841,13 @@ implicit none
                             call KF_Change(InvN,dx,SatNum+ParaNum,2,'pos')
                             call KF_Change(InvN,dx,SatNum+ParaNum,3,'pos')
                         end if
+                        CuParaNum=CuParaNum+3
+                    elseif (Pos_State=="S") then
+                        if (dabs(InvN(i,i))==0.d0) CuParaNum=CuParaNum+3
                     elseif (Pos_State=="F") then
                         A(1:N,1:3)=0.d0
                     end if
                     
-                    ! ********Eliminate the tropsphere parameter *******
                     ! ********Eliminate the tropsphere parameter *******
                     if ((TropLen/=0.d0) .and. (ADmethod=='LS'))  then
                         if ((Obsweek-TropWeek)*604800.d0+ObsSec-TropSow>=TropLen) then
@@ -876,6 +878,7 @@ implicit none
                         if ( (ParaNum>5) .and. ((index(isb_mode,"WN") /=0) .or. (index(isb_mode,"wn") /=0)) )then  ! ISB estimated, white noise
                             do i=6, ParaNum
                                 call Elimi_Para(Nbb,U,SatNum+ParaNum,i)
+                                CuParaNUm=CuParaNUm+1
                             end do
                         end if
                     elseif (ADmethod=='KF') then
@@ -883,6 +886,7 @@ implicit none
                         if ( (ParaNum>5) .and. ((index(isb_mode,"WN") /=0) .or. (index(isb_mode,"wn") /=0)) )then  ! ISB estimated, white noise
                             do i=6, ParaNum
                                 call KF_Change(InvN, dx,SatNum+ParaNum, i, 'clk')
+                                CuParaNUm=CuParaNUm+1
                             end do
                         elseif ( (ParaNum>5) .and. ((index(isb_mode,"RW") /=0) .or. (index(isb_mode,"rw") /=0)) ) then     ! Set ISB as a random walk noise, (2m)**2/day
                             do i=6, ParaNum
@@ -891,7 +895,8 @@ implicit none
                                 elseif (SystemUsed(1)==.false. .and. GLOIFB==14 .and. i<=19) then ! if frequency depended of GLONASS-only IFB
                                     N=N+1
                                     A(N, 6:ParaNum)=1.d2  ! Tight constraint of Sum(IFB)=0.0
-                                    U(N)=0.d0
+                                    L(N)=0.d0
+                                    PP(N)=1.d0
                                     if (InvN(i,i)==0.d0)    InvN(i,i)= 10.d0**2  ! GLONASS IFB frequency depend
                                 end if
                                 if (dabs(InvN(i,i))>0.d0) then
@@ -900,6 +905,7 @@ implicit none
                             end do
                         end if
                     end if
+                    CuParaNUm=CuParaNUm+1
 
                     ! ********Random walk of ionosphere parameter*********
                     if (If_Est_Iono .and. (index(ObsCombine,"P1") /=0 .or. index(ObsCombine,"P2") /=0 .or. index(ObsCombine,"P3") /=0)) then

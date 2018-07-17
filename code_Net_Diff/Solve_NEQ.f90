@@ -5,7 +5,8 @@
 !            1) Solve the normal equation and get the wide line
 !     and W4 combination ambiguity (float);
 !            2) Fix the WL and W4 amiguity using LAMBDA method;
-!            3) Use the float or fixed ambigity to get the ambiguity 
+!            3.a) Use the fixed ambigity to get fixed coordinate, return;
+!            3.b) Use the fixed ambigity to get the ambiguity 
 !      of L1 and L2;
 !            4) Estimate the coordinate by fixing the ambiguity of 
 !      L1 and L2.
@@ -43,10 +44,11 @@ implicit none
     integer :: npar, npar2, nfixed
     real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
     real(8) :: Q(2*MaxPRN, 2*maxPRN), Q2(2*MaxPRN, 2*maxPRN), P(MaxPRN, maxPRN)
-    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN)
+    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN), dz(2*MaxPRN)
     integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
     real(8) :: minP
     integer(1) :: flag_partial, flag_fixed, freq, sys, par_PRNS
+    real(8) :: temp_Nbb(2*MaxPRN,2*MaxPRN), temp_InvN(ParaNum, 2*MaxPRN), dx(2*MaxPRN), temp_dx(ParaNum)
 
     !   Velocity estimation of Doppler Data
     if (Combination(3)) then
@@ -149,7 +151,7 @@ implicit none
         end do
         write(unit=LogID,fmt='(A)') ''
         
-        if ( (dabs(maxV)>.1d0)  ) then
+        if ( dabs(maxV)>.4d0*a1*154.d0/(a1*154.d0+a2*120.d0)  ) then
             if ((maxL)==1) then   ! maxV in P1
                 call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap1(1:N,:), NEQ%Lp1(1:N), &
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(1), NEQ%SumN)
@@ -213,9 +215,13 @@ implicit none
     do i=1, 2*maxPRN
         iPOS(i:i)=i
         if (ar_mode/=2 .and. i<=maxPRN) then
-            if (NEQ%Ele(i)<FixEle) amb2(i)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+            if (NEQ%Ele(i)<FixEle) then
+                amb2(i)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+            end if
         elseif (ar_mode/=2 .and. i>maxPRN) then
-            if (NEQ%Ele(i-maxPRN)<FixEle) amb2(i)=0.d0
+            if (NEQ%Ele(i-maxPRN)<FixEle) then
+                amb2(i)=0.d0
+            end if
         end if
     end do
     call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
@@ -246,7 +252,7 @@ implicit none
 !        write(LambdaID,'(38F11.3)') Q(1:npar, 1:npar)
 !        write(LambdaID,'(38F11.3)') amb(1:npar)
 !        call LAMBDA_zhang(lambdaID, npar, Q(1:npar, 1:npar), amb(1:npar), disall)
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu)
+        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -276,7 +282,7 @@ implicit none
 
 !            amb2=amb  ! store the amb before LAMBDA
 !!            call LAMBDA_zhang(lambdaID, npar2, Q2(1:npar2, 1:npar2), amb(1:npar2), disall) 
-!            call LAMBDA(lambdaID, npar2, amb(1:npar2),Q2(1:npar2, 1:npar2),1,amb(1:npar2),disall,Ps,Qzhat(1:npar2, 1:npar2),Z(1:npar2, 1:npar2),nfixed,mu)
+!            call LAMBDA(lambdaID, npar2, amb(1:npar2),Q2(1:npar2, 1:npar2),1,amb(1:npar2),disall,Ps,Qzhat(1:npar2, 1:npar2),Z(1:npar2, 1:npar2),nfixed,mu,dz(1:npar2))
 !            ratio2=dabs(disall(2)/disall(1))
 !            if (ratio2>minratio) then
 !                iPOS=iPOS2  ! use all the PRNs
@@ -414,8 +420,27 @@ implicit none
     end if
     Flag_Sln=flag_partial+1
 
-
-    ! Step3:
+    ! Setp3(a):
+!        Update the coordinate by fixing the ambiguity of L1 and L2.
+!!    ! If there is no L1&L2 mixed combination, Still some problem, don't use this.
+!    if ((a1*a2==0.d0 .and. b1*b2==0.d0) .or. (a1*f1+a2*f2==0.d0) .or. (b1*f1+b2*f2==0.d0)) then
+!!        dx(1:MaxPRN)=NEQ%amb_WL
+!!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
+!!        temp_dx=MATMUL(temp_InvN, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
+!        do i=1,npar
+!            PRN=iPOS2(i)
+!            temp_InvN(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
+!        end do
+!        temp_InvN(:,1:npar)=MATMUL(temp_InvN(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
+!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1
+!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN(:,1:npar), temp_Nbb(1:npar,1:npar)), dz(1:npar))
+!
+!        Coor=temp_dx(1:3)
+!        
+!        return
+!    end if
+    
+    ! Step3(b):
     !      Use the float or fixed ambigity to get the 
     !      ambiguity  of L1 and L2
     if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
@@ -580,7 +605,7 @@ implicit none
         maxV=maxval(dabs(Epo_NEQ%maxV))
         maxL=maxloc(dabs(Epo_NEQ%maxV),dim=1)
         
-        if ( (dabs(maxV)>.08d0*a1*154.d0/(a1*154.d0+a2*120.d0))  ) then
+        if ( (dabs(maxV)>.4d0*a1*154.d0/(a1*154.d0+a2*120.d0))  ) then
             if ((maxL)==1) then   ! maxV in P1
                 call Minus_NEQ( Epo_NEQ%Nbb(1:ParaNum,1:ParaNum), Epo_NEQ%U(1:ParaNum), Epo_NEQ%Ap1(1:N,:), Epo_NEQ%Lp1(1:N), &
                        Epo_NEQ%P(1:N, 1:N), ParaNum,  N, Epo_NEQ%maxL(1), Epo_NEQ%SumN)

@@ -372,7 +372,7 @@ implicit none
     close(CoorID)
     
     call CPU_time(t%t_end)!(time_end1)
-    write(*,"(A16F10.4)") "Total time:" , t%t_end - t%t_begin
+    write(*,"(A16F10.2,A1)") "Total time:" , t%t_end - t%t_begin,"s"
     stop
     100 write(*,*) '-------ERROR------: Opening output file error, please check if the file exist or it can be read.'
     stop

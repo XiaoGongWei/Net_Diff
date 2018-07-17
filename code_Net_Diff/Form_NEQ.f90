@@ -55,10 +55,7 @@ implicit none
         NEQ%InvN=0.d0
         NEQ%U=0.d0
         NEQ%dx=0.d0
-    elseif (Pos_State=="K") then    ! on the fly, kinematic 
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
+    else
         ! Eliminate the unobserved satellite at this epoch
         do PRN=1, MaxPRN !DD%PRNS
             flag_del_PRN=.true.
@@ -115,6 +112,9 @@ implicit none
         end do
     end if
     if (Pos_State=="K") then    ! on the fly, kinematic
+        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
+        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
+        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
         if (ADmethod=='LS' .or. .not.(If_Est_Iono .and. IonoNum>0) ) then
             call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 1)
             call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 2)
@@ -432,7 +432,7 @@ implicit none
             if (Epo_NEQ%InvN(4,4)==0.d0) then
 !                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+4.d0   !    (0.02**2)*10000 ! 0.02m
             else
-                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.01**2/3600.d0*Interval)*10000.d0    !    (0.01^2/3600*Interval)*10000 ! 0.02cm
+                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.001**2/3600.d0*Interval)*10000.d0    !    (0.01^2/3600*Interval)*10000 ! 0.02cm
             end if
         end if
 
