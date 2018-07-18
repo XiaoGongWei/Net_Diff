@@ -112,12 +112,12 @@ implicit none
         ! Calculate the transfor matrix between TRS and CRS
         MJD=Obsweek*7.d0+44244.0d0+Obssec/86400.d0 !-Leap_sec/86400.d0 ! In GPST
         kmjd=mod(Obssec,86400.d0)/86400.d0
-        Xp=EOP%X(1)+kmjd*(EOP%X(2)-EOP%X(1))
-        Yp=EOP%Y(1)+kmjd*(EOP%Y(2)-EOP%Y(1))
+        EOP%Xp=EOP%X(1)+kmjd*(EOP%X(2)-EOP%X(1))
+        EOP%Yp=EOP%Y(1)+kmjd*(EOP%Y(2)-EOP%Y(1))
         dUT1=EOP%dUT1(1)+kmjd*(EOP%dUT1(2)-EOP%dUT1(1))
         DX00=EOP%dX(1)+kmjd*(EOP%dX(2)-EOP%dX(1))
         DY00=EOP%dY(1)+kmjd*(EOP%dY(2)-EOP%dY(1))
-        call CRS2TRS(Leap_sec, MJD,Xp,Yp,dUT1,DX00,DY00,Rota_C2T,Rota_T2C)
+        call CRS2TRS(Leap_sec, MJD,EOP%Xp,EOP%Yp,dUT1,DX00,DY00,Rota_C2T,Rota_T2C)
         
         ! Calculate the position of Sun and Moon in CRS
         TT=MJD+2400000.5d0+(19.d0+32.184d0)/86400.d0  ! 地球动力学时
@@ -648,6 +648,8 @@ implicit none
                         end if
                         Amb(PRN,k)=0.d0
                         write(unit=LogID,fmt='(A6,1X,A1,I2,A24,A5)') 'PRN',System,PRN_S,'cycle slip, at station', STA%STA(k)%Name
+!                    else
+!                        InvN(PRN+ParaNum, PRN+ParaNum)=InvN(PRN+ParaNum, PRN+ParaNum)+1.d-8*Interval
                     end if
                     
                     ! ***********Phase wind up correction***********

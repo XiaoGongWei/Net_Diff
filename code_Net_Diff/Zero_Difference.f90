@@ -65,6 +65,7 @@ implicit none
     Lat=STA%STA(k)%BLH(1)
     Lon=STA%STA(k)%BLH(2)
     Hgt=STA%STA(k)%BLH(3)
+    MJD=Obsweek*7.d0+44244.0d0+Obssec/86400.d0
     dist=dsqrt(DOT_PRODUCT((AppCoor-STA%STA(2)%TrueCoor),(AppCoor-STA%STA(2)%TrueCoor)))
     if ((k==2) .and. (dist>1.d3)) then ! If rover station move more than 1km, re-calculate the rotation matrix
         call XYZ2BLH(AppCoor(1), AppCoor(2), AppCoor(3),Lat,Lon,Hgt)
@@ -298,11 +299,15 @@ implicit none
         if (allocated(Ant(GNum+RNum+CNum+NumE+JNum+INum+k)%PCV)) then
             call PCV_Corr(GNum+RNum+CNum+NumE+JNum+INum+k, 90.d0-Ele, Azi, StaPCV)  ! Station PCV, zenith and azimuth depended
         end if
+         call S2C(SunCoor(1:3), Sat_Coor, Sat_Vel, System, PRN)
         if (Orbit=="SP3") then
-            ! We simply consider the Z-PCO difference
              Ele_Sat=dasind(sind(Ele+90.d0)*6378137.d0/dsqrt(DOT_PRODUCT(Sat_Coor,Sat_Coor)))
-            SatPCO(1)=Ant(PRN)%PCO(3,1)*cosd(Ele_Sat)
-            SatPCO(2)=Ant(PRN)%PCO(3,2)*cosd(Ele_Sat)
+!            SatPCO(1)=Ant(PRN)%PCO(3,1)*cosd(Ele_Sat)  ! simply consider the Z-PCO difference, incorrect!!!!
+!            SatPCO(2)=Ant(PRN)%PCO(3,2)*cosd(Ele_Sat)
+            Sat_Coor0=Sat_Coor+MATMUL(Rota_C2T, MATMUL(Rota_S2C,Ant(PRN)%PCO(1:3,1)))
+            SatPCO(1)=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor),(Sat_Coor-AppCoor)))-dsqrt(DOT_PRODUCT((Sat_Coor0-AppCoor),(Sat_Coor0-AppCoor)))
+            Sat_Coor0=Sat_Coor+MATMUL(Rota_C2T, MATMUL(Rota_S2C,Ant(PRN)%PCO(1:3,2)))
+            SatPCO(2)=dsqrt(DOT_PRODUCT((Sat_Coor-AppCoor),(Sat_Coor-AppCoor)))-dsqrt(DOT_PRODUCT((Sat_Coor0-AppCoor),(Sat_Coor0-AppCoor)))
             call PCV_Corr(PRN, Ele_Sat, 0.d0, SatPCV)  ! Satllite PCV, zenith depended
         end if
         ! Note:
