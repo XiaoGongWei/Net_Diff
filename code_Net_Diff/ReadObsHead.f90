@@ -291,13 +291,13 @@ implicit none
                         ObsHead(kth)%ObsType(1,i)=j
                     else if ( (TempType3=="C1X")  .or. (TempType3=="C1Z") ) then
                         ObsHead(kth)%ObsType(2,i)=j
-                    else if ( (TempType3=="C2X") .or. (TempType3=="C2L") .or. (TempType3=="C2S")) then
+                    else if ( (TempType3=="C2X") ) then
                         ObsHead(kth)%ObsType(3,i)=j
                     else if ( (TempType3=="C5X") .or. (TempType3=="C5Q") .or. (TempType3=="C5I") ) then
                         ObsHead(kth)%ObsType(4,i)=j
                     else if (TempType3=="L1C") then  ! L1X L1Z it is the new signal
                         ObsHead(kth)%ObsType(5,i)=j
-                    else if ( (TempType3=="L2X") .or. (TempType3=="L2L") .or. (TempType3=="L2S")) then
+                    else if ( (TempType3=="L2X") ) then
                         ObsHead(kth)%ObsType(6,i)=j
                     else if ( (TempType3=="L5X") .or. (TempType3=="L5Q") .or. (TempType3=="L5I") ) then
                         ObsHead(kth)%ObsType(7,i)=j

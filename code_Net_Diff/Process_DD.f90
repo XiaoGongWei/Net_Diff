@@ -83,6 +83,12 @@ implicit none
     Mean_Coor=0.d0
     Mean_NEU=0.d0
 
+    if (all(STA%STA(1)%OLC%OLC==0.d0)) then
+        STA%STA(2)%OLC%OLC=0.d0  ! If one station no ocean load, then set all ocean load as zero
+    elseif (all(STA%STA(2)%OLC%OLC==0.d0)) then
+        STA%STA(1)%OLC%OLC=0.d0
+    end if
+
     ! ***************** Loop epoch-by-epoch ******************
     do while(flag)
         epoch=epoch+1
