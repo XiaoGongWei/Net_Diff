@@ -421,7 +421,7 @@ implicit none
 !                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+400.d0     !    (0.2**2)*10000 ! 0.2m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+4.d0/3600.d0*Interval*10000.d0   ! (4m2/3600*Interval)*10000
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+1.d0/3600.d0*Interval*10000.d0   ! (4m2/3600*Interval)*10000
                 end if
             end if
         end do
