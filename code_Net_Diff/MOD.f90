@@ -15,7 +15,7 @@ implicit none
     integer,parameter :: INum0=7   ! max IRNSS satellite number
     integer :: GNum=32   ! max GPS satellite number
     integer :: RNum=24   ! max GLONASS satellite number
-    integer :: CNum=14   ! max BeiDou satellite number
+    integer :: CNum=35   ! max BeiDou satellite number
     integer :: NumE=31   ! max GALILEO satellite number
     integer :: JNum=7   ! max QZSS satellite number
     integer :: INum=7   ! max IRNSS satellite number

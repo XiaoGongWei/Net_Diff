@@ -68,7 +68,7 @@ implicit none
         
             call UTC2GPST(year, mon, day, hour, min, int_sec, GPSweek, GPSsec)
         
-            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec>0.01d0) then ! If no data in this epoch
+            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec>0.011d0) then ! If no data in this epoch
             !if ((GPSweek>Obsweek) .or. (GPSsec>Obssec)) then ! If no data in this epoch
                 backspace(ObsID(sta))
                 exit
@@ -201,7 +201,7 @@ implicit none
             end do  ! do i=1,ObsData%PRNS
         
             ! If next line not reach the specialized time
-            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec<-0.01d0) then
+            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec<-0.011d0) then
 !            if ((GPSweek<Obsweek) .or. (GPSsec<Obssec)) then
                 cycle
             else
@@ -234,7 +234,7 @@ implicit none
             ! int_sec=int_sec-14.d0  ! 精密星历时间为BDT，观测时间为GPST
 
             call UTC2GPST(year, mon, day, hour, min, int_sec, GPSweek, GPSsec)
-            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec>0.01d0) then ! If no data in this epoch
+            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec>0.011d0) then ! If no data in this epoch
             !if ((GPSweek>Obsweek) .or. (GPSsec>Obssec)) then ! If no data in this epoch
                 backspace(ObsID(sta))
                 exit
@@ -355,7 +355,7 @@ implicit none
             end do   ! do i=1,ObsData%PRNS
 
             ! If next line not reach the specialized time
-            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec<-0.01d0) then
+            if ((GPSweek-Obsweek)*604800.d0+GPSsec-Obssec<-0.011d0) then
 !            if ((GPSweek<Obsweek) .or. (GPSsec<Obssec)) then
                 cycle
             else
