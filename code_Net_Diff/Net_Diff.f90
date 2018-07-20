@@ -16,6 +16,7 @@ subroutine Net_Diff(A,L,PRNPRN,Code,N,M,Num,S,epoch)
 use MOD_STA
 use MOD_Res
 use MOD_FileID
+use MOD_VAR
 implicit none
     ! Intent
     integer :: N,Num,M, S
@@ -53,8 +54,10 @@ implicit none
         if (sum_P/=0.d0) then
             dL=dL/sum_P
             
-            if (Co=='LC') then
-                  L(i)=L(i)-dL
+            if (proc_mod==3)then
+                if (Co=='LC') L(i)=L(i)-dL  ! For zone correction in Process_Corr
+            else
+                L(i)=L(i)-dL  ! In DSPP/DPPP
             end if
         else    ! If no common satellites
             L(i)=0.d0

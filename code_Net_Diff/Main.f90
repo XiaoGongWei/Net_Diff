@@ -343,14 +343,14 @@ implicit none
 
 !    call Process_BRD_Sp3  ! navigation
 !      call Process_Net
-    if (proc_mod==0) then
-        call Process    ! 24h
+    if (proc_mod==0 .or. proc_mod==6) then  
+        call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         call Process_Corr    ! 24h,加分区改正数或等效钟差
 !    elseif (proc_mod==4) then
 !        call Process2      ! 2min 站间差
     elseif (proc_mod==5) then
-        call Process_DD    ! 2min 双差解算
+        call Process_DD    ! RTK
     else
         write(*,*) "proc_mod error"
         pause 
@@ -374,7 +374,7 @@ implicit none
     call CPU_time(t%t_end)!(time_end1)
     write(*,"(A16F10.2,A1)") "Total time:" , t%t_end - t%t_begin,"s"
     stop
-    100 write(*,*) '-------ERROR------: Opening output file error, please check if the file exist or it can be read.'
+    100 write(*,*) '-------ERROR------: Opening output file error, please check if the file exist or it can be read (If Net_Diff.dll exist, kill it)'
     stop
 
 end program
