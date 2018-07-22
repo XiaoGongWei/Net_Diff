@@ -122,7 +122,7 @@ implicit none
             call CRS2TRS(Leap_sec, MJD,EOP%Xp,EOP%Yp,dUT1,DX00,DY00,Rota_C2T,Rota_T2C)
         
             ! Calculate the position of Sun and Moon in CRS
-            TT=MJD+2400000.5d0+(19.d0+32.184d0)/86400.d0  ! 地球动力学时
+            TT=MJD+2400000.5d0+(19.d0+32.184d0)/86400.d0
             call PLEPH (TT, 11, 3, SunCoor)
             SunCoor=SunCoor*1000.d0   ! Unit in meter
             call PLEPH (TT, 10, 3, MoonCoor)
@@ -199,14 +199,14 @@ implicit none
         if (ar_mode==2)  DD%RefSat=0  ! Instantaneous AR
         call Get_RefSat(SD, DD%RefSat, RefSat)
         if (all(RefSat==0)) then
-            write(LogID,'(5X,A30)') '未找到参考星，不计算此历元。'
+            write(LogID,'(5X,A30)') 'no reference satellite found, skip.'
             cycle          ! If no reference satellite found(almost not possible)
         end if
         
         ! ========= Form double difference =============
         call Double_Difference(SD, DD, RefSat)
         
-        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3+1) ) then ! 如果卫星数太少
+        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3+1) ) then
             write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'
             cycle
         end if

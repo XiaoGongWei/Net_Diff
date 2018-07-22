@@ -41,7 +41,6 @@ implicit none
     logical :: flag_del_PRN
     real(8) :: dT(2)
 
-    ! 如果有周跳，消法方程参数，再加到法方程；如果没有，直接相加；如果没有数据，暂时先不加，也不消
     
     Awl=0.d0; Aw4=0.d0
     Aewl=0.d0

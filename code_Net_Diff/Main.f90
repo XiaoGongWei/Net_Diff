@@ -2,7 +2,7 @@
 ! Entrance of the program Net_Diff
 !
 ! NOTICE: 
-!           This program is for static or kinematic SPP/PPP for 
+!           This program is for static or kinematic SPP/PPP/RTK for 
 !     single-station. As for multi-station PPP, net-combination
 !     PPP or satellite clock estimation, please turn to Net_PPP.
 !            In the other hand, this programe can used for SPP/PPP
@@ -346,7 +346,7 @@ implicit none
     if (proc_mod==0 .or. proc_mod==6) then  
         call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
-        call Process_Corr    ! 24h,加分区改正数或等效钟差
+        call Process_Corr    ! 加分区改正数或等效钟差
 !    elseif (proc_mod==4) then
 !        call Process2      ! 2min 站间差
     elseif (proc_mod==5) then
@@ -361,13 +361,13 @@ implicit none
     do i=1,STA%Num
         close(ObsID(i))
     end do
-    close(LogID)  ! 平差后的参数改正数及卫星
-    close(CSID,status='delete')  ! 周跳探测中间输出
+    close(LogID)
+    close(CSID,status='delete')
     if ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         close(ResO_CID,status='delete') ! O-C
         close(X38ID,status='delete') ! X38
     elseif (proc_mod==5) then
-        close(LambdaID, status='delete') ! 双差中的Lambda
+        close(LambdaID, status='delete')
     end if
     close(CoorID)
     

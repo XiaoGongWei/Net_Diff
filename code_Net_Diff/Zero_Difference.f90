@@ -122,7 +122,7 @@ implicit none
 !    call Cal_Rec_Clk(Obsweek, Obssec, ObsData, AppCoor, Rotation, Rec_Clk)
     call Cal_Rec_Clk2(k, Obsweek, Obssec, ObsData,AppCoor, Rotation, ZHD,ZWD,Lat, Hgt, int_doy, PRNOUT, PRNOUTn, Rec_Clk)
     if (ObsData%PRNS - PRNOUTn <=3) then
-        write(unit=LogID,fmt='(A5,I3,A30)') '%STA', k, '本历元可用卫星过少，不计算。'
+        write(unit=LogID,fmt='(A5,I3,A30)') '%STA', k, 'too few satellites, skip。'
         return
     end if
 
@@ -362,11 +362,11 @@ implicit none
         end if
 
         if ( (L1==0.d0) .and. (L2==0.d0) ) then
-            cycle ! 当L1或L2为零时无法计算WL和W4组合模糊度
+            cycle
         elseif ( (L1==0.d0) .or. (L2==0.d0) ) then
             if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) .or. If_Est_Iono ) then   ! If dual-frequency combination
 !                CycleSlip(k)%Slip(PRN)=1
-                cycle   ! 不管 better than cycle, better than cycleslip=1
+                cycle   ! better than cycleslip=1
             elseif ( (a1*f1+a2*f2/=0.d0) .and. (L1==0.d0) ) then   ! If single-frequency combination
                 cycle
             elseif ( (b1*f1+b2*f2/=0.d0) .and. (L2==0.d0) ) then   ! If single-frequency combination
