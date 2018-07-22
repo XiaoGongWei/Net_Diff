@@ -48,7 +48,7 @@ implicit none
     integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
     real(8) :: minP
     integer(1) :: flag_partial, flag_fixed, freq, sys, par_PRNS
-    real(8) :: temp_Nbb(2*MaxPRN,2*MaxPRN), temp_InvN(ParaNum, 2*MaxPRN), dx(2*MaxPRN), temp_dx(ParaNum)
+    real(8) :: temp_Nbb(2*MaxPRN,2*MaxPRN), temp_InvN(ParaNum, ParaNum), dx(2*MaxPRN), temp_dx(ParaNum) !, temp_InvN(ParaNum, 2*MaxPRN)
 
     !   Velocity estimation of Doppler Data
     if (Combination(3)) then
@@ -301,6 +301,7 @@ implicit none
                     else
                         NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
                     end if
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity does not change
@@ -322,6 +323,7 @@ implicit none
             do i=1,npar
                 if (iPOS(i)==0) then
                     NEQ%amb_WL(iPOS2(i))=0.d0
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity does not change
@@ -335,6 +337,7 @@ implicit none
             do i=1,npar
                 if (iPOS(i)==0) then
                     NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity does not change
@@ -424,16 +427,18 @@ implicit none
 !        Update the coordinate by fixing the ambiguity of L1 and L2.
 !!    ! If there is no L1&L2 mixed combination, Still some problem, don't use this.
 !    if ((a1*a2==0.d0 .and. b1*b2==0.d0) .or. (a1*f1+a2*f2==0.d0) .or. (b1*f1+b2*f2==0.d0)) then
-!!        dx(1:MaxPRN)=NEQ%amb_WL
-!!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
-!!        temp_dx=MATMUL(temp_InvN, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
-!        do i=1,npar
-!            PRN=iPOS2(i)
-!            temp_InvN(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
-!        end do
-!        temp_InvN(:,1:npar)=MATMUL(temp_InvN(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
-!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1
-!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN(:,1:npar), temp_Nbb(1:npar,1:npar)), dz(1:npar))
+!        dx(1:MaxPRN)=NEQ%amb_WL     ! Not best, as amb_WL includes some unfixed float solution, should abandon them in U(1:ParaNum)
+!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
+!        call InvSqrt(NEQ%Nbb(1:ParaNum,1:ParaNum), ParaNum, temp_InvN)
+!        temp_dx=MATMUL(temp_InvN, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
+!
+!!        do i=1,npar
+!!            PRN=iPOS2(i)
+!!            temp_InvN(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
+!!        end do
+!!        temp_InvN(:,1:npar)=MATMUL(temp_InvN(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
+!!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1
+!!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN(:,1:npar), temp_Nbb(1:npar,1:npar)), dz(1:npar))
 !
 !        Coor=temp_dx(1:3)
 !        

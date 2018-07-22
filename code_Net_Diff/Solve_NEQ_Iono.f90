@@ -300,6 +300,7 @@ implicit none
                     else
                         NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
                     end if
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity  change
@@ -321,6 +322,7 @@ implicit none
             do i=1,npar
                 if (iPOS(i)==0) then
                     NEQ%amb_WL(iPOS2(i))=0.d0
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity change
@@ -334,6 +336,7 @@ implicit none
             do i=1,npar
                 if (iPOS(i)==0) then
                     NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
+                    NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity does not change
@@ -708,6 +711,7 @@ implicit none
 !                else
 !                    Epo_NEQ%amb_L2(iPOS2(i)-maxPRN)=0.d0
 !                end if
+                Epo_NEQ%fixed_amb_num(iPOS2(i))=0
             else
                 if (abs(Epo_NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                     Epo_NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity change
@@ -829,7 +833,7 @@ implicit none
 !
 !    end do
 
-    dx(1:MaxPRN)=Epo_NEQ%amb_L1
+    dx(1:MaxPRN)=Epo_NEQ%amb_L1  ! Not best, as amb_L1 includes some unfixed float solution, should abandon them, but maybe absorbed in ionosphere parameter?
     dx(MaxPRN+1:2*MaxPRN)=Epo_NEQ%amb_L2
     temp_Nbb(1:ParaNum,1:ParaNum)=Epo_NEQ%Nbb(1:ParaNum,1:ParaNum)
     temp_Nbb(ParaNum+1:ParaNum+MaxPRN,1:ParaNum)=Epo_NEQ%Nbb(ParaNum+MaxPRN*2+1:ParaNum+MaxPRN*3,1:ParaNum)

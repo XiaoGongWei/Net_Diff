@@ -345,12 +345,12 @@ implicit none
             if (NEQ%fixed_amb(PRN)/=0.99d0) then
                 NEQ%fixed_amb_num(PRN)=NEQ%fixed_amb_num(PRN)+1
                 if (PRN<=maxPRN) then
-                    if (NEQ%fixed_amb_num(PRN)>5 .and. NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 5 epoches
+                    if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity >10 epoches
                         NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
                         NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))
                     end if
                 elseif (PRN>maxPRN) then
-                    if (NEQ%fixed_amb_num(PRN)>5 .and. NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity > 5 epoches
+                    if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
                         NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
                         NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))
                     end if
@@ -457,12 +457,12 @@ implicit none
                 if (If_Est_Iono .and. IonoNum>0 .and. Epo_NEQ%fixed_amb(PRN)/=0.99d0) then
                     Epo_NEQ%fixed_amb_num(PRN)=Epo_NEQ%fixed_amb_num(PRN)+1
                     if (PRN<=maxPRN) then
-                        if (Epo_NEQ%fixed_amb_num(PRN)>5 .and. Epo_NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 5 epoches
+                        if (Epo_NEQ%fixed_amb_num(PRN)>10 .and. Epo_NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 10 epoches
                             Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
                             Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))
                         end if
                     elseif (PRN>maxPRN) then
-                        if (Epo_NEQ%fixed_amb_num(PRN)>5 .and. Epo_NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity > 5 epoches
+                        if (Epo_NEQ%fixed_amb_num(PRN)>10 .and. Epo_NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
                             Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
                             Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))
                         end if

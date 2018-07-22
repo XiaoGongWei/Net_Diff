@@ -517,9 +517,6 @@ implicit none
                     elseif (Ele>LimEle) then
                         P=2*dsind(Ele)
                     else
-                        if ((STA%STA(k)%SKD=="F") .or. (STA%STA(k)%SKD=="f")) then
-                            write(LogID,'(A7,I3,A30)')  'PRN', PRN, '高度角小于截止高度角，剔除。'
-                        end if
                         cycle
                     end if
                     

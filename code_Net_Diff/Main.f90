@@ -65,7 +65,7 @@ implicit none
             end if
         end if
         if (SystemUsed(2)) then
-            NavFile=trim(NavDir)//"brdc"//str_day(5:7)//"0."//str_day(3:4)//"g"
+            NavFile=trim(NavDir)//"brdm"//str_day(5:7)//"0."//str_day(3:4)//"p"
             call ReadNavHead_R(NavFile)
             call ReadNavData_R
         end if

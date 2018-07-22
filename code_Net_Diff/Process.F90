@@ -410,9 +410,6 @@ implicit none
                     elseif (Ele>LimEle) then
                         P=2*dsind(Ele) ! 1.d0/(0.4d0+0.3d0/sind(Ele))**2  !  1.d0/(0.3d0+0.3d0/sind(Ele)) ! 
                     else
-                        if ((STA%STA(k)%SKD=="F") .or. (STA%STA(k)%SKD=="f")) then
-                            write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN, Ele, 'elevation too low'
-                        end if
                         cycle
                     end if
                 !        ! 根据轨道精度加权
