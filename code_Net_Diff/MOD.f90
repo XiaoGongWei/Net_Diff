@@ -8,13 +8,13 @@ implicit none
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
     integer,parameter :: GNum0=32   ! max GPS satellite number, used for variables defination in MOD
-    integer,parameter :: RNum0=24   ! max GLONASS satellite number
+    integer,parameter :: RNum0=27   ! max GLONASS satellite number
     integer,parameter :: CNum0=35   ! max BeiDou satellite number
     integer,parameter :: NumE0=31   ! max GALILEO satellite number
     integer,parameter :: JNum0=7   ! max QZSS satellite number
     integer,parameter :: INum0=7   ! max IRNSS satellite number
     integer :: GNum=32   ! max GPS satellite number
-    integer :: RNum=24   ! max GLONASS satellite number
+    integer :: RNum=27   ! max GLONASS satellite number
     integer :: CNum=35   ! max BeiDou satellite number
     integer :: NumE=31   ! max GALILEO satellite number
     integer :: JNum=7   ! max QZSS satellite number
@@ -457,6 +457,7 @@ use MOD_constant
         real(8)  :: P2(MaxPRN)     =  0.d0
         real(8)  :: P1CS(MaxPRN)     =  0.d0   ! for cycle slip
         real(8)  :: P2CS(MaxPRN)     =  0.d0
+        real(8)  :: amb0(MaxPRN,3)     =  0.d0
         real(8)  :: L1(MaxPRN)     =  0.d0
         real(8)  :: L2(MaxPRN)     =  0.d0
         real(8)  :: WL(MaxPRN)    =  0.d0
