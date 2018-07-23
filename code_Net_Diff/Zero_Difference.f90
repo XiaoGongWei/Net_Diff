@@ -428,11 +428,11 @@ implicit none
             ZD%EWL(N)=(c*L2+Ion2*f2-c*L3-Ion3*f3)/(f2 - f3)-corr
         end if
 
-        if (CycleSlip(k)%Slip(PRN)==1) then
-            ZD%amb0(PRN,1)=nint(L1-P1/c*f1)  ! For tightly coupled multi-system RTK
-            ZD%amb0(PRN,2)=nint(L2-P2/c*f2)
-            ZD%amb0(PRN,3)=nint(L3-P3/c*f3)
-        end if
+!        if (CycleSlip(k)%Slip(PRN)==1) then
+!            ZD%amb0(PRN,1)=nint(L1-P1/c*f1)  ! For tightly coupled multi-system RTK
+!            ZD%amb0(PRN,2)=nint(L2-P2/c*f2)
+!            ZD%amb0(PRN,3)=nint(L3-P3/c*f3)
+!        end if
         if (L1/=0.d0)      ZD_L1=(L1-ZD%amb0(PRN,1))*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
         if (L2/=0.d0)      ZD_L2=(L2-ZD%amb0(PRN,2))*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
         if (L3/=0.d0)      ZD_L3=(L3-ZD%amb0(PRN,3))*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
