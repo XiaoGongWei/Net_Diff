@@ -427,18 +427,25 @@ implicit none
 !        Update the coordinate by fixing the ambiguity of L1 and L2.
 !!    ! If there is no L1&L2 mixed combination, Still some problem, don't use this.
 !    if ((a1*a2==0.d0 .and. b1*b2==0.d0) .or. (a1*f1+a2*f2==0.d0) .or. (b1*f1+b2*f2==0.d0)) then
-!        dx(1:MaxPRN)=NEQ%amb_WL     ! Not best, as amb_WL includes some unfixed float solution, should abandon them in U(1:ParaNum)
+!        ! Need some convengence time of the unfixed ambiguity, as amb_WL includes some unfixed float solution, should abandon them in U(1:ParaNum)
+!        dx(1:MaxPRN)=NEQ%amb_WL     
 !        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
 !        call InvSqrt(NEQ%Nbb(1:ParaNum,1:ParaNum), ParaNum, temp_InvN)
 !        temp_dx=MATMUL(temp_InvN, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
-!
-!!        do i=1,npar
+!!
+!!        do i=1,npar  ! wrong, don't know why
 !!            PRN=iPOS2(i)
 !!            temp_InvN(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
 !!        end do
 !!        temp_InvN(:,1:npar)=MATMUL(temp_InvN(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
-!!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1
+!!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1  ! See lambda Eq-2.27
 !!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN(:,1:npar), temp_Nbb(1:npar,1:npar)), dz(1:npar))
+!
+!!        dx(1:MaxPRN)=NEQ%amb_WL ! need some time for convergence
+!!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
+!!        dz=NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN)-dx
+!!        call InvSqrt(NEQ%InvN(1:ParaNum,1:ParaNum), ParaNum, temp_InvN)   ! Qaa-1 ! See lambda Eq-2.27
+!!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(NEQ%InvN(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum), temp_InvN), dz)
 !
 !        Coor=temp_dx(1:3)
 !        
