@@ -37,8 +37,8 @@ use MOD_Ant
     end if
 
     do PRN=6,14
-        Ant(PRN)%PCO(:,1)=PCO(PRN, :, ac)
-        Ant(PRN)%PCO(:,2)=PCO(PRN, :, ac)
+        Ant(PRN+GNum+RNum)%PCO(:,1)=PCO(PRN, :, ac)
+        Ant(PRN+GNum+RNum)%PCO(:,2)=PCO(PRN, :, ac)
     end do
 
 
