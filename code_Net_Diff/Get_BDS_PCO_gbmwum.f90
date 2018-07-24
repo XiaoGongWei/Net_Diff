@@ -19,6 +19,7 @@
 !   ============ End of Header ==========
 
 subroutine Get_BDS_PCO_gbmwum(year, doy, ac)
+use MOD_constant
 use MOD_Ant
     integer :: year, doy, ac
     integer :: PRN
