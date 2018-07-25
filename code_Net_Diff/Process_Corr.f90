@@ -897,7 +897,7 @@ implicit none
                                     if (InvN(i,i)==0.d0)    InvN(i,i)= 10.d0**2  ! GLONASS IFB frequency depend
                                 end if
                                 if (dabs(InvN(i,i))>0.d0) then
-                                    InvN(i,i)=InvN(i,i) +(isb_step/86400.d0)**2*Interval
+                                    InvN(i,i)=InvN(i,i) +isb_step**2/86400.d0*Interval
                                 end if
                             end do
                         end if
