@@ -185,9 +185,9 @@ implicit none
     
      ! Get antenna corrections information
     call Get_Ant(MJD)
-    if (index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0 .and. int_year*1000+int_doy>2014197) then
+    if (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0 .and. int_year*1000+int_doy>2014197) then
         call Get_BDS_PCO_gbmwum(int_year,int_doy, 1)
-    elseif (index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'wum') /=0 ) then
+    elseif (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'wum') /=0 ) then
         call Get_BDS_PCO_gbmwum(int_year,int_doy, 2)
     end if
 
