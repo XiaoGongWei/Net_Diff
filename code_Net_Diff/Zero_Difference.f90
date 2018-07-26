@@ -44,7 +44,8 @@ implicit none
     real(8) :: P1, P2, P3, C1, C2, DP1, DP2, DP3, L1, L2, L3, Range, t1,PC, LC, ZD_L1, ZD_L2, ZD_L3, EWL_amb
     real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s, toe
     real(8) :: Sat_XYZ(3), Ele, Azi, P, MJD, STD, Ion1, Ion2, Ion3, corr, dist
-    real(8) :: dztd
+    real(8) :: dztd, ZTDsec
+    character(100) :: line
 
     ZD%PRN=0;      ZD%A=0.d0
     ZD%Ele=0.d0;   ZD%P=0.d0
@@ -129,6 +130,12 @@ implicit none
     write(unit=LogID,fmt='(A5,I3,E15.6)') '%STA', k, rec_clk
     dztd=0.d0
 !    read(unit=AmbID(k),fmt='(F10.4)') dztd
+!    read(unit=AmbID(k),fmt='(A)') line
+!    read(line(14:18),'(F5.0)') ZTDSec
+!    read(line(19:25),'(F7.1)') dztd
+!    if (mod(ObsSec,86400.d0)-ZTDSec<300.d0) backspace(AmbID(k))
+!    dztd=dztd/1000.d0-ZHD-ZWD
+
     N=0
     N_DP=0
     do i=1,ObsData%PRNS

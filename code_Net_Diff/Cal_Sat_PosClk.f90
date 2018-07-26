@@ -54,7 +54,6 @@ implicit none
         end do
         if ( (( (Obsweek-ClkData%GPSweek(2))*604800.0d0+Obssec-ClkData%GPSsec(2) ) > 340.0d0)  .or. &
                 (( (Obsweek-ClkData%GPSweek(1))*604800.0d0+Obssec-ClkData%GPSsec(1) ) < -340.0d0) ) then
-                write(*,*) "Observation time exceeds the Clk data time 5 minutes, please check!"
                 return
         end if
     end if
@@ -69,7 +68,6 @@ implicit none
         end do
         if ( (( (Obsweek-SP3Data%GPSweek(10))*604800.0d0+Obssec-SP3Data%GPSsec(10) ) > 40.0d0)  .or. &
                 (( (Obsweek-SP3Data%GPSweek(1))*604800.0d0+Obssec-SP3Data%GPSsec(1) ) < -40.0d0) ) then
-                write(*,*) "Observation time exceeds the SP3 data time 15mins, please check!"
                 return
         end if
     end if

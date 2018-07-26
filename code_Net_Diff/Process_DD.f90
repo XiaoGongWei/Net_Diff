@@ -44,17 +44,28 @@ implicit none
     real(8) :: dx_Coor(4), Coor(3), BLH(3), Mean_Coor(3), NEU(3), RMS(3), Mean_NEU(3)
     real(8) :: PDOP, Nbb(3,3), InvN(3,3)
     real(8) :: Vel(3)
+    character(100) :: line
 
     ParaNum=3  ! no tropsphere and clock for single system double difference
     if (If_Est_Iono) then       ! If estimate ionosphere
         IonoNum=MaxPRN
-        AmbID(1)=FileID_Mark
-        FileID_Mark=FileID_Mark+1
     end if
-!    open(unit=AmbID(1), file='E:\TUMSAT\long_baseline3\dztd_koma_143',action="read")
+!    AmbID(1)=FileID_Mark
+!    FileID_Mark=FileID_Mark+1
+!!    open(unit=AmbID(1), file='E:\TUMSAT\long_baseline3\dztd_koma_143',action="read")
+!    open(unit=AmbID(1), file='E:\Program\Fortran\Matlab_PPP\Net_Diff\for_redistribution_files_only\test\RTK_longbaseline\hkws1570.18zpd',action="read")
+!    do while(.true.)
+!        read(AmbID(1),'(A)') line
+!        if (index(line,'*SITE ____EPOCH___ TRO')/=0) exit
+!    end do
 !    AmbID(2)=FileID_Mark
 !    FileID_Mark=FileID_Mark+1
-!    open(unit=AmbID(2), file='E:\TUMSAT\long_baseline3\dztd_kaiy_143',action="read")
+!!    open(unit=AmbID(2), file='E:\TUMSAT\long_baseline3\dztd_kaiy_143',action="read")
+!    open(unit=AmbID(2), file='E:\Program\Fortran\Matlab_PPP\Net_Diff\for_redistribution_files_only\test\RTK_longbaseline\hksl1570.18zpd',action="read")
+!    do while(.true.)
+!        read(AmbID(2),'(A)') line
+!        if (index(line,'*SITE ____EPOCH___ TRO')/=0) exit
+!    end do
     if (TropLen/=0.d0) then       ! If estimate troposphere
         ParaNum=ParaNum+1
     end if

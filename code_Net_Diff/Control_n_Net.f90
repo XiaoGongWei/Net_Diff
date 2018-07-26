@@ -118,9 +118,11 @@ implicit none
         elseif (index(line,"dd_coe") /= 0)   then
             read(line,*) temp, a1,a2,b1,b2
         elseif (index(line,"partial_ar") /= 0)   then
-            read(line,*) temp, str_partial_ar, parARnum
+            read(line,*) temp, str_partial_ar
             if ( (index(str_partial_ar,"N") /=0) .or.  (index(str_partial_ar,"n") /=0) )then
                 partial_ar=.false.
+            else
+                read(line,*) temp, str_partial_ar, parARnum
             end if
         elseif (index(line,"ratio") /= 0)   then
             read(line,*) temp, minratio
