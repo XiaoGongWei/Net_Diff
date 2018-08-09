@@ -93,6 +93,15 @@ implicit none
         end if
         write(LogID,"(A7,3F10.3)") 'Vel', NEQ_DP%dx(1:3)
     end if
+    
+    ! If not estimate Wide lane ambiguity
+    if (.not.(If_Est_WL)) then
+        EPO_NEQ%Awl=0.d0
+        EPO_NEQ%Lwl=0.d0
+        EPO_NEQ%Aw4=0.d0
+        EPO_NEQ%Lw4=0.d0
+        goto 300
+    end if
 
     ! Step1:
     !     Solve the normal equation and get the wide line
@@ -210,12 +219,6 @@ implicit none
     ! If LC combination
     if (  ( (a1==0.d0) .and. (a2==0.d0) .and. (mod(b1,1.d0)/=0.d0) ) .or. ( (b1==0.d0) .and. (b2==0.d0) .and. (mod(a1,1.d0)/=0.d0) )  ) then
         Coor(1:3)=NEQ%dx(1:3)
-        return
-    end if
-    ! If float solution
-    if (ar_mode==0) then
-        Coor(1:3)=NEQ%dx(1:3)
-        Flag_Sln=3
         return
     end if
     
@@ -499,19 +502,19 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Lwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Lwl(i)*2.d0 ! sqrt(a1**2+a2**2)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Lwl(i) ! *sqrt(a1**2+a2**2)
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Lw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Lw4(i)*2.d0 ! sqrt(2.d0)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Lw4(i) ! *sqrt(2.d0)
     end do
     write(unit=LogID,fmt='(A)') ''
     
 
     ! Step4:
     !      Solve L1 and L2 ambiguity(float) and ionosphere delay
-    Ad_Flag=.true.
+    300 Ad_Flag=.true.
     N=Epo_NEQ%PRNS
     do while(AD_flag)
         Ad_Flag=.false.
@@ -671,7 +674,14 @@ implicit none
         end if
     end do
     write(LogID,'(A)') ''
-
+    
+    ! If float solution
+    if (ar_mode==0) then
+        Coor=Epo_NEQ%dx(1:4)
+        Flag_Sln=3
+        return
+    end if
+    
     200 if (npar>1) then
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then

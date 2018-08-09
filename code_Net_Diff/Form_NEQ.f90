@@ -123,6 +123,8 @@ implicit none
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 2, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 3, 'ddp')
         end if
+    elseif (Pos_State=="F") then
+        DD%A(:,1:3)=0.d0
     end if
     Epo_NEQ%Al1=0.d0
     Epo_NEQ%Al2=0.d0
@@ -398,7 +400,7 @@ implicit none
     Epo_NEQ%Ll1(1:N)=DD%L1(1:N)
     Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)
     Epo_NEQ%Ll2(1:N)=DD%L2(1:N)
-    Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer
+    Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer due to code multipath
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
             Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/2.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater  5.6d0 ! 
@@ -417,10 +419,10 @@ implicit none
                 end if
             elseif (ADmethod=='KF') then
                 if (Epo_NEQ%InvN(i,i)==0.d0 .and. any(Epo_NEQ%Al1(:,i)/=0.d0)) then
-!                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+400.d0     !    (0.2**2)*10000 ! 0.2m
+                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+400.d0     !    (0.2**2)*10000 ! 0.2m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+1.d0/3600.d0*Interval*10000.d0   ! (4m2/3600*Interval)*10000
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+4.d0/3600.d0*Interval*10000.d0   ! (4m2/3600*Interval)*10000
                 end if
             end if
         end do
@@ -429,9 +431,9 @@ implicit none
             Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+0.25d0    !    (1/0.02**2)/10000 ! 0.02m
         elseif (ParaNum==4 .and. ADmethod=='KF') then
             if (Epo_NEQ%InvN(4,4)==0.d0) then
-!                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+4.d0   !    (0.02**2)*10000 ! 0.02m
+                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+4.d0   !    (0.02**2)*10000 ! 0.02m
             else
-                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.001**2/3600.d0*Interval)*10000.d0    !    (0.01^2/3600*Interval)*10000 ! 0.02cm
+                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.02**2/3600.d0*Interval)*10000.d0    !    (0.01^2/3600*Interval)*10000 ! 0.02cm
             end if
         end if
 
@@ -439,16 +441,16 @@ implicit none
             call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
             Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
         end if
-          ! Add constraints to ionosphere
-        do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
-            if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
-                    Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.4d0**2)/10000.d0 ! 0.4m
-            end if
-        end do
-          ! Add constraints to troposphere
-        if (ParaNum==4) then
-            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)/10000.d0 ! 0.05m
-        end if
+!          ! Add constraints to ionosphere
+!        do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
+!            if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
+!                    Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.4d0**2)/10000.d0 ! 0.4m
+!            end if
+!        end do
+!          ! Add constraints to troposphere
+!        if (ParaNum==4) then
+!            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)/10000.d0 ! 0.05m
+!        end if
         
         ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
         if (ar_mode==3) then !

@@ -158,11 +158,11 @@ implicit none
         if (mod(epoch,10)==1) write(*,'(A5,I6,2X,I4,4I3,F5.1)') "Epoch", epoch, ObsData(2)%year,ObsData(2)%mon,&
                        ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec
         if (ObsHead(2)%Version==2) then
-            write(unit=LogID,fmt='(A5,I5,2X, I4,4I3, F5.1)') 'Epoch', epoch, ObsData(2)%year,ObsData(2)%mon,&
-                           ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec
+            write(unit=LogID,fmt='(A5,I5,2X, I4,4I3, F5.1,I5,F10.1)') 'Epoch', epoch, ObsData(2)%year,ObsData(2)%mon,&
+                           ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec, Obsweek,Obssec
         else
-            write(unit=LogID,fmt='(A5,I5,2X, I4,4I3.2, F5.1)') 'Epoch', epoch, ObsData(2)%year,ObsData(2)%mon,&
-                           ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec
+            write(unit=LogID,fmt='(A5,I5,2X, I4,4I3.2, F5.1,I5,F10.1)') 'Epoch', epoch, ObsData(2)%year,ObsData(2)%mon,&
+                           ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec, Obsweek,Obssec
         end if
         write(unit=CSID,fmt='(A5,I5,2X, I4,4I3.2, F5.1)') 'Epoch', epoch, ObsData(2)%year,ObsData(2)%mon,&
                        ObsData(2)%day, ObsData(2)%hour, ObsData(2)%min, ObsData(2)%sec

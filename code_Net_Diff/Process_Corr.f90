@@ -517,6 +517,7 @@ implicit none
                     elseif (Ele>LimEle) then
                         P=2*dsind(Ele)
                     else
+                        write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
                         cycle
                     end if
                     

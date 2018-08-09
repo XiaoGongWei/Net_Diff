@@ -65,8 +65,9 @@ implicit none
                 if ( (ZD(1)%WL(i)/=0.d0) .and. (ZD(2)%WL(j)/=0.d0) ) then
                     SD%WL(N)=ZD(2)%WL(j)-ZD(1)%WL(i)
                 end if
-                if ( (ZD(1)%WL_amb(i)/=99.d0) .and. (ZD(2)%WL_amb(j)/=99.d0) ) then  ! Just for test, not very good, because of the wrong rounding integer
-                    SD%WL_amb(N)=ZD(2)%WL_amb(j)-ZD(1)%WL_amb(i)  ! Wide Lane ambiguity, in cycle
+                if ( (ZD(1)%WL_amb(SD%PRN(N))/=99.d0) .and. (ZD(2)%WL_amb(SD%PRN(N))/=99.d0) ) then  ! Just for test, not very good, because of the wrong rounding integer
+!                    SD%WL_amb(N)=ZD(2)%WL_amb(j)-ZD(1)%WL_amb(i)  ! Wide Lane ambiguity, in cycle
+                    SD%WL_amb(SD%PRN(N))=ZD(2)%WL_amb(SD%PRN(N))-ZD(1)%WL_amb(SD%PRN(N))  ! Wide Lane ambiguity, in cycle
                 end if
                 if ( (ZD(1)%W4(i)/=0.d0) .and. (ZD(2)%W4(j)/=0.d0) ) then
                     SD%W4(N)=ZD(2)%W4(j)-ZD(1)%W4(i)

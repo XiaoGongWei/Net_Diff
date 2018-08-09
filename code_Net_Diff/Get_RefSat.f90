@@ -69,29 +69,29 @@ implicit none
                 end if
             end do
         else      ! If the reference satellite already exsits
-            do i=1, SD%PRNS
-                  ! Check if elevation of reference satellite > 40deg and data available and no cycle slip
-                if ((SD%PRN(i)==RefSat0(sys)) .and. (SD%Ele(i)>40.d0) ) then
-                    if ( (Combination(2)==.false.).and. (SD%P1(i)/=0.d0) ) then   ! PC
-                        RefSat(sys)=RefSat0(sys)
-                        exit
-                    else if ( (Combination(2)==.true.) ) then  ! L1L2, in DD
-                        if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
-                            if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then
-                                RefSat(sys)=RefSat0(sys)
-                            end if
-                        elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
-                            RefSat(sys)=RefSat0(sys)
-!                        elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
+!            do i=1, SD%PRNS
+!                  ! Check if elevation of reference satellite > 40deg and data available and no cycle slip
+!                if ((SD%PRN(i)==RefSat0(sys)) .and. (SD%Ele(i)>40.d0) ) then
+!                    if ( (Combination(2)==.false.).and. (SD%P1(i)/=0.d0) ) then   ! PC
+!                        RefSat(sys)=RefSat0(sys)
+!                        exit
+!                    else if ( (Combination(2)==.true.) ) then  ! L1L2, in DD
+!                        if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
+!                            if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then
+!                                RefSat(sys)=RefSat0(sys)
+!                            end if
+!                        elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
 !                            RefSat(sys)=RefSat0(sys)
-                        end if
-                        exit
-                    end if
-                end if
-            end do
-            if (RefSat(sys)>0) cycle
-            ! If not found the reference satellite or it's elevation is below 40 degrees or cycle slip occurs in reference satellite
-            ! it means that a new reference satellite is found
+!!                        elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
+!!                            RefSat(sys)=RefSat0(sys)
+!                        end if
+!                        exit
+!                    end if
+!                end if
+!            end do
+!            if (RefSat(sys)>0) cycle
+!            ! If not found the reference satellite or it's elevation is below 40 degrees or cycle slip occurs in reference satellite
+!            ! it means that a new reference satellite is found
             maxEle=30.d0
             do i=1, SD%PRNS
                 ! PC

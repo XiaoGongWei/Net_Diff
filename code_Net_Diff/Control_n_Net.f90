@@ -135,6 +135,11 @@ implicit none
             if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
                 If_Est_Iono=.true.
             end if
+        elseif (index(line,"est_wl_amb") /= 0)   then
+            read(line,*) temp, temp
+            if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
+                If_Est_WL=.true.
+            end if
         elseif (index(line,"ionocompensate") /= 0)   then
             read(line,*) temp, str_IonoCompensate
             if ( (index(str_IonoCompensate,"Y") /=0) .or.  (index(str_IonoCompensate,"y") /=0) )then

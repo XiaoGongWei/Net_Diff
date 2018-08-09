@@ -1,4 +1,4 @@
-! ================  Cal_Sat_Clk_e  ===============
+ï»¿! ================  Cal_Sat_Clk_e  ===============
 ! PURPOSE:
 !      Calculate the GALILEO satellite clcok using the navigation data
 !
@@ -42,14 +42,21 @@ implicit none
     tkr=(GPSweek-Navdata_E(PRN)%Nav(1)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(1)%GPSsec
     do i=2,Ubound(Navdata_E(PRN)%Nav,dim=1)
         t=(GPSweek-Navdata_E(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(i)%GPSsec
-        if (dabs(t)<=dabs(tkr)-0.1d0 .and. (NavData_E(PRN)%Nav(i)%Health==0.d0)) then
-            tkr=t    ! È¡¾àÀë×î½üÊ±¿ÌµÄÐÇÀú
+        ! Code=258(â€­0100000010â€¬) means F/NAV, E1/E5a; Code =513(â€­1000000001â€¬) or 517(â€­1000000101â€¬) mens I/Nav, E1/E5b
+        ! The meaning of code, see RINEX 3.02
+        ! The satellite clock is almost the same, less than 1ns, so here we use the more common used F/Nav
+        !      Montenbruck O, Hauschild A, Steigenberger P (2014) Differential
+        ! code bias estimation using multi-GNSS observations and global
+        ! ionosphere maps. In: Proceedings of ION ITM 2014, San Diego,CA)
+        ! The meaning of signal health, see RINEX 3.02 and Galileo ICD 5.1.9.3. Usually, when Health>0(56 or 455), it means some signal is out of service or in testing
+        if (dabs(t)<=dabs(tkr)-0.1d0 .and. (NavData_E(PRN)%Nav(i)%Health==0.d0) .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) ) then
+            tkr=t    ! å–è·ç¦»æœ€è¿‘æ—¶åˆ»çš„æ˜ŸåŽ†
             tempNav=Navdata_E(PRN)%Nav(i)
         else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
             exit
         end if
 !        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_E(PRN)%Nav(i)%Health==0.d0) ) then
-!            tkr=t   ! È¡×îÐÂµÄÐÇÀú,t¿Û³ýÁË½ÓÊÕ»úÖÓ²î£¬! .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
+!            tkr=t   ! å–æœ€æ–°çš„æ˜ŸåŽ†,tæ‰£é™¤äº†æŽ¥æ”¶æœºé’Ÿå·®ï¼Œ! .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
 !            tempNav=Navdata_E(PRN)%Nav(i)
 !            if ((dabs(tkr)<3620.d0)  .and. (tempNav%Health==0.d0)  .and. (tempNav%a0/=0.d0) ) then
 !                exit
@@ -67,10 +74,10 @@ implicit none
     tk=tkr
     Sat_Clk=tempNav%a0+tk*tempNav%a1+tk*tk*tempNav%a2
     
-    ! BGD correction £¡ Reference: Galileo ICD 5.1.3~5.1.5
+    ! BGD correction ï¼ Reference: Galileo ICD 5.1.3~5.1.5
     ! F/Nav refered to E1/E5a BGD  
     ! I/Nav refered to E1/E5b BGD  E1/E5a  E1/E5b
-    ! In fact, differences between the E1¨CE5a and E1¨CE5b biases are
+    ! In fact, differences between the E1â€“E5a and E1â€“E5b biases are
     ! sufficiently small (maybe less thant 0.3ns) 
     !      Montenbruck O, Hauschild A, Steigenberger P (2014) Differential
     ! code bias estimation using multi-GNSS observations and global
@@ -78,13 +85,12 @@ implicit none
     ! Notice: IGS Precise clock refered to E1E5a
     ! The following clock is based on F/Nav, i.e. refered to E1/E5a.
     if ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0)) then
-!        if (tempNav%TGD(2)==0.d0)  tempNav%TGD(2)=tempNav%TGD(1)  ! If no BGD(E1,E5b), BGD(E1,E5a) insteaded
-        Sat_Clk=Sat_Clk - tempNav%TGD(2)                       ! E1/E5a==>E1
+        Sat_Clk=Sat_Clk - tempNav%TGD(1)                       ! E1/E5a==>E1
     elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) then
         Sat_Clk=Sat_Clk - (f1/f2)**2*tempNav%TGD(1)     ! E1/E5a==>E5a, assume  that clock in I/Nav=F/nav
     elseif ((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0)) then
-!        if (tempNav%TGD(2)==0.d0)  tempNav%TGD(2)=tempNav%TGD(1)  ! If no BGD(E1,E5b), BGD(E1,E5a) insteaded
-        Sat_Clk=Sat_Clk - (f1/f2)**2*tempNav%TGD(2)     ! E1/E5a==>E5b
+        if (tempNav%TGD(2)==0.d0)  tempNav%TGD(2)=tempNav%TGD(1)  ! If no BGD(E1,E5b), BGD(E1,E5a) instead, as the difference is very small
+        Sat_Clk=Sat_Clk - (f1/f2)**2*tempNav%TGD(2)     ! E1/E5b==>E5b
     end if
 
 end subroutine

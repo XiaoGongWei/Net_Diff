@@ -232,11 +232,11 @@ implicit none
                      cycle
                  end if
                  if (ObsHead(k)%Version==2) then
-                     write(unit=LogID,fmt='(A5,I5,2X,I4,4I3,F5.1,F15.3)') 'Epoch', epoch, ObsData%year,ObsData%mon,&
-                           ObsData%day, ObsData%hour, ObsData%min, ObsData%sec, Rec_Clk*c
+                     write(unit=LogID,fmt='(A5,I5,2X,I4,4I3,F5.1,I5,F10.1,F15.3)') 'Epoch', epoch, ObsData%year,ObsData%mon,&
+                           ObsData%day, ObsData%hour, ObsData%min, ObsData%sec, Obsweek, Obssec, Rec_Clk*c
                  else
-                     write(unit=LogID,fmt='(A5,I5,2X,I4,4I3.2,F5.1,F15.3)') 'Epoch', epoch, ObsData%year,ObsData%mon,&
-                           ObsData%day, ObsData%hour, ObsData%min, ObsData%sec, Rec_Clk*c
+                     write(unit=LogID,fmt='(A5,I5,2X,I4,4I3.2,F5.1,I5,F10.1,F15.3)') 'Epoch', epoch, ObsData%year,ObsData%mon,&
+                           ObsData%day, ObsData%hour, ObsData%min, ObsData%sec, Obsweek, Obssec, Rec_Clk*c
                  end if
              else
              
@@ -410,6 +410,7 @@ implicit none
                     elseif (Ele>LimEle) then
                         P=2*dsind(Ele) ! 1.d0/(0.4d0+0.3d0/sind(Ele))**2  !  1.d0/(0.3d0+0.3d0/sind(Ele)) ! 
                     else
+                        write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
                         cycle
                     end if
                 !        ! 根据轨道精度加权

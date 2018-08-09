@@ -108,7 +108,7 @@ implicit none
                     read(line(54:55), fmt="(I2)") year_end
                     read(line(57:59), fmt="(I3)") doy_end
                 end if
-                if ( ((int_year-2000-year_st)*365+int_doy-doy_st<100) .and. ((int_year-2000-year_st)*365+int_doy-doy_st>=0) ) then
+                if ( ((int_year-2000-year_st)*365+int_doy-doy_st<300) .and. ((int_year-2000-year_st)*365+int_doy-doy_st>=0) ) then
                     read(line(13:14), fmt="(I2)") PRN
                     read(line(12:12), fmt="(A1)") System
                     read(line(81:92), fmt="(F12.4)") val
@@ -155,6 +155,9 @@ implicit none
                             DCBBSX(2,PRN+GNum+RNum+CNum+NumE)=val*1e-9
                         elseif (index(line,"C1C  C1X") /= 0) then   ! C1P1
                             DCBBSX(3,PRN+GNum+RNum+CNum+NumE)=val*1e-9
+                            if (DCB(PRN+GNum+RNum+CNum+NumE)==0.d0) then
+                                DCB(PRN+GNum+RNum+CNum+NumE)= -val*1e-9  
+                            end if
                         elseif (index(line,"C1X  C2X") /= 0) then   ! C1X C2X
                             DCBBSX(4,PRN+GNum+RNum+CNum+NumE)=val*1e-9
                         end if

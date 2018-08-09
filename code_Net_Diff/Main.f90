@@ -288,6 +288,7 @@ implicit none
         end if
         write(CoorID,"(A12,5X,L5,I3)") 'partial_ar:  ', partial_AR, parARnum
         write(CoorID,"(A12,5X,F5.1)") 'minratio:  ', minratio
+        write(CoorID,"(A12,5X,L5)") 'est_wl_amb:  ', If_Est_WL
     end if
     if ((proc_mod>=1) .and. (proc_mod<=3)) then
         write(CoorID,"(A12,5X,I5)") 'delay:  ', int(delay0)

@@ -123,10 +123,9 @@ implicit none
             if ((SD%WL(L_ref(sys))/=0.d0) .and. (SD%WL(j)/=0.d0)) then
                 DD%WL(N)=SD%WL(j)-SD%WL(L_ref(sys))
             end if
-            if ((SD%WL_amb(L_ref(sys))/=99.d0) .and. (SD%WL_amb(j)/=99.d0)) then  ! Just for test, not very good, because of the wrong rounding integer
+            if ((SD%WL_amb(RefSat(sys))/=99.d0) .and. (SD%WL_amb(DD%PRN(N))/=99.d0)) then  ! Just for test, not good due to the code multipath
                 ! Wide lane ambiguity can be used to constraint L1&L2 observation
-                DD%WL_amb(DD%PRN(N))=SD%WL_amb(j)-SD%WL_amb(L_ref(sys))  ! Wide Lane ambiguity, in cycle
-!                write(LogID,'(A6,I3,I8,F8.2)') 'MWAMB', DD%PRN(N), nint(DD%WL(N)/c*(f1-f2)), DD%WL_amb(N)
+                DD%WL_amb(DD%PRN(N))=SD%WL_amb(DD%PRN(N))-SD%WL_amb(RefSat(sys))  ! Wide Lane ambiguity, in cycle
                 if (abs(DD%WL_amb(DD%PRN(N))-real(nint(DD%WL_amb(DD%PRN(N)))))<0.3d0) then  ! Only when the fraction part is less than 0.3cycle
                     DD%WL_amb(DD%PRN(N))=real(nint(DD%WL_amb(DD%PRN(N)))) ! After double differece, DCB is eliminated theoretically, round to integer value
                 end if

@@ -232,9 +232,9 @@ implicit none
     if (n<1) return
     PRNOUT=0
     if (k<=STA%FixNum) then
-        LimClk=2.d-7  ! If station fixed, we assume the tolerance of outlier should be strict. However, there is ISB
+        LimClk=1.d-6  ! If station fixed, we assume the tolerance of outlier should be strict. However, there is ISB
     else
-        LimClk=3.d-7
+        LimClk=1.d-6
     end if
     do while (.true.)
         maxV=maxval(dabs(Rec_Clk_prn(1:N)-Rec_Clk))

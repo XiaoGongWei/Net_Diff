@@ -1,4 +1,4 @@
-! ======================Cal_Sat_Pos_e====================
+ï»¿! ======================Cal_Sat_Pos_e====================
 !
 ! PURPOSE:
 !           Calculate the GALILEO Satellite Coordinate, satellite clock error, 
@@ -52,14 +52,21 @@ implicit none
     tkr=(GPSweek-Navdata_E(PRN)%Nav(1)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(1)%GPSsec
     do i=2,Ubound(Navdata_E(PRN)%Nav,dim=1)
         t=(GPSweek-Navdata_E(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-Navdata_E(PRN)%Nav(i)%GPSsec
-        if (dabs(t)<=dabs(tkr)-0.1d0 .and. (NavData_E(PRN)%Nav(i)%Health==0.d0)) then
-            tkr=t    ! È¡¾àÀë×î½üÊ±¿ÌµÄÐÇÀú
+        ! Code=258(â€­0100000010â€¬) means F/NAV, E1/E5a; Code =513(â€­1000000001â€¬) or 517(â€­1000000101â€¬) mens I/Nav, E1/E5b
+        ! The meaning of code, see RINEX 3.02
+        ! The satellite clock is almost the same, less than 1ns, so here we use the more common used F/Nav
+        !      Montenbruck O, Hauschild A, Steigenberger P (2014) Differential
+        ! code bias estimation using multi-GNSS observations and global
+        ! ionosphere maps. In: Proceedings of ION ITM 2014, San Diego,CA)
+        ! The meaning of signal health, see RINEX 3.02 and Galileo ICD 5.1.9.3. Usually, when Health>0(56 or 455), it means some signal is out of service or in testing
+        if (dabs(t)<=dabs(tkr)-0.1d0 .and. (NavData_E(PRN)%Nav(i)%Health==0.d0) .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) ) then
+            tkr=t    ! å–è·ç¦»æœ€è¿‘æ—¶åˆ»çš„æ˜ŸåŽ†
             tempNav=Navdata_E(PRN)%Nav(i)
         else if ( (dabs(t) - dabs(tkr))>700.d0 ) then
             exit
         end if
 !        if ((t>=-0.1d0)  .and. (abs(t)-abs(tkr)<20.d0) .and. (NavData_E(PRN)%Nav(i)%Health==0.d0)) then
-!            tkr=t   ! È¡×îÐÂµÄÐÇÀú,t¿Û³ýÁË½ÓÊÕ»úÖÓ²î£¬!   .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
+!            tkr=t   ! å–æœ€æ–°çš„æ˜ŸåŽ†,tæ‰£é™¤äº†æŽ¥æ”¶æœºé’Ÿå·®ï¼Œ!   .and. (mod(NavData_E(PRN)%Nav(i)%Code,2.d0)==0.d0) Code=258 means F/NAV, E1/E5a; Code =513 or 517 mens I/Nav, E1/E5b
 !            tempNav=Navdata_E(PRN)%Nav(i)
 !            if ((dabs(tkr)<3620.d0)  .and. (tempNav%Health==0.d0)  .and. (tempNav%a0/=0.d0) ) then
 !                exit
@@ -134,7 +141,7 @@ implicit none
 !        Sat_Clk=tempNav%a0+tk*tempNav%a1+tk*tk*tempNav%a2
         
         ! Clock-error correction with theory of relativity
-        Rela=c*F*e*dsqrt(A)*dsin(Ek)  ! Unit in meter  ! ¼ûGPS ICD
+        Rela=c*F*e*dsqrt(A)*dsin(Ek)  ! Unit in meter  ! è§GPS ICD
         
         !  Earth rotation correction
         Rotation=reshape( (/ dcos(omg*t1), dsin(omg*t1), 0, -dsin(omg*t1),dcos(omg*t1), 0, 0, 0, 1.0d0 /), (/3,3/) ) 

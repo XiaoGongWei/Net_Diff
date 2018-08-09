@@ -53,7 +53,7 @@ implicit none
     ZD%P1CS=0.d0;    ZD%P2CS=0.d0
     ZD%L1=0.d0;    ZD%L2=0.d0
     ZD%WL=0.d0;  ZD%W4=0.d0
-    ZD%EWL=0.d0; ZD%WL_amb=99.d0
+    ZD%EWL=0.d0; !ZD%WL_amb=99.d0
 
 
     Obsweek=ObsData%week
@@ -446,9 +446,15 @@ implicit none
         if ( (a1/=0.d0) .and. (a2/=0.d0) ) then  ! If two frequency combination
             if ( (L1/=0.d0) .and. (L2/=0.d0) ) then
                 ZD%WL(N)=(a1*f1*ZD_L1+a2*f2*ZD_L2)/(a1*f1+a2*f2)
-                if (CycleSlip(k)%CS(PRN)%arcLengthMW>=10) then  ! When accumulate 10 epoches, record Wide Lane ambiguity just for rounding
-                      ! Just for test, not very good, because of the wrong rounding integer
-                    ZD%WL_amb(N)=L1 - L2 - (P1*f1 + P2*f2)/(f1+f2)*(f1-f2)/c  ! Wide Lane ambiguity, in cycle, includes DCB
+!                if (CycleSlip(k)%CS(PRN)%arcLengthMW>=5) then  ! When accumulate 5 epoches, record Wide Lane ambiguity just for rounding
+                if ( CycleSlip(k)%Slip(PRN)/=1 .and. Ele>LimEle) then
+                      ! Just for test, not very good, because of the wrong rounding integer from code multipath
+!                    ZD%WL_amb(PRN)=CycleSlip(k)%CS(PRN)%nMWmean
+                    ZD%WL_amb_n(PRN)= ZD%WL_amb_n(PRN)+1.d0 ! Wide Lane ambiguity, in cycle, includes DCB
+                    ZD%WL_amb(PRN)=(L1 - L2 - (P1*f1 + P2*f2)/(f1+f2)*(f1-f2)/c)/ZD%WL_amb_n(PRN) + (1.d0-1.d0/ ZD%WL_amb_n(PRN))*ZD%WL_amb(PRN)
+                else  ! if new cycle slip
+                    ZD%WL_amb(PRN)=99.d0
+                    ZD%WL_amb_n(PRN)=0.d0
                 end if
                 if ((b1==0.d0) .and. (b2==0.d0)) then  ! If only WL combination
                     ZD%L1(N)=(a1*f1*ZD_L1+a2*f2*ZD_L2)/(a1*f1+a2*f2)

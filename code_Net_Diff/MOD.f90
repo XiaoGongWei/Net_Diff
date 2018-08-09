@@ -3,7 +3,7 @@
 ! =========== Constant variables module =================
 module MOD_constant
 implicit none
-    integer,parameter :: MaxPRN=85  ! max satellite observed at one epoch
+    integer,parameter :: MaxPRN=105  ! max satellite observed at one epoch
     integer :: SatNum=0   ! Satellite Number
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
@@ -464,6 +464,7 @@ use MOD_constant
         real(8)  :: W4(MaxPRN)    =  0.d0
         real(8)  :: EWL(MaxPRN)    =  0.d0
         real(8)  :: WL_amb(MaxPRN)    =  0.d0
+        real(8)  :: WL_amb_n(MaxPRN)    =  0.d0
         real(8)  :: EWL_amb(MaxPRN)    =  0.d0
     end type
 !    type(type_ZD) :: ZD(2)  ! 1: Reference station; 2: User station
@@ -742,6 +743,7 @@ use MOD_constant
     real(8) :: minratio=3.d0
     logical(1) :: partial_AR=.true.
     integer(1) :: parARnum=2
+     logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
     real(8) ::   a1= 1.d0 , a2= 0.d0 ! L1
     real(8) ::  b1= 0.d0 , b2= 1.d0  ! L2
     logical :: If_IonoCompensate=.false.
