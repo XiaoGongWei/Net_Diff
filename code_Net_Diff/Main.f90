@@ -253,7 +253,7 @@ implicit none
         write(CoorID,"(A12,5X,A5,F5.1)",advance='no') 'combination:  ','PC',sigPC
     end if
     if (Combination(2)) then
-        write(CoorID,"(A5,F5.2)",advance='no') 'LC',sigLC
+        write(CoorID,"(A5,F7.3)",advance='no') 'LC',sigLC
     end if
     if (Combination(3)) then
         write(CoorID,"(A5,F5.2)",advance='no') 'DP',sigDP
@@ -317,8 +317,7 @@ implicit none
     
     CSID=FileID_Mark
     FileID_Mark=FileID_Mark+1
-    open(unit=CSID, file=trim(OutDir)//"cs.txt",action="write",err=100)
-    write(CSID,"(A15)")    "Cycle Slip value."
+    open(unit=CSID, file=trim(OutDir)//"cs_"// str_day // ".txt",action="write",err=100)
 
     if ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         ResO_CID=FileID_Mark   ! Correction error, used for smooth comparation
@@ -331,7 +330,7 @@ implicit none
     elseif (proc_mod==5) then    
         LambdaID=FileID_Mark
         FileID_Mark=FileID_Mark+1
-        open(unit=LambdaID, file=trim(OutDir)//"lambda.txt",action="write",err=100)
+        open(unit=LambdaID, file=trim(OutDir)//"lambda_"// str_day // ".txt",action="write",err=100)
         write(LambdaID,"(A19)")    "Lambda processing."
     end if
 

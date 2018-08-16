@@ -241,7 +241,7 @@ implicit none
         do i=1,3
             PDOP=PDOP+InvN(i,i)
         end do
-        PDOP=dsqrt(PDOP)/100.d0
+        PDOP=dsqrt(PDOP)
 
         !  ======== Least squart estimation for the coordinate ========
         if (DD%PRNS<4) then

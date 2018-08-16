@@ -33,13 +33,14 @@ implicit none
     type(type_NEQ) ::  NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
     ! Local variables
-    integer :: N, i, j, PRN, sys, freq
+    integer :: N, i, j, k, PRN, sys, freq
     real(8)  :: Awl(MaxPRN, ParaNum+2*MaxPRN+IonoNum),Aw4(MaxPRN, ParaNum+2*MaxPRN+IonoNum)
     real(8) :: Aewl(MaxPRN,ParaNum)
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
     real(8)  :: Al1(MaxPRN, ParaNum+3*IonoNum), Al2(MaxPRN, ParaNum+3*IonoNum)
     logical :: flag_del_PRN
     real(8) :: dT(2)
+    real(8) :: Kk(ParaNum+3*IonoNum,1)  ! Kalman gain
 
     
     Awl=0.d0; Aw4=0.d0
@@ -54,6 +55,12 @@ implicit none
         NEQ%InvN=0.d0
         NEQ%U=0.d0
         NEQ%dx=0.d0
+        if (If_Est_Iono .and. IonoNum>0) then
+            Epo_NEQ%Nbb=0.d0
+            Epo_NEQ%InvN=0.d0
+            Epo_NEQ%U=0.d0
+            Epo_NEQ%dx=0.d0
+        end if
     else
         ! Eliminate the unobserved satellite at this epoch
         do PRN=1, MaxPRN !DD%PRNS
@@ -69,31 +76,39 @@ implicit none
             ! First is the ionosphere parameter
             if (If_Est_Iono .and. IonoNum>0) then
                 if (flag_del_PRN .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
-                    if (ADmethod=='LS') then
-                            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+2*IonoNum+PRN) !  ionosphere parameter
-                    elseif (ADmethod=='KF') then
-                            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+2*IonoNum+PRN, 'dda')  ! ionosphere parameter
-                    end if
+!                    if (ADmethod=='LS') then
+!                            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+2*IonoNum+PRN) !  ionosphere parameter
+!                    elseif (ADmethod=='KF') then  ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+                            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+2*IonoNum+PRN, 'dds')  ! ionosphere parameter
+!                    end if
                 end if
             end if
             ! Then comes to ambiguity parameter
-            if (abs(NEQ%Nbb(ParaNum+PRN,ParaNum+PRN))<1.d-11) cycle
+            if (ADmethod=='LS' .and. abs(NEQ%Nbb(ParaNum+PRN,ParaNum+PRN))<1.d-11) then
+                cycle
+            elseif (ADmethod=='KF' .and. abs(NEQ%InvN(ParaNum+PRN,ParaNum+PRN))<1.d-11) then
+                cycle
+            end if
             if (flag_del_PRN .and. any(dT<-3.d0*Interval)) then   !  If satellite unobserved more than 3 epoches. result shows not very good, so don't use.
-!            if (flag_del_PRN) then
-                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
-                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
-                NEQ%dx(ParaNum+PRN)=0.d0
-                NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
+!                if (ADmethod=='LS') then
+                    call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
+                    call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+                    NEQ%dx(ParaNum+PRN)=0.d0
+                    NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
+!                elseif (ADmethod=='KF') then
+!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dds')
+!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dds')
+!                end if
                 if (If_Est_Iono .and. IonoNum>0) then
-                    if (ADmethod=='LS') then
-                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
-                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
-                        Epo_NEQ%dx(ParaNum+PRN)=0.d0
-                        Epo_NEQ%dx(ParaNum+IonoNum+PRN)=0.d0
-                    elseif (ADmethod=='KF') then
-                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dda')
-                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dda')
-                    end if
+!                    if (ADmethod=='LS') then
+!                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
+!                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
+!                        Epo_NEQ%dx(ParaNum+PRN)=0.d0
+!                        Epo_NEQ%dx(ParaNum+IonoNum+PRN)=0.d0
+!                    elseif (ADmethod=='KF') then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dds')
+                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dds')
+!                    end if
                 end if
                 if (ar_mode==3) then ! If fixed and hold mode
                     NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
@@ -111,17 +126,23 @@ implicit none
         end do
     end if
     if (Pos_State=="K") then    ! on the fly, kinematic
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
-        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
-        if (ADmethod=='LS' .or. .not.(If_Est_Iono .and. IonoNum>0) ) then
-            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 1)
-            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 2)
-            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 3)
-        elseif (ADmethod=='KF') then
+!        if (ADmethod=='LS') then
+            call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
+            call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
+            call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
+!        elseif (ADmethod=='KF') then
+!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 1, 'ddp')
+!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
+!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 3, 'ddp')
+!        end if
+        if (If_Est_Iono .and. IonoNum>0) then  ! When not estimate ionosphere parameter and LS mode
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 1, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 2, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 3, 'ddp')
+        else ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 1)
+            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 2)
+            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 3)
         end if
     elseif (Pos_State=="F") then
         DD%A(:,1:3)=0.d0
@@ -184,16 +205,21 @@ implicit none
         if (ar_mode/=2) then ! If not instantaneous AR
             if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(2)%Slip(PRN)==1) ) then ! Cycle Slip in 
                  write(LogID,'(A10,I3,A11)') 'PRN', PRN,'cycle slip'  
-                 call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
-                 call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+!                 if (ADmethod=='LS') then
+                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
+                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+!                 elseif (ADmethod=='KF') then
+!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')  ! L1 ambiguity
+!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')  ! L2 ambiguity
+!                 end if
                  if (If_Est_Iono .and. IonoNum>0) then
-                    if (ADmethod=='LS') then
-                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
-                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
-                    elseif (ADmethod=='KF') then
+!                    if (ADmethod=='LS') then
+!                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
+!                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
+!                    elseif (ADmethod=='KF') then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
                         call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dda')  ! L1 ambiguity
                         call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dda')  ! L2 ambiguity
-                    end if
+!                    end if
                  end if
                  if (ar_mode==3) then ! If fixed and hold mode
                     NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity if cycle slip occurs
@@ -216,13 +242,13 @@ implicit none
              Ap1(i,1:ParaNum)=DD%A(i,1:ParaNum)
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap1(i,ParaNum+IonoNum*2+PRN)=1.d0  ! Ionosphere parameter
-                if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>5 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
-                    NEQ%Lp1(i)=(DD%P1(i) - Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/100.d0
+                if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>10 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
+                    NEQ%Lp1(i)=(DD%P1(i) - Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/sigPC
                 else
-                    NEQ%Lp1(i)=DD%P1(i)/100.d0
+                    NEQ%Lp1(i)=DD%P1(i)/sigPC
                 end if
              else  ! Normal double difference
-                NEQ%Lp1(i)=DD%P1(i)/100.d0
+                NEQ%Lp1(i)=DD%P1(i)/sigPC
              end if
              NEQ%SumN=NEQ%SumN+1
              Epo_NEQ%SumN=Epo_NEQ%SumN+1
@@ -234,12 +260,12 @@ implicit none
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap2(i,ParaNum+IonoNum*2+PRN)=f1**2/f2**2  ! Ionosphere parameter
                 if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>5 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
-                    NEQ%Lp2(i)=(DD%P2(i) - f1**2/f2**2*Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/100.d0
+                    NEQ%Lp2(i)=(DD%P2(i) - f1**2/f2**2*Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/sigPC
                 else
-                    NEQ%Lp2(i)=DD%P2(i)/100.d0
+                    NEQ%Lp2(i)=DD%P2(i)/sigPC
                 end if
              else  ! Normal double difference
-                NEQ%Lp2(i)=DD%P2(i)/100.d0
+                NEQ%Lp2(i)=DD%P2(i)/sigPC
              end if
              NEQ%SumN=NEQ%SumN+1
              Epo_NEQ%SumN=Epo_NEQ%SumN+1
@@ -247,20 +273,20 @@ implicit none
 
          ! For WL
          if ( DD%WL(i)/=0.d0 ) then
-             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%Nbb(ParaNum+PRN, ParaNum+PRN)>0.d0) then
+             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+PRN, ParaNum+PRN)/=0.d0) then
                  Awl(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Awl(i,ParaNum+PRN)=c/(a1*f1+a2*f2)  ! 1.d0
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
                     Awl(i,ParaNum+IonoNum*2+PRN)= f1/f2 ! Ionosphere parameter
                     if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>5 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
-                        NEQ%Lwl(i)=(DD%WL(i) - f1/f2*Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/sqrt(a1**2+a2**2)
+                        NEQ%Lwl(i)=(DD%WL(i) - f1/f2*Epo_NEQ%dx(ParaNum+IonoNum*2+PRN))/sigLC/sqrt(a1**2+a2**2)  ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2)
                     else
-                        NEQ%Lwl(i)=DD%WL(i)/sqrt(a1**2+a2**2)
+                        NEQ%Lwl(i)=DD%WL(i)/sigLC/sqrt(a1**2+a2**2)  ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2)
                     end if
                     Epo_NEQ%SumN=Epo_NEQ%SumN+1
                  else  ! Normal double difference
-                    NEQ%Lwl(i)=DD%WL(i)/sqrt(a1**2+a2**2)
+                    NEQ%Lwl(i)=DD%WL(i)/sigLC/sqrt(a1**2+a2**2)  ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2)
                  end if
              else
                  DD%WL(i)=0.d0
@@ -269,7 +295,7 @@ implicit none
 
          ! For W4
          if ( DD%W4(i)/=0.d0 ) then
-             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%Nbb(ParaNum+MaxPRN+PRN, ParaNum+MaxPRN+PRN)>0.d0) then
+             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+MaxPRN+PRN, ParaNum+MaxPRN+PRN)/=0.d0) then
                  Aw4(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Aw4(i,ParaNum+MaxPRN+PRN)=c/(b1*f1+b2*f2)  !1.d0
                  NEQ%SumN=NEQ%SumN+1
@@ -317,20 +343,21 @@ implicit none
     NEQ%Sys=DD%Sys
     NEQ%System=DD%System
     NEQ%P(1:N,1:N)=DD%P(1:N,1:N)
-    NEQ%Ap1(1:N,:)=Ap1(1:N,1:ParaNum)/100.d0      ! P=P*0.01d0
-    NEQ%Ap2(1:N,:)=Ap2(1:N,1:ParaNum)/100.d0     ! P=P*0.01d0
-!    NEQ%Lp1(1:N)=DD%P1(1:N)/100.d0         ! Already done in former loop
-!    NEQ%Lp2(1:N)=DD%P2(1:N)/100.d0         ! Already done in former loop
-    NEQ%Aewl(1:N,:)=Aewl(1:N,:)/30.d0     ! Extra Wide Lane P=P/( sqrt( (a1*f2)**2+(a2*f3)**2 ) 
-    NEQ%Lewl(1:N)=DD%EWL(1:N)/30.d0 
+    NEQ%R(1:N,1:N)=DD%Q(1:N,1:N)
+    NEQ%Ap1(1:N,:)=Ap1(1:N,1:ParaNum)/sigPC      ! P=P*0.01d0
+    NEQ%Ap2(1:N,:)=Ap2(1:N,1:ParaNum)/sigPC     ! P=P*0.01d0
+!    NEQ%Lp1(1:N)=DD%P1(1:N)/sigPC         ! Already done in former loop
+!    NEQ%Lp2(1:N)=DD%P2(1:N)/sigPC         ! Already done in former loop
+    NEQ%Aewl(1:N,:)=Aewl(1:N,:)/sigLC/30.d0     ! Extra Wide Lane P=P/(sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2)), for GPS 33.2, for BeiDou 28.5, for Galileo 54.9
+    NEQ%Lewl(1:N)=DD%EWL(1:N)/sigLC/30.d0 
     NEQ%amb_EWL=DD%EWL_amb
     if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
-        NEQ%Awl(1:N,:)=Awl(1:N,1:ParaNum+MaxPRN*2)/sqrt(a1**2+a2**2)
-!        NEQ%Lwl(1:N)=DD%WL(1:N)/sqrt(a1**2+a2**2)         ! Already done in former loop
+        NEQ%Awl(1:N,:)=Awl(1:N,1:ParaNum+MaxPRN*2)/sigLC/sqrt(a1**2+a2**2)
+!        NEQ%Lwl(1:N)=DD%WL(1:N)/sigLC/sqrt(a1**2+a2**2)         ! Already done in former loop
     end if
     if ( (b1/=0.d0) .or. (b2/=0.d0) ) then
-        NEQ%Aw4(1:N,:)=Aw4(1:N,1:ParaNum+MaxPRN*2)/sqrt(b1**2+b2**2)
-        NEQ%Lw4(1:N)=DD%W4(1:N)/sqrt(b1**2+b2**2)
+        NEQ%Aw4(1:N,:)=Aw4(1:N,1:ParaNum+MaxPRN*2)/sigLC/sqrt(b1**2+b2**2)
+        NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/sqrt(b1**2+b2**2)
     end if
     if (ParaNum==4) then    ! Don't estimate tropsphere parameter in NEQ Only in EPO_NEQ for long baseline need to estimate it.
         NEQ%Ap1(1:N,4)=0.d0
@@ -347,13 +374,21 @@ implicit none
                 NEQ%fixed_amb_num(PRN)=NEQ%fixed_amb_num(PRN)+1
                 if (PRN<=maxPRN) then
                     if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity >10 epoches
-                        NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
-                        NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))
+!                        if (ADmethod=='LS') then
+                            NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0*(1.d0/0.01**2) ! 1cm
+                            NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))*(1.d0/0.01**2) ! 1cm
+!                        elseif (ADmethod=='KF') then
+!                            call KF_Gain_one(NEQ%InvN, NEQ%dx,NEQ%N, PRN+ParaNum, 1.d0*(NEQ%fixed_amb(PRN)), 0.01d0)
+!                        end if
                     end if
                 elseif (PRN>maxPRN) then
                     if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
-                        NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
-                        NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))
+!                        if (ADmethod=='LS') then
+                            NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0*(1/0.01**2) ! 1cm
+                            NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))*(1.d0/0.01**2) ! 1cm
+!                        elseif (ADmethod=='KF') then
+!                            call KF_Gain_one(NEQ%InvN, NEQ%dx,NEQ%N, PRN+ParaNum, 1.d0*(NEQ%fixed_amb(PRN)), 0.01d0)
+!                        end if
                     end if
                 end if
             end if
@@ -364,27 +399,42 @@ implicit none
     if (Combination(3) .and. Vel_Used==1) then
         do i=1,3
             if (NEQ_DP%Flag_Sln(5)==1) then ! If full fixed
-                NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+0.01d0*NEQ_DP%dt     ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2)/10000 ! 0.1m
+                if (ADmethod=='LS') then
+                    NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/0.01d0/NEQ_DP%dt  ! This is wrong for Nbb
+                elseif (ADmethod=='KF') then
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+0.01d0*NEQ_DP%dt    ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2) ! 0.1m
+                end if
             elseif (NEQ_DP%Flag_Sln(5)==2) then ! If partial fixed
-                NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/2500.d0*NEQ_DP%dt   ! (1/0.5**2)/10000 ! 0.5m
+                if (ADmethod=='LS') then
+                    NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/0.25d0*NEQ_DP%dt  ! This is wrong for Nbb
+                elseif (ADmethod=='KF') then
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+0.25d0*NEQ_DP%dt     ! (1/0.5**2) ! 0.5m
+                end if
             elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
-                NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/40000.d0*NEQ_DP%dt   ! (1/2.d0**2)/10000 ! 2m
+                if (ADmethod=='LS') then
+                    NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/4.d0*NEQ_DP%dt   ! This is wrong for Nbb
+                elseif (ADmethod=='KF') then
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+4.d0*NEQ_DP%dt    ! (1/2.d0**2) ! 2m
+                end if
             end if
         end do
     end if
     
-    NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap1(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap1(1:N,:)  )
-    NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap2(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap2(1:N,:)  )
-    NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Aewl(1:N,:)  )  ! EWL
-    NEQ%Nbb             =  NEQ%Nbb               +  matmul(  matmul( transpose(NEQ%Awl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Awl(1:N,:)  )
-    NEQ%Nbb             =  NEQ%Nbb               +  matmul(  matmul( transpose(NEQ%Aw4(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Aw4(1:N,:)  )
+!    if (ADmethod=='LS') then     ! When Least square, add Nbb
+        NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap1(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap1(1:N,:)  )
+        NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap2(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap2(1:N,:)  )
+        NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Aewl(1:N,:)  )  ! EWL
+        NEQ%Nbb             =  NEQ%Nbb               +  matmul(  matmul( transpose(NEQ%Awl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Awl(1:N,:)  )
+        NEQ%Nbb             =  NEQ%Nbb               +  matmul(  matmul( transpose(NEQ%Aw4(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Aw4(1:N,:)  )
 
-    NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Ap1(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lp1(1:N)  )
-    NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Ap2(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lp2(1:N)  )
-    NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lewl(1:N)  )  ! EWL
-    NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Awl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lwl(1:N)  )
-    NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Aw4(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lw4(1:N)  )
-    
+        NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Ap1(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lp1(1:N)  )
+        NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Ap2(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lp2(1:N)  )
+        NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lewl(1:N)  )  ! EWL
+        NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Awl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lwl(1:N)  )
+        NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Aw4(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lw4(1:N)  )
+!    elseif (ADmethod=='KF') then
+!        ! Kalmen Filter will done in Solve_NEQ_Iono, or Solve_NEQ,  KF_Gain function
+!    end if
 
     Epo_NEQ%PRNS=DD%PRNS
     Epo_NEQ%PRN=DD%PRN
@@ -392,65 +442,81 @@ implicit none
     Epo_NEQ%Sys=DD%Sys
     Epo_NEQ%System=DD%System
     Epo_NEQ%P(1:N,1:N)=DD%P(1:N,1:N)
-    Epo_NEQ%Ap1(1:N,:)=Ap1(1:N,:)*0.01d0
-    Epo_NEQ%Lp1(1:N)=DD%P1(1:N)*0.01d0
-    Epo_NEQ%Ap2(1:N,:)=Ap2(1:N,:)*0.01d0
-    Epo_NEQ%Lp2(1:N)=DD%P2(1:N)*0.01d0
-    Epo_NEQ%Al1(1:N,:)=Al1(1:N,:)
-    Epo_NEQ%Ll1(1:N)=DD%L1(1:N)
-    Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)
-    Epo_NEQ%Ll2(1:N)=DD%L2(1:N)
+    Epo_NEQ%R(1:N,1:N)=DD%Q(1:N,1:N)
+    Epo_NEQ%Ap1(1:N,:)=Ap1(1:N,:)/sigPC
+    Epo_NEQ%Lp1(1:N)=DD%P1(1:N)/sigPC
+    Epo_NEQ%Ap2(1:N,:)=Ap2(1:N,:)/sigPC
+    Epo_NEQ%Lp2(1:N)=DD%P2(1:N)/sigPC
+    Epo_NEQ%Al1(1:N,:)=Al1(1:N,:)/sigLC
+    Epo_NEQ%Ll1(1:N)=DD%L1(1:N)/sigLC
+    Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)/sigLC
+    Epo_NEQ%Ll2(1:N)=DD%L2(1:N)/sigLC
     Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer due to code multipath
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
-            Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/2.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater  5.6d0 ! 
-            Epo_NEQ%Lwl(1:N)=DD%WL(1:N)/2.d0 ! sqrt(a1**2+a2**2)
+            Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/sigLC/2.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater 
+            Epo_NEQ%Lwl(1:N)=DD%WL(1:N)/sigLC/2.d0 ! sqrt(a1**2+a2**2)   ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2), for GPS, it is 5.74, for BeiDou, it is 5.57, for Galileo, it is 4.93
         end if
 !        if ( (b1/=0.d0) .or. (b2/=0.d0) ) then  ! only for triple frequency
-            Epo_NEQ%Aw4(1:N,:)=Aw4(1:N,:)/2.d0 ! sqrt(2.d0)  ! 6.9d0 !
-            Epo_NEQ%Lw4(1:N)=DD%W4(1:N)/2.d0 ! sqrt(2.d0)
+            Epo_NEQ%Aw4(1:N,:)=Aw4(1:N,:)/sigLC/2.d0 ! sqrt(2.d0)  ! 6.9d0 ! should be sqrt((b1*f1)**2+(b2*f2)**2)/(b1*f1-b2*f2)
+            Epo_NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/2.d0 ! sqrt(2.d0)
 !        end if
         
         ! Initial precision of ionosphere parameter
         do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
-            if (ADmethod=='LS') then
-                if (Epo_NEQ%Nbb(i,i)==0.d0 .and. any(Epo_NEQ%Al1(:,i)/=0.d0)) then
-                    Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+0.0025d0    !    (1/0.2**2)/10000 ! 0.2m
-                end if
-            elseif (ADmethod=='KF') then
+!            if (ADmethod=='LS') then
+!                if (Epo_NEQ%Nbb(i,i)==0.d0 .and. any(Epo_NEQ%Al1(:,i)/=0.d0)) then
+!                    Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.2d0**2)    !    (1/0.2**2) ! 0.2m
+!                end if
+!            elseif (ADmethod=='KF') then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
                 if (Epo_NEQ%InvN(i,i)==0.d0 .and. any(Epo_NEQ%Al1(:,i)/=0.d0)) then
-                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+400.d0     !    (0.2**2)*10000 ! 0.2m
+!                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+0.01d0     !    (0.1**2) ! 0.1m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+4.d0/3600.d0*Interval*10000.d0   ! (4m2/3600*Interval)*10000
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+1.d0/3600.d0*Interval   ! (4m2/3600*Interval)
                 end if
-            end if
+!            end if
         end do
         ! Initial precision of troposphere parameter
-        if (ParaNum==4 .and. ADmethod=='LS') then
-            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+0.25d0    !    (1/0.02**2)/10000 ! 0.02m
-        elseif (ParaNum==4 .and. ADmethod=='KF') then
+!        if (ParaNum==4 .and. ADmethod=='LS') then
+!            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)    !    (1/0.02**2) ! 0.02m
+        if (ParaNum==4) then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
             if (Epo_NEQ%InvN(4,4)==0.d0) then
-                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+4.d0   !    (0.02**2)*10000 ! 0.02m
+!                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+0.01d0**2   !    (0.01**2) ! 0.01m
             else
-                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.02**2/3600.d0*Interval)*10000.d0    !    (0.01^2/3600*Interval)*10000 ! 0.02cm
+                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.01**2/3600.d0*Interval)    !    (0.01^2/3600*Interval) ! 0.01cm
             end if
         end if
 
-        if (ADmethod=='KF') then
-            call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
-            Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
+        ! *****************************************************
+        if (ADmethod=='LS') then  
+        ! This is transformed Kalman Filter, similar as Least Square.
+        ! For long baseline, we use transformed KF instead of LS
+        ! Traditional Kalman Filter formulation is more efficient when parameter is very huge
+            call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)     ! Inverse is a bit slow
+            Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! Update Nbb and U
         end if
-!          ! Add constraints to ionosphere
-!        do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
-!            if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
-!                    Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.4d0**2)/10000.d0 ! 0.4m
-!            end if
-!        end do
-!          ! Add constraints to troposphere
-!        if (ParaNum==4) then
-!            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)/10000.d0 ! 0.05m
-!        end if
+        ! Now we can start traditional Least Square
+        ! ****************************************************
+
+          ! Add constraints to ionosphere
+        do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
+            if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
+                    if (ADmethod=='LS') then
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.4d0**2) ! 0.4m
+                    elseif (ADmethod=='KF') then
+                        call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, i, 0.d0, 0.4d0)
+                    end if
+            end if
+        end do
+          ! Add constraints to troposphere
+        if (ParaNum==4) then
+            if (ADmethod=='LS') then
+                Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2) ! 0.05m
+            elseif (ADmethod=='KF') then
+                call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 4, 0.d0, 0.02d0)
+            end if
+        end if
         
         ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
         if (ar_mode==3) then !
@@ -458,49 +524,48 @@ implicit none
                 if (If_Est_Iono .and. IonoNum>0 .and. Epo_NEQ%fixed_amb(PRN)/=0.99d0) then
                     Epo_NEQ%fixed_amb_num(PRN)=Epo_NEQ%fixed_amb_num(PRN)+1
                     if (PRN<=maxPRN) then
-                        if (Epo_NEQ%fixed_amb_num(PRN)>10 .and. Epo_NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 10 epoches
-                            Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
-                            Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))
+                        if (Epo_NEQ%fixed_amb_num(PRN)>50 .and. Epo_NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 50 epoches
+                            if (ADmethod=='LS') then
+                                Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+(1.d0/0.01d0**2) !  ! 1cm
+                                Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+1.d0*(Epo_NEQ%fixed_amb(PRN))*(1.d0/0.01d0**2)
+                            elseif (ADmethod=='KF') then
+                                call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, PRN+ParaNum, 1.d0*(Epo_NEQ%fixed_amb(PRN)), 0.01d0)
+                            end if
                         end if
                     elseif (PRN>maxPRN) then
-                        if (Epo_NEQ%fixed_amb_num(PRN)>10 .and. Epo_NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
-                            Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0 ! (1/0.01**2) ! 1cm
-                            Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))
+                        if (Epo_NEQ%fixed_amb_num(PRN)>50 .and. Epo_NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >50 epoches
+                            if (ADmethod=='LS') then
+                                Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+(1.d0/0.01d0**2) ! (1/0.01**2) ! 1cm
+                                Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))*(1.d0/0.01d0**2)
+                             elseif (ADmethod=='KF') then
+                                call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, PRN+ParaNum, 1.d0*(Epo_NEQ%fixed_amb(PRN)), 0.01d0)
+                            end if
                         end if
                     end if
                 end if
             end do
         end if
+        
+        if (ADmethod=='LS') then     ! When Least square, add Nbb
+            Epo_NEQ%Nbb     =  Epo_NEQ%Nbb + matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap1(1:N,:)  )
+            Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap2(1:N,:)  )
+            Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Al1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Al1(1:N,:)  )
+            Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Al2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Al2(1:N,:)  )
 
-        Epo_NEQ%Nbb     =  Epo_NEQ%Nbb + matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap1(1:N,:)  )
-        Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap2(1:N,:)  )
-        Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Al1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Al1(1:N,:)  )
-        Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Al2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Al2(1:N,:)  )
-
-        Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp1(1:N)  )
-        Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp2(1:N)  )
-        Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Al1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ll1(1:N)  )
-        Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Al2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ll2(1:N)  )
+            Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp1(1:N)  )
+            Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp2(1:N)  )
+            Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Al1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ll1(1:N)  )
+            Epo_NEQ%U         =  Epo_NEQ%U           +  matmul(  matmul( transpose(Epo_NEQ%Al2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ll2(1:N)  )
+        elseif (ADmethod=='KF') then
+            ! Kalmen Filter will done in Solve_NEQ_Iono, KF_Gain function
+        end if
     else 
+        ! Traditional Least Square
         Epo_NEQ%Nbb(1:ParaNum,1:ParaNum)     =  Epo_NEQ%Nbb(1:ParaNum,1:ParaNum) + matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap1(1:N,:)  )
         Epo_NEQ%Nbb(1:ParaNum,1:ParaNum)     =  Epo_NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap2(1:N,:)  )    
         Epo_NEQ%U(1:ParaNum)         =  Epo_NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp1(1:N)  )
         Epo_NEQ%U(1:ParaNum)         =  Epo_NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Lp2(1:N)  )    
-        
     end if
 
-    ! If Doppler velocity used, add constraints to fixed coordinate
-    if (Combination(3) .and. Vel_Used==1) then
-        do i=1,3
-            if (NEQ_DP%Flag_Sln(5)==1) then  ! If full fixed
-                Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+0.01d0*NEQ_DP%dt     ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2)/10000 ! 0.1m
-            elseif (NEQ_DP%Flag_Sln(5)==2) then ! If partial fixed
-                Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/2500.d0*NEQ_DP%dt   ! (1/0.5**2)/10000 ! 0.5m
-            elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
-                Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/250000.d0*NEQ_DP%dt   ! (1/5.d0**2)/10000 ! 5m
-            end if
-        end do
-    end if
-    
     return
 end subroutine

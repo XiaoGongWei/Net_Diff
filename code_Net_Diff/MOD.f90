@@ -578,6 +578,7 @@ use MOD_constant
         integer(1) :: Sys(MAXPRN)=0
         character(1) :: System(MAXPRN)
         real(8)  :: Ele(MAXPRN)    =  0.d0
+        real(8)  :: R(MaxPRN, MaxPRN)=0.d0
         real(8)  :: P(MaxPRN, MaxPRN)=0.d0
         real(8), allocatable :: Ap1(:, :), Ap2(:, :), Awl(:, :), Aw4(:, :), Aewl(:, :)
         real(8)  :: Lp1(MaxPRN), Vp1(MaxPRN)
@@ -617,6 +618,7 @@ implicit none
         integer(1) :: Sys(MAXPRN)=0
         character(1) :: System(MAXPRN)
         real(8)  :: Ele(MAXPRN)    =  0.d0
+        real(8)  :: R(MaxPRN, MaxPRN)=0.d0
         real(8)  :: P(MaxPRN, MaxPRN)=0.d0
         real(8), allocatable :: Ap1(:, :),Ap2(:, :), Al1(:, :), Al2(:, :), Awl(:, :), Aw4(:, :)
         real(8)  :: Lp1(MaxPRN), Vp1(MaxPRN)

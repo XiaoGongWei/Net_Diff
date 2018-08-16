@@ -37,8 +37,11 @@ implicit none
         if (amb(i)==0.d0) then
             PRN(i)=0           
             Q(1:N0, i:N0-1)=Q(1:N0, i+1:N0)
+            Q(1:N0, N0) = 0.d0
             Q(i:N0-1, 1:N0)=Q(i+1:N0, 1:N0)
+            Q(N0, 1:N0) = 0.d0
             amb(i:N0-1)=amb(i+1:N0)
+            amb(N0)=0.d0
             PRN(i:N0-1)=PRN(i+1:N0)
             PRN(N0)=0
             N=N-1

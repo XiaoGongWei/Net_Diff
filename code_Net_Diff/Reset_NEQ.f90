@@ -182,13 +182,15 @@ implicit none
                 end if
             end if
 
-            call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
-            NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
+!            if (ADmethod=='LS') then
+                call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
+                NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
+!            end if
 
-            if (If_Est_Iono .and. IonoNum>0) then
-                call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
-                Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
-            end if
+!            if (If_Est_Iono .and. IonoNum>0 .and. ADmethod=='LS') then  ! This is only for Least Square method, but we change to transformed Kalman Filter
+!                call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
+!                Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
+!            end if
         end if
     end do
 

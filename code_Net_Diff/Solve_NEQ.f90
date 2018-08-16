@@ -40,15 +40,17 @@ implicit none
     real(8) :: Coor(3)
     real(8) :: maxV
     integer :: maxL
+    real(8) :: NEQ_dx(ParaNum+2*MaxPRN), NEQ_InvN(ParaNum+2*MaxPRN,ParaNum+2*MaxPRN)
+    real(8) :: AA(4*NEQ%PRNS,ParaNum+2*MaxPRN), LL(4*NEQ%PRNS), RR(4*NEQ%PRNS,4*NEQ%PRNS)
     ! for lambda
     integer :: npar, npar2, nfixed
     real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
     real(8) :: Q(2*MaxPRN, 2*maxPRN), Q2(2*MaxPRN, 2*maxPRN), P(MaxPRN, maxPRN)
     real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN), dz(2*MaxPRN)
     integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
-    real(8) :: minP
+    real(8) :: minP, maxQ
     integer(1) :: flag_partial, flag_fixed, freq, sys, par_PRNS
-    real(8) :: temp_Nbb(2*MaxPRN,2*MaxPRN), temp_InvN(ParaNum, ParaNum), dx(2*MaxPRN), temp_dx(ParaNum) !, temp_InvN(ParaNum, 2*MaxPRN)
+    real(8) :: temp_Nbb(ParaNum,ParaNum), temp_InvN(2*MaxPRN, 2*MaxPRN),temp_InvN2(ParaNum, 2*MaxPRN), dx(2*MaxPRN), temp_dx(ParaNum) !
 
     !   Velocity estimation of Doppler Data
     if (Combination(3)) then
@@ -63,7 +65,7 @@ implicit none
                 NEQ_DP%dx=MATMUL(NEQ_DP%InvN, NEQ_DP%U)
                 if (any(isnan(NEQ_DP%dx))) then
                     write(*,*)  "-------ERROR-------: NEQ_DP%dx=nan, please check"
-                    write(LogID, '(5X,A40)')  "-------ERROR-------: dx=nan, please check"
+                    write(LogID, '(5X,A50)')  "-------ERROR-------: dx=nan, please check"
                     stop
                 end if
                 NEQ_DP%V(1:N)=MATMUL(NEQ_DP%A(1:N,:), NEQ_DP%dx)-NEQ_DP%L(1:N)
@@ -99,27 +101,61 @@ implicit none
     NEQ%maxV=0.d0
     NEQ%maxL=0
     N=NEQ%PRNS
+!    if (ADmethod=='KF') then
+!        NEQ_InvN=NEQ%InvN
+!        NEQ_dx=NEQ%dx ! temp save Pk and X in in case of outliers
+!    end if
     do while(AD_flag)
         Ad_Flag=.false.
-        call Invsqrt(NEQ%Nbb, NEQ%N, NEQ%InvN)
-        NEQ%dx=matmul(NEQ%InvN, NEQ%U)   ! In distance(meter)
+!        if (ADmethod=='LS') then
+            call Invsqrt(NEQ%Nbb, NEQ%N, NEQ%InvN)
+            NEQ%dx=matmul(NEQ%InvN, NEQ%U)   ! In distance(meter)
+!        elseif (ADmethod=='KF') then
+!            ! Add Kk information for each type of observation and get new dx and InvN
+!            K=0; AA=0.d0; LL=0.d0; RR=0.d0
+!            if (any(NEQ%Lp1(1:N)/=0.d0)) then
+!                AA(K+1:K+N,1:ParaNum)=NEQ%Ap1(1:N,1:ParaNum)
+!                LL(K+1:K+N)=NEQ%Lp1(1:N)
+!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+!                K=K+N
+!            end if
+!            if (any(NEQ%Lp2(1:N)/=0.d0)) then
+!                AA(K+1:K+N,1:ParaNum)=NEQ%Ap2(1:N,1:ParaNum)
+!                LL(K+1:K+N)=NEQ%Lp2(1:N)
+!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+!                K=K+N
+!            end if
+!            if (any(NEQ%Lwl(1:N)/=0.d0)) then
+!                AA(K+1:K+N,:)=NEQ%Awl(1:N,:)
+!                LL(K+1:K+N)=NEQ%Lwl(1:N)
+!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+!                K=K+N
+!            end if
+!            if (any(NEQ%Lw4(1:N)/=0.d0)) then
+!                AA(K+1:K+N,:)=NEQ%Aw4(1:N,:)
+!                LL(K+1:K+N)=NEQ%Lw4(1:N)
+!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+!                K=K+N
+!            end if
+!            call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*MaxPRN), LL(1:K), RR(1:K,1:K))
+!        end if
         if (any(isnan(NEQ%dx))) then
             write(*,*)  "-------ERROR-------: NEQ%dx=nan, please check"
-            write(LogID, '(5X,A40)')  "-------ERROR-------: NEQ%dx=nan, please check"
+            write(LogID, '(5X,A50)')  "-------ERROR-------: NEQ%dx=nan, please check"
             stop
         end if
 
         ! =================== Outliers Detect =====================
-        NEQ%Vp1(1:N)=matmul(NEQ%Ap1(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp1(1:N)
+        NEQ%Vp1(1:N)=(matmul(NEQ%Ap1(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp1(1:N))*sigLC ! unify to carrier phase magnitude
         NEQ%maxV(1:1)=maxval(dabs(NEQ%Vp1(1:N)))
         NEQ%maxL(1:1)=maxloc(dabs(NEQ%Vp1(1:N)))
-        NEQ%Vp2(1:N)=matmul(NEQ%Ap2(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp2(1:N)
+        NEQ%Vp2(1:N)=(matmul(NEQ%Ap2(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp2(1:N))*sigLC
         NEQ%maxV(2:2)=maxval(dabs(NEQ%Vp2(1:N)))
         NEQ%maxL(2:2)=maxloc(dabs(NEQ%Vp2(1:N)))
-        NEQ%Vwl(1:N)=matmul(NEQ%Awl(1:N, :), NEQ%dx) - NEQ%Lwl(1:N)
+        NEQ%Vwl(1:N)=(matmul(NEQ%Awl(1:N, :), NEQ%dx) - NEQ%Lwl(1:N))*sigLC
         NEQ%maxV(3:3)=maxval(dabs(NEQ%Vwl(1:N)))
         NEQ%maxL(3:3)=maxloc(dabs(NEQ%Vwl(1:N)))
-        NEQ%Vw4(1:N)=matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N)
+        NEQ%Vw4(1:N)=(matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N))*sigLC
         NEQ%maxV(4:4)=maxval(dabs(NEQ%Vw4(1:N)))
         NEQ%maxL(4:4)=maxloc(dabs(NEQ%Vw4(1:N)))
 
@@ -185,10 +221,15 @@ implicit none
 !                    STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0 
 !                end if
             end if
-!            if (NEQ%SumN<3+N*2) exit
+
+!            if (ADmethod=='KF') then
+!                NEQ%InvN=NEQ_InvN
+!                NEQ%dx=NEQ_dx ! temp save Pk and X in in case of outliers
+!            end if
             Ad_Flag=.true.
             write(unit=LogID,fmt='(5X,A5,3F10.3,A8)') '!!!dx',NEQ%dx(1:3),'outlier'
-        end if 
+        end if
+        
         ! =================== End of Outliers Detect =====================
         write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
     end do
@@ -226,7 +267,7 @@ implicit none
     end do
     call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
                                        MaxPRN*2, Q, amb, npar, iPOS)
-    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; iPOS3=iPOS; P=NEQ%P
+    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=NEQ%P
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     write(LogID,'(A10)',advance='no') 'amb_float'
     if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
@@ -252,7 +293,7 @@ implicit none
 !        write(LambdaID,'(38F11.3)') Q(1:npar, 1:npar)
 !        write(LambdaID,'(38F11.3)') amb(1:npar)
 !        call LAMBDA_zhang(lambdaID, npar, Q(1:npar, 1:npar), amb(1:npar), disall)
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/10000.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -279,18 +320,6 @@ implicit none
                 end if
             end do
             npar=npar2
-
-!            amb2=amb  ! store the amb before LAMBDA
-!!            call LAMBDA_zhang(lambdaID, npar2, Q2(1:npar2, 1:npar2), amb(1:npar2), disall) 
-!            call LAMBDA(lambdaID, npar2, amb(1:npar2),Q2(1:npar2, 1:npar2),1,amb(1:npar2),disall,Ps,Qzhat(1:npar2, 1:npar2),Z(1:npar2, 1:npar2),nfixed,mu,dz(1:npar2))
-!            ratio2=dabs(disall(2)/disall(1))
-!            if (ratio2>minratio) then
-!                iPOS=iPOS2  ! use all the PRNs
-!            else
-!                ! flag the unfixed PRN
-!                amb=amb2 ! use the  amb before LAMBDA
-!            end if
-
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'amb_fix'
         if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
@@ -351,22 +380,23 @@ implicit none
         write(LogID,'(A)') ''
         amb_success=amb_success+1
     elseif (partial_AR) then ! partial ambigulty fixing
-        minP=100.d0
+        minP=100.d0; maxQ=0.d0
         minL=0; minL2=0
         amb3=amb2
         iPOS=iPOS2
-        do i=1,npar2  ! Start from the minimum elevation satellite
+        do i=1,npar2  ! Start from the maximum variance satellite
             PRN=iPOS3(i)
+            if (PRN==0) cycle
             if (PRN>maxPRN) PRN=PRN-maxPRN
             do j=1,NEQ%PRNS
                 if (NEQ%PRN(j)==PRN) then
                     exit
                 end if
             end do
-            if ( (PRN/=0) .and. (P(j,j)<minP) ) then
+            if ( (PRN/=0) .and. (P(j,j)<minP-1.d-5) ) then
                 minP=P(j,j)
                 minL=i
-            elseif ( (PRN/=0) .and. abs(P(j,j)-minP)<1.d-11 ) then
+            elseif ( (PRN/=0) .and. abs(P(j,j)-minP)<1.d-5 ) then
                 minL2=i   ! dual frequency
             end if
         end do
@@ -382,7 +412,7 @@ implicit none
             end if
             call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
             flag_partial=1
-            goto 100
+            if (npar>=3) goto 100
         elseif ( (parARnum==2) ) then
          ! Which means ratio not less than minratio for only one satellite partial AR, then we try two.
          ! However, this is only for that last epoch is partial AR
@@ -409,7 +439,7 @@ implicit none
 
                 call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
                 flag_partial=1
-                goto 100
+                if (npar>=3) goto 100
 
             end if
         end if  !  if (minL/=0) then
@@ -425,32 +455,40 @@ implicit none
 
     ! Setp3(a):
 !        Update the coordinate by fixing the ambiguity of L1 and L2.
-!!    ! If there is no L1&L2 mixed combination, Still some problem, don't use this.
-!    if ((a1*a2==0.d0 .and. b1*b2==0.d0) .or. (a1*f1+a2*f2==0.d0) .or. (b1*f1+b2*f2==0.d0)) then
-!        ! Need some convengence time of the unfixed ambiguity, as amb_WL includes some unfixed float solution, should abandon them in U(1:ParaNum)
-!        dx(1:MaxPRN)=NEQ%amb_WL     
-!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
-!        call InvSqrt(NEQ%Nbb(1:ParaNum,1:ParaNum), ParaNum, temp_InvN)
-!        temp_dx=MATMUL(temp_InvN, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
-!!
-!!        do i=1,npar  ! wrong, don't know why
-!!            PRN=iPOS2(i)
-!!            temp_InvN(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
-!!        end do
-!!        temp_InvN(:,1:npar)=MATMUL(temp_InvN(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
-!!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb(1:npar,1:npar))   ! Qzz-1  ! See lambda Eq-2.27
-!!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN(:,1:npar), temp_Nbb(1:npar,1:npar)), dz(1:npar))
+!    ! If there is no L1&L2 mixed combination, Still some problem, don't use this.
+    if ((a1*a2==0.d0 .and. b1*b2==0.d0) .or. (a1*f1+a2*f2==0.d0) .or. (b1*f1+b2*f2==0.d0)) then
+        ! Need some convengence time of the unfixed ambiguity, as amb_WL includes some unfixed float solution, should abandon them in U(1:ParaNum)
+!        dx=NEQ%dx(ParaNum+1:ParaNum+2*maxPRN)
+!        do i=1,npar
+!            PRN=iPOS2(i)
+!            dx(PRN)=amb(i)
+!        end do
+!        call InvSqrt(NEQ%Nbb(1:ParaNum,1:ParaNum), ParaNum, temp_Nbb)
+!        temp_dx=MATMUL(temp_Nbb, NEQ%U(1:ParaNum)-MATMUL(transpose(NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)),dx))
 !
-!!        dx(1:MaxPRN)=NEQ%amb_WL ! need some time for convergence
-!!        dx(MaxPRN+1:2*MaxPRN)=NEQ%amb_W4
-!!        dz=NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN)-dx
-!!        call InvSqrt(NEQ%InvN(1:ParaNum,1:ParaNum), ParaNum, temp_InvN)   ! Qaa-1 ! See lambda Eq-2.27
-!!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(NEQ%InvN(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum), temp_InvN), dz)
-!
-!        Coor=temp_dx(1:3)
-!        
-!        return
-!    end if
+!        do i=1,npar  ! wrong, don't know why
+!            PRN=iPOS2(i)
+!            temp_InvN2(:,i)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
+!        end do
+!        temp_InvN2(:,1:npar)=MATMUL(temp_InvN2(:,1:npar), Z(1:npar, 1:npar))  ! Qbz
+!        call InvSqrt(Qzhat(1:npar, 1:npar), npar, temp_Nbb)   ! Qzz-1  ! See lambda Eq-2.7
+!        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN2(:,1:npar), temp_Nbb), dz(1:npar))
+
+        dx(1:npar)=0.d0; temp_InvN2(:,1:npar)=0.d0; j=0
+        do i=1,npar
+            PRN=iPOS(i)
+            if (PRN==0) cycle
+            j=j+1
+            dx(j)=NEQ%dx(ParaNum+PRN)-amb(i)
+            temp_InvN2(:,j)=NEQ%InvN(1:ParaNum, ParaNum+PRN)
+        end do
+        call InvSqrt(Q(1:npar, 1:npar), npar, temp_InvN(1:npar,1:npar)) !  Qaa-1 ! See lambda Eq-2.27, only the fixed InvN
+        temp_dx=NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN2(:,1:npar), temp_InvN(1:npar,1:npar)), dx(1:npar))
+
+        Coor=temp_dx(1:3)
+        write(unit=LogID,fmt='(A10,3F7.2)') 'fixcoor', Coor
+        return
+    end if
     
     ! Step3(b):
     !      Use the float or fixed ambigity to get the 
@@ -529,9 +567,9 @@ implicit none
                 Epo_NEQ%Ll1(i)=0.d0
             else
                 if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
-                    Epo_NEQ%Ll1(i)=Epo_NEQ%Ll1(i) -  NEQ%amb_L1(PRN)* c/f1
+                    Epo_NEQ%Ll1(i)=Epo_NEQ%Ll1(i) -  NEQ%amb_L1(PRN)* c/f1/sigLC
                 else
-                    Epo_NEQ%Ll1(i)=Epo_NEQ%Ll1(i) -  NEQ%amb_L1(PRN)* c/(a1*f1+a2*f2)
+                    Epo_NEQ%Ll1(i)=Epo_NEQ%Ll1(i) -  NEQ%amb_L1(PRN)* c/(a1*f1+a2*f2)/sigLC
                 end if
             end if
             NEQ%Lwl(i)=NEQ%Lwl(i) -  NEQ%amb_WL(PRN)*NEQ%Awl(i,3+PRN)
@@ -554,9 +592,9 @@ implicit none
                 Epo_NEQ%Ll2(i)=0.d0
             else
                 if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
-                    Epo_NEQ%Ll2(i)=Epo_NEQ%Ll2(i) -  NEQ%amb_L2(PRN)* c/ f2
+                    Epo_NEQ%Ll2(i)=Epo_NEQ%Ll2(i) -  NEQ%amb_L2(PRN)* c/ f2/sigLC
                 else
-                    Epo_NEQ%Ll2(i)=Epo_NEQ%Ll2(i) -  NEQ%amb_L2(PRN)* c/ (b1*f1+b2*f2)
+                    Epo_NEQ%Ll2(i)=Epo_NEQ%Ll2(i) -  NEQ%amb_L2(PRN)* c/ (b1*f1+b2*f2)/sigLC
                 end if
 !                write(LogID,'(A6,2X, I2, 2F10.3)') 'L1L2',PRN,Epo_NEQ%Ll1(i),Epo_NEQ%Ll2(i)
             end if
@@ -571,12 +609,12 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Ll1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Ll1(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Ll1(i)*sigLC
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Ll2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Ll2(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Ll2(i)*sigLC
     end do
     write(unit=LogID,fmt='(A)') ''
     
@@ -596,21 +634,21 @@ implicit none
         Epo_NEQ%dx = matmul(Epo_NEQ%InvN, Epo_NEQ%U)
         if (any(isnan(Epo_NEQ%dx))) then
             write(*,*)  "-------Epo_NEQ-------: Epo_NEQ%dx=nan, please check"
-            write(LogID, '(5X,A40)')  "-------ERROR-------: Epo_NEQ%dx=nan, please check"
+            write(LogID, '(5X,A50)')  "-------ERROR-------: Epo_NEQ%dx=nan, please check"
             stop
         end if
         
         ! =================== Outliers Detect =====================
-        Epo_NEQ%Vp1(1:N)=matmul(Epo_NEQ%Ap1(1:N, :), Epo_NEQ%dx(1:3)) - Epo_NEQ%Lp1(1:N)
+        Epo_NEQ%Vp1(1:N)=(matmul(Epo_NEQ%Ap1(1:N, :), Epo_NEQ%dx(1:3)) - Epo_NEQ%Lp1(1:N))*sigLC ! unify to carrier phase magnitude
         Epo_NEQ%maxV(1:1)=maxval(dabs(Epo_NEQ%Vp1(1:N)))
         Epo_NEQ%maxL(1:1)=maxloc(dabs(Epo_NEQ%Vp1(1:N)))
-        Epo_NEQ%Vp2(1:N)=matmul(Epo_NEQ%Ap2(1:N, :), Epo_NEQ%dx(1:3)) - Epo_NEQ%Lp2(1:N)
+        Epo_NEQ%Vp2(1:N)=(matmul(Epo_NEQ%Ap2(1:N, :), Epo_NEQ%dx(1:3)) - Epo_NEQ%Lp2(1:N))*sigLC
         Epo_NEQ%maxV(2:2)=maxval(dabs(Epo_NEQ%Vp2(1:N)))
         Epo_NEQ%maxL(2:2)=maxloc(dabs(Epo_NEQ%Vp2(1:N)))
-        Epo_NEQ%Vl1(1:N)=matmul(Epo_NEQ%Al1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll1(1:N)
+        Epo_NEQ%Vl1(1:N)=(matmul(Epo_NEQ%Al1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll1(1:N))*sigLC
         Epo_NEQ%maxV(3:3)=maxval(dabs(Epo_NEQ%Vl1(1:N)))
         Epo_NEQ%maxL(3:3)=maxloc(dabs(Epo_NEQ%Vl1(1:N)))
-        Epo_NEQ%Vl2(1:N)=matmul(Epo_NEQ%Al2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll2(1:N)
+        Epo_NEQ%Vl2(1:N)=(matmul(Epo_NEQ%Al2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll2(1:N))*sigLC
         Epo_NEQ%maxV(4:4)=maxval(dabs(Epo_NEQ%Vl2(1:N)))
         Epo_NEQ%maxL(4:4)=maxloc(dabs(Epo_NEQ%Vl2(1:N)))
 

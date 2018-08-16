@@ -291,9 +291,9 @@ implicit none
         end if
 
         if (Ele>30.d0) then
-            P=1.d0/(0.3d0+0.3d0/sind(Ele))**2 !1.d0   ! 0.3 is refer from RTKLIB
+            P=1.d0/(0.5d0+0.5d0/sind(Ele))**2 !1.d0   ! 0.3 is refer from RTKLIB
         elseif (Ele>LimEle) then
-            P=1.d0/(0.3d0+0.3d0/sind(Ele))**2 !4*dsind(Ele)**2   !
+            P=1.d0/(0.5d0+0.5d0/sind(Ele))**2 !4*dsind(Ele)**2   !
         else
             write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
             cycle
