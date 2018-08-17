@@ -155,7 +155,6 @@ implicit none
     Epo_NEQ%Vl2=0.d0
 
     N=DD%PRNS
-    ! 该历元的误差方程个数
     NEQ%SumN=0
     Epo_NEQ%SumN=0
 
@@ -366,7 +365,14 @@ implicit none
         NEQ%Awl(1:N,4)=0.d0
         NEQ%Aw4(1:N,4)=0.d0
     end if
-
+    
+    if (GloParaNum>0) then  ! If GLONASS
+        do i=1,GloParaNum
+            if (NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)==0.d0) then
+                NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)=0.5d0**2  ! 1m
+            end if
+        end do
+    end if
     ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
     if (ar_mode==3) then !
         do PRN=1, 2*maxPRN
@@ -452,6 +458,13 @@ implicit none
     Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)/sigLC
     Epo_NEQ%Ll2(1:N)=DD%L2(1:N)/sigLC
     Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer due to code multipath
+    if (GloParaNum>0) then  ! If GLONASS
+        do i=1,GloParaNum
+            if (Epo_NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)==0.d0) then
+                Epo_NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)=0.5d0**2  ! 1m
+            end if
+        end do
+    end if
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
             Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/sigLC/2.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater 
@@ -462,7 +475,7 @@ implicit none
             Epo_NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/2.d0 ! sqrt(2.d0)
 !        end if
         
-        ! Initial precision of ionosphere parameter
+        ! Initial precision and random walk of ionosphere parameter
         do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
 !            if (ADmethod=='LS') then
 !                if (Epo_NEQ%Nbb(i,i)==0.d0 .and. any(Epo_NEQ%Al1(:,i)/=0.d0)) then
@@ -473,14 +486,14 @@ implicit none
 !                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+0.01d0     !    (0.1**2) ! 0.1m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+0.2**2/3600.d0*Interval   ! (4m2/3600*Interval)
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+0.5**2/3600.d0*Interval   ! (4m2/3600*Interval)
                 end if
 !            end if
         end do
-        ! Initial precision of troposphere parameter
-!        if (ParaNum==4 .and. ADmethod=='LS') then
+        ! Initial precision and random walk of troposphere parameter
+!        if (TropLen/=0.d0 .and. ADmethod=='LS') then
 !            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)    !    (1/0.02**2) ! 0.02m
-        if (ParaNum==4) then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+        if (TropLen/=0.d0) then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
             if (Epo_NEQ%InvN(4,4)==0.d0) then
 !                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+0.01d0**2   !    (0.01**2) ! 0.01m
             else
@@ -515,7 +528,7 @@ implicit none
         end do
         ! Add constraints to troposphere
         factor=log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*1.d-5  ! distance related and height related
-        if (ParaNum==4) then
+        if (TropLen/=0.d0) then
             if (ADmethod=='LS') then
                 Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/factor**2) ! 0.05m
             elseif (ADmethod=='KF') then

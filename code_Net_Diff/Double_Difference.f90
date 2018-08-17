@@ -63,6 +63,9 @@ implicit none
             DD%PRN_S(N)       =    SD%PRN_S(j)
             DD%Ele(DD%PRN(N))       =    SD%Ele(j)
             DD%Q(N,N)       =    SD%Q(j)
+            if (sys==2 .and. GloParaNum>0) then  ! If GLONASS
+                SD%A(L_ref(sys),ParaNum-GloParaNum+1:ParaNum)=0.d0  ! Set the reference GLONASS satellite IFB as zero
+            end if
             DD%A(N, :)    =    SD%A(j,:) - SD%A(L_ref(sys),:)
             DD%corr(N)       =    SD%corr(j)-SD%corr(L_ref(sys))
             DD%s(N)           =    SD%s(j)-SD%s(L_ref(sys))

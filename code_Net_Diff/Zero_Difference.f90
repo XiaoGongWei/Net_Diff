@@ -406,7 +406,10 @@ implicit none
         ZD%Ele(N)     =    Ele
         ZD%P(N)        =    P
         ZD%A(N,1:3)  =    (/(AppCoor-Sat_Coor)/s /)
-        if (ParaNum==4 .and. If_Est_Iono) ZD%A(N, 4) = STA%STA(k)%Trop%map_wet ! Only when estimate ionosphere, usually for long baseline
+        if (TropLen/=0.d0 .and. If_Est_Iono) ZD%A(N, 4) = STA%STA(k)%Trop%map_wet ! Only when estimate ionosphere, usually for long baseline
+        if (System=='R' .and. GloParaNum>0) then
+            ZD%A(N, ParaNum-GloParaNum+Kk+8)=1.d0
+        end if
         corr                =    s+STD-Sat_Clk*c+Rec_Clk*c-Rela 
         ZD%Corr(N)   =        STD-Sat_Clk*c+Rec_Clk*c-Rela
         ZD%s(N)        =     s

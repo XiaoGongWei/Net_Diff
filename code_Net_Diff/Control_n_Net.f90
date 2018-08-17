@@ -261,6 +261,7 @@ implicit none
         ParaNum=ParaNum+1
         INT_SystemUsed(2)=1
         if (If_IFB) then
+            GloParaNum=14
             if ( (index(IFB_Mode,"FD") /=0) .or. (index(IFB_Mode,"fd") /=0) ) then
                 IFB_Mode='FD'
                 ParaNum=ParaNum+14  ! Frequency depend

@@ -9,6 +9,7 @@
 !      amb                 the new format ambiguities
 
 subroutine LAMBDA_Prepare(Q0, amb0, N0, Q, amb, N, PRN)
+use MOD_VAR
 implicit none
     integer :: N0, N
     real(8) :: Q0(N0, N0), amb0(N0)
@@ -16,7 +17,7 @@ implicit none
     integer :: PRN(N0)
 !    real(8), allocatable :: Q(:,:)), amb(:)
     ! Local variables
-    integer :: i
+    integer :: i, PRN_S
 
     Q=Q0; amb=amb0
 
@@ -34,7 +35,8 @@ implicit none
     
     N=N0
     do i=N0,  1, -1
-        if (amb(i)==0.d0) then
+        PRN_S=PRN(i)
+        if ((amb(i)==0.d0) .or. (GloParaNum>0 .and. PRN_S>GNum .and. PRN_S<=GNum+RNum)) then  ! exclude GLONASS satellite in Lambda
             PRN(i)=0           
             Q(1:N0, i:N0-1)=Q(1:N0, i+1:N0)
             Q(1:N0, N0) = 0.d0

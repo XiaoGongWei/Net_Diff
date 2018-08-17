@@ -69,6 +69,9 @@ implicit none
     if (TropLen/=0.d0) then       ! If estimate troposphere
         ParaNum=ParaNum+1
     end if
+    if (GloParaNum>0) then
+        ParaNum=ParaNum+GloParaNum
+    end if
     allocate(ZD(1)%A(MaxPRN,ParaNum), ZD(2)%A(MaxPRN,ParaNum), SD%A(MaxPRN,ParaNum), DD%A(MaxPRN,ParaNum) )
     allocate(NEQ%Ap1(MaxPRN,ParaNum),NEQ%Ap2(MaxPRN,ParaNum),NEQ%Awl(MaxPRN,MaxPRN*2+ParaNum),NEQ%Aw4(MaxPRN,MaxPRN*2+ParaNum))
     allocate(NEQ%Aewl(MaxPRN,ParaNum))

@@ -19,6 +19,7 @@ use MOD_Epo_NEQ
 use MOD_constant
 use MOD_Var
 use MOD_FileID
+use MOD_GLO_Fre
 implicit none
     type(type_DD) :: DD
     type(type_NEQ) :: NEQ
@@ -181,18 +182,56 @@ implicit none
                     Epo_NEQ%fixed_amb(RefSat(sys)+MaxPRN)=0.99d0
                 end if
             end if
-
-!            if (ADmethod=='LS') then
-                call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
-                NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
-!            end if
-
-!            if (If_Est_Iono .and. IonoNum>0 .and. ADmethod=='LS') then  ! This is only for Least Square method, but we change to transformed Kalman Filter
-!                call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
-!                Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
-!            end if
         end if
     end do
+
+    ! For GLONASS IFB change
+    if (GloParaNum>0) then  ! If GLONASS
+        sys=2
+        do i=1,GloParaNum
+            if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then 
+                if (Fre_Chann(RefSat(sys)-GNum) == Fre_Chann(DD%RefSat(sys)-GNum)) exit ! If GLONASS reference satellite frequency changes
+                if ((i/=Fre_Chann(RefSat(sys)-GNum)+8) .and. (NEQ%dx(ParaNum-GloParaNum+i)/=0.d0)) then
+                    NEQ%dx(ParaNum-GloParaNum+i)=NEQ%dx(ParaNum-GloParaNum+i)-NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! other satellite
+                    NEQ%InvN(:,ParaNum-GloParaNum+i)=NEQ%InvN(:,ParaNum-GloParaNum+i)-NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
+                    NEQ%InvN(ParaNum-GloParaNum+i,:)=NEQ%InvN(ParaNum-GloParaNum+i,:)-NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+                    if (If_Est_Iono .and. IonoNum>0) then
+                        Epo_NEQ%dx(ParaNum-GloParaNum+i)=Epo_NEQ%dx(ParaNum-GloParaNum+i)-Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! other satellite
+                        Epo_NEQ%InvN(:,ParaNum-GloParaNum+i)=Epo_NEQ%InvN(:,ParaNum-GloParaNum+i)-Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
+                        Epo_NEQ%InvN(ParaNum-GloParaNum+i,:)=Epo_NEQ%InvN(ParaNum-GloParaNum+i,:)-Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+                    end if
+                end if
+            end if
+        end do
+        if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then
+            if (Fre_Chann(RefSat(sys)-GNum) /= Fre_Chann(DD%RefSat(sys)-GNum)) then  ! If GLONASS reference satellite frequency changes
+                NEQ%dx(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)=0.d0-NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! old reference satellite
+                NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)= 0.d0 -NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
+                NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8,:)= 0.d0 -NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+                NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0   ! new reference satellite
+                NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0
+                NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)=0.d0
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)=0.d0-Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! old reference satellite
+                    Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)= 0.d0 -Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
+                    Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8,:)= 0.d0 -Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+                    Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0   ! new reference satellite
+                    Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0
+                    Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)=0.d0
+                end if
+            end if
+        end if
+    end if
+
+!        if (ADmethod=='LS') then
+            call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
+            NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
+!        end if
+
+!        if (If_Est_Iono .and. IonoNum>0 .and. ADmethod=='LS') then  ! This is only for Least Square method, but we change to transformed Kalman Filter
+!            call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)
+!            Epo_NEQ%U=MATMUL(Epo_NEQ%Nbb, Epo_NEQ%dx)   ! New Nbb and U is needed
+!        end if
 
     return
 end subroutine
