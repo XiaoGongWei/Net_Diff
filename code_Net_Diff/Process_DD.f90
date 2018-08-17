@@ -199,6 +199,9 @@ implicit none
             end if
             call Zero_Difference(ObsData(i), i, ZD(i))
         end do
+        Baseline=dsqrt(DOT_PRODUCT((STA%STA(1)%Coor-STA%STA(2)%Coor),(STA%STA(1)%Coor-STA%STA(2)%Coor)))
+        Diff_Hgt=dabs(STA%STA(1)%BLH(3)-STA%STA(2)%BLH(3))
+        Min_Lat=minval((/STA%STA(1)%BLH(1),STA%STA(2)%BLH(1)/))
 
         ! ========= Form station difference ============
         call Station_Difference(ZD, SD)

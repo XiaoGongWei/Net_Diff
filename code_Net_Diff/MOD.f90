@@ -745,7 +745,8 @@ use MOD_constant
     real(8) :: minratio=3.d0
     logical(1) :: partial_AR=.true.
     integer(1) :: parARnum=2
-     logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
+    logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
+    real(8) :: Baseline, Diff_Hgt, Min_Lat   ! This is only for long baseline RTK
     real(8) ::   a1= 1.d0 , a2= 0.d0 ! L1
     real(8) ::  b1= 0.d0 , b2= 1.d0  ! L2
     logical :: If_IonoCompensate=.false.

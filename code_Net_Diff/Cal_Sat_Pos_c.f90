@@ -62,7 +62,6 @@ implicit none
         t=(GPSweek-NavData_C(PRN)%Nav(i)%GPSweek)*604800.d0+GPSsec-NavData_C(PRN)%Nav(i)%GPSsec
         if (delaytmp/=0.d0) then  ! If for BDS SBAS
             if ((t-delaytmp>=-0.2d0)  .and. (abs(t-delaytmp)<=abs(tkr))  .and. (NavData_C(PRN)%Nav(i)%Health==0.d0) ) then
-                if ((proc_mod/=5) .and. (NavData_C(PRN)%Nav(i)%IODE<10.d0))  cycle
                 tkr=t   ! 取最新的星历,t扣除了接收机钟差
                 tempNav=NavData_C(PRN)%Nav(i)
             elseif (t<-0.2d0) then
@@ -70,6 +69,7 @@ implicit none
             end if
         else
             if (dabs(t)<=dabs(tkr) .and. (NavData_C(PRN)%Nav(i)%Health==0.d0)) then
+                if ((proc_mod/=5) .and. (NavData_C(PRN)%Nav(i)%IODE>10.d0))  cycle
                 tkr=t ! 取距离最近时刻的星历
                 tempNav=NavData_C(PRN)%Nav(i)
             else if ( (dabs(t) - dabs(tkr))>700.d0 ) then

@@ -39,7 +39,7 @@ implicit none
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
     real(8)  :: Al1(MaxPRN, ParaNum+3*IonoNum), Al2(MaxPRN, ParaNum+3*IonoNum)
     logical :: flag_del_PRN
-    real(8) :: dT(2)
+    real(8) :: dT(2), factor
     real(8) :: Kk(ParaNum+3*IonoNum,1)  ! Kalman gain
 
     
@@ -473,7 +473,7 @@ implicit none
 !                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+0.01d0     !    (0.1**2) ! 0.1m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+1.d0/3600.d0*Interval   ! (4m2/3600*Interval)
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+0.2**2/3600.d0*Interval   ! (4m2/3600*Interval)
                 end if
 !            end if
         end do
@@ -499,22 +499,27 @@ implicit none
         ! Now we can start traditional Least Square
         ! ****************************************************
 
-          ! Add constraints to ionosphere
+        ! Add constraints to ionosphere
+        factor=(Baseline*6.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
+        if (Baseline>200.d3) then
+            factor=1.2d0*exp((90.d0-Min_Lat)/50.d0-1.d0)
+        end if
         do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
             if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
                     if (ADmethod=='LS') then
-                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/0.4d0**2) ! 0.4m
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+(1.d0/factor**2) ! 0.4m
                     elseif (ADmethod=='KF') then
-                        call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, i, 0.d0, 0.4d0)
+                        call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, i, 0.d0, factor)
                     end if
             end if
         end do
-          ! Add constraints to troposphere
+        ! Add constraints to troposphere
+        factor=log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*1.d-5  ! distance related and height related
         if (ParaNum==4) then
             if (ADmethod=='LS') then
-                Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2) ! 0.05m
+                Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/factor**2) ! 0.05m
             elseif (ADmethod=='KF') then
-                call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 4, 0.d0, 0.02d0)
+                call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 4, 0.d0, factor)
             end if
         end if
         
