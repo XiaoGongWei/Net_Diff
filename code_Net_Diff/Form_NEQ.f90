@@ -135,14 +135,27 @@ implicit none
 !            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
 !            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 3, 'ddp')
 !        end if
-        if (If_Est_Iono .and. IonoNum>0) then  ! When not estimate ionosphere parameter and LS mode
+        if (If_Est_Iono .and. IonoNum>0) then  ! When estimate ionosphere parameter
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 1, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 2, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 3, 'ddp')
-        else ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+        else ! If not estimate ionosphere, Least square is enough for Epo_NEQ as it has only coordinate paramters
             call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 1)
             call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 2)
             call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, 3)
+        end if
+    elseif (Pos_State=="S") then
+        if (ADmethod=='KF') then
+            if (NEQ%InvN(1,1)==0.d0) then ! If first epoch
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 1, 'ddp')
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 3, 'ddp')
+            end if
+        end if
+        if (Epo_NEQ%InvN(1,1)==0.d0 .and. If_Est_Iono .and. IonoNum>0) then  ! When estimate ionosphere parameter
+            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 1, 'ddp')
+            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 2, 'ddp')
+            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 3, 'ddp')
         end if
     elseif (Pos_State=="F") then
         DD%A(:,1:3)=0.d0
