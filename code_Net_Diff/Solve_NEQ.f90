@@ -101,44 +101,44 @@ implicit none
     NEQ%maxV=0.d0
     NEQ%maxL=0
     N=NEQ%PRNS
-!    if (ADmethod=='KF') then
-!        NEQ_InvN=NEQ%InvN
-!        NEQ_dx=NEQ%dx ! temp save Pk and X in in case of outliers
-!    end if
+    if (ADmethod=='KF') then
+        NEQ_InvN=NEQ%InvN
+        NEQ_dx=NEQ%dx ! temp save Pk and X in in case of outliers
+    end if
     do while(AD_flag)
         Ad_Flag=.false.
-!        if (ADmethod=='LS') then
+        if (ADmethod=='LS') then
             call Invsqrt(NEQ%Nbb, NEQ%N, NEQ%InvN)
             NEQ%dx=matmul(NEQ%InvN, NEQ%U)   ! In distance(meter)
-!        elseif (ADmethod=='KF') then
-!            ! Add Kk information for each type of observation and get new dx and InvN
-!            K=0; AA=0.d0; LL=0.d0; RR=0.d0
-!            if (any(NEQ%Lp1(1:N)/=0.d0)) then
-!                AA(K+1:K+N,1:ParaNum)=NEQ%Ap1(1:N,1:ParaNum)
-!                LL(K+1:K+N)=NEQ%Lp1(1:N)
-!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
-!                K=K+N
-!            end if
-!            if (any(NEQ%Lp2(1:N)/=0.d0)) then
-!                AA(K+1:K+N,1:ParaNum)=NEQ%Ap2(1:N,1:ParaNum)
-!                LL(K+1:K+N)=NEQ%Lp2(1:N)
-!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
-!                K=K+N
-!            end if
-!            if (any(NEQ%Lwl(1:N)/=0.d0)) then
-!                AA(K+1:K+N,:)=NEQ%Awl(1:N,:)
-!                LL(K+1:K+N)=NEQ%Lwl(1:N)
-!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
-!                K=K+N
-!            end if
-!            if (any(NEQ%Lw4(1:N)/=0.d0)) then
-!                AA(K+1:K+N,:)=NEQ%Aw4(1:N,:)
-!                LL(K+1:K+N)=NEQ%Lw4(1:N)
-!                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
-!                K=K+N
-!            end if
-!            call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*MaxPRN), LL(1:K), RR(1:K,1:K))
-!        end if
+        elseif (ADmethod=='KF') then
+            ! Add Kk information for each type of observation and get new dx and InvN
+            K=0; AA=0.d0; LL=0.d0; RR=0.d0
+            if (any(NEQ%Lp1(1:N)/=0.d0)) then
+                AA(K+1:K+N,1:ParaNum)=NEQ%Ap1(1:N,1:ParaNum)
+                LL(K+1:K+N)=NEQ%Lp1(1:N)
+                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                K=K+N
+            end if
+            if (any(NEQ%Lp2(1:N)/=0.d0)) then
+                AA(K+1:K+N,1:ParaNum)=NEQ%Ap2(1:N,1:ParaNum)
+                LL(K+1:K+N)=NEQ%Lp2(1:N)
+                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                K=K+N
+            end if
+            if (any(NEQ%Lwl(1:N)/=0.d0)) then
+                AA(K+1:K+N,:)=NEQ%Awl(1:N,:)
+                LL(K+1:K+N)=NEQ%Lwl(1:N)
+                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                K=K+N
+            end if
+            if (any(NEQ%Lw4(1:N)/=0.d0)) then
+                AA(K+1:K+N,:)=NEQ%Aw4(1:N,:)
+                LL(K+1:K+N)=NEQ%Lw4(1:N)
+                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                K=K+N
+            end if
+            call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*MaxPRN), LL(1:K), RR(1:K,1:K))
+        end if
         if (any(isnan(NEQ%dx))) then
             write(*,*)  "-------ERROR-------: NEQ%dx=nan, please check"
             write(LogID, '(5X,A50)')  "-------ERROR-------: NEQ%dx=nan, please check"
@@ -161,31 +161,6 @@ implicit none
 
         maxV=maxval(dabs(NEQ%maxV))
         maxL=maxloc(dabs(NEQ%maxV),dim=1)
-        write(unit=LogID,fmt='(5X,A5)',advance='no') 'PRN'
-        do i=1,N
-            write(unit=LogID,fmt='(I7)',advance='no') NEQ%PRN(i)
-        end do
-        write(unit=LogID,fmt='(A)') ''
-        write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
-        do i=1,N
-            write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)
-        end do
-        write(unit=LogID,fmt='(A)') ''
-        write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
-        do i=1,N
-            write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)
-        end do
-        write(unit=LogID,fmt='(A)') ''
-        write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
-        do i=1,N
-            write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)
-        end do
-        write(unit=LogID,fmt='(A)') ''
-        write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
-        do i=1,N
-            write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)
-        end do
-        write(unit=LogID,fmt='(A)') ''
         
         if ( dabs(maxV)>.4d0*a1*154.d0/(a1*154.d0+a2*120.d0)  ) then
             if ((maxL)==1) then   ! maxV in P1
@@ -233,6 +208,34 @@ implicit none
         ! =================== End of Outliers Detect =====================
         write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
     end do
+
+    ! Write residuals
+    write(unit=LogID,fmt='(5X,A5)',advance='no') 'PRN'
+    do i=1,N
+        write(unit=LogID,fmt='(I7)',advance='no') NEQ%PRN(i)
+    end do
+    write(unit=LogID,fmt='(A)') ''
+    write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
+    do i=1,N
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)
+    end do
+    write(unit=LogID,fmt='(A)') ''
+    write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
+    do i=1,N
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)
+    end do
+    write(unit=LogID,fmt='(A)') ''
+    write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
+    do i=1,N
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)
+    end do
+    write(unit=LogID,fmt='(A)') ''
+    write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
+    do i=1,N
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)
+    end do
+    write(unit=LogID,fmt='(A)') ''
+
     ! If LC combination
     if (  ( (a1==0.d0) .and. (a2==0.d0) .and. (mod(b1,1.d0)/=0.d0) ) .or. ( (b1==0.d0) .and. (b2==0.d0) .and. (mod(a1,1.d0)/=0.d0) )  ) then
         Coor=NEQ%dx(1:3)

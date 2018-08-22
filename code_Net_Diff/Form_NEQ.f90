@@ -90,15 +90,15 @@ implicit none
                 cycle
             end if
             if (flag_del_PRN .and. any(dT<-3.d0*Interval)) then   !  If satellite unobserved more than 3 epoches. result shows not very good, so don't use.
-!                if (ADmethod=='LS') then
+                if (ADmethod=='LS') then
                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
                     NEQ%dx(ParaNum+PRN)=0.d0
                     NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
-!                elseif (ADmethod=='KF') then
-!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dds')
-!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dds')
-!                end if
+                elseif (ADmethod=='KF') then
+                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dds')
+                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dds')
+                end if
                 if (If_Est_Iono .and. IonoNum>0) then
 !                    if (ADmethod=='LS') then
 !                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
@@ -126,15 +126,15 @@ implicit none
         end do
     end if
     if (Pos_State=="K") then    ! on the fly, kinematic
-!        if (ADmethod=='LS') then
+        if (ADmethod=='LS') then
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
-!        elseif (ADmethod=='KF') then
-!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 1, 'ddp')
-!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
-!            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 3, 'ddp')
-!        end if
+        elseif (ADmethod=='KF') then
+            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 1, 'ddp')
+            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
+            call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 3, 'ddp')
+        end if
         if (If_Est_Iono .and. IonoNum>0) then  ! When estimate ionosphere parameter
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 1, 'ddp')
             call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, 2, 'ddp')
@@ -217,13 +217,13 @@ implicit none
         if (ar_mode/=2) then ! If not instantaneous AR
             if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(2)%Slip(PRN)==1) ) then ! Cycle Slip in 
                  write(LogID,'(A10,I3,A11)') 'PRN', PRN,'cycle slip'  
-!                 if (ADmethod=='LS') then
+                 if (ADmethod=='LS') then
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
-!                 elseif (ADmethod=='KF') then
-!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')  ! L1 ambiguity
-!                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')  ! L2 ambiguity
-!                 end if
+                 elseif (ADmethod=='KF') then
+                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')  ! L1 ambiguity
+                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')  ! L2 ambiguity
+                 end if
                  if (If_Est_Iono .and. IonoNum>0) then
 !                    if (ADmethod=='LS') then
 !                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
@@ -393,12 +393,12 @@ implicit none
                 NEQ%fixed_amb_num(PRN)=NEQ%fixed_amb_num(PRN)+1
                 if (PRN<=maxPRN) then
                     if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity >10 epoches
-!                        if (ADmethod=='LS') then
+                        if (ADmethod=='LS') then
                             NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0*(1.d0/0.01**2) ! 1cm
                             NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))*(1.d0/0.01**2) ! 1cm
-!                        elseif (ADmethod=='KF') then
-!                            call KF_Gain_one(NEQ%InvN, NEQ%dx,NEQ%N, PRN+ParaNum, 1.d0*(NEQ%fixed_amb(PRN)), 0.01d0)
-!                        end if
+                        elseif (ADmethod=='KF') then
+                            call KF_Gain_one(NEQ%InvN, NEQ%dx,NEQ%N, PRN+ParaNum, 1.d0*(NEQ%fixed_amb(PRN)), 0.01d0)
+                        end if
                     end if
                 elseif (PRN>maxPRN) then
                     if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
@@ -439,7 +439,7 @@ implicit none
         end do
     end if
     
-!    if (ADmethod=='LS') then     ! When Least square, add Nbb
+    if (ADmethod=='LS') then     ! When Least square, add Nbb
         NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap1(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap1(1:N,:)  )
         NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Ap2(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Ap2(1:N,:)  )
         NEQ%Nbb(1:ParaNum,1:ParaNum) = NEQ%Nbb(1:ParaNum,1:ParaNum) +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Aewl(1:N,:)  )  ! EWL
@@ -451,9 +451,9 @@ implicit none
         NEQ%U(1:ParaNum)          =  NEQ%U(1:ParaNum)           +  matmul(  matmul( transpose(NEQ%Aewl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lewl(1:N)  )  ! EWL
         NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Awl(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lwl(1:N)  )
         NEQ%U                 =  NEQ%U                   +  matmul(  matmul( transpose(NEQ%Aw4(1:N,:)), NEQ%P(1:N,1:N) ), NEQ%Lw4(1:N)  )
-!    elseif (ADmethod=='KF') then
-!        ! Kalmen Filter will done in Solve_NEQ_Iono, or Solve_NEQ,  KF_Gain function
-!    end if
+    elseif (ADmethod=='KF') then
+        ! Kalmen Filter will done in Solve_NEQ_Iono, or Solve_NEQ,  KF_Gain function
+    end if
 
     Epo_NEQ%PRNS=DD%PRNS
     Epo_NEQ%PRN=DD%PRN
