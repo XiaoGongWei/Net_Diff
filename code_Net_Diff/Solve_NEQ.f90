@@ -197,10 +197,10 @@ implicit none
 !                end if
             end if
 
-!            if (ADmethod=='KF') then
-!                NEQ%InvN=NEQ_InvN
-!                NEQ%dx=NEQ_dx ! temp save Pk and X in in case of outliers
-!            end if
+            if (ADmethod=='KF') then
+                NEQ%InvN=NEQ_InvN
+                NEQ%dx=NEQ_dx ! temp save Pk and X in in case of outliers
+            end if
             Ad_Flag=.true.
             write(unit=LogID,fmt='(5X,A5,3F10.3,A8)') '!!!dx',NEQ%dx(1:3),'outlier'
         end if
@@ -208,7 +208,7 @@ implicit none
         ! =================== End of Outliers Detect =====================
         write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
     end do
-
+    
     ! Write residuals
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'PRN'
     do i=1,N

@@ -33,7 +33,7 @@ implicit none
     if (index(flag,'pos') /= 0) then   ! Q 
         InvN(t,:)=0.d0   ! Eliminate InvN in row t and line t
         InvN(:,t)=0.d0
-        InvN(t,t)=60.d0**2 ! 1.d8
+        InvN(t,t)=60.d0**2   ! precision is 60m, in case of real kinematic
         X(t)=0.d0
     elseif (flag(1:3)=='zwd') then
         if (InvN(t,t)==0.d0) InvN(t,t)= 0.05d0**2    ! P0  variance 0.5m
@@ -51,7 +51,7 @@ implicit none
     elseif (flag(1:3)=='ddp') then  ! double difference position
         InvN(t,:)=0.d0
         InvN(:,t)=0.d0
-        InvN(t,t)=10.d0**2   ! precision is 10m
+        InvN(t,t)=60.d0**2   ! precision is 60m, in case of real kinematic
         X(t)=0.d0
     elseif (flag(1:3)=='dda') then  ! double difference ambiguity
         InvN(t,:)=0.d0

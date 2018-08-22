@@ -219,10 +219,10 @@ implicit none
                 NEQ%amb_EWL(NEQ%PRN(NEQ%maxL(5)))=0.d0
             end if
 
-!            if (ADmethod=='KF') then
-!                NEQ%InvN(1:ParaNum+MaxPRN,1:ParaNum+MaxPRN)=NEQ_InvN
-!                NEQ%dx(1:ParaNum+MaxPRN)=NEQ_dx   ! temp save Pk and X in in case of outliers
-!            end if
+            if (ADmethod=='KF') then
+                NEQ%InvN(1:ParaNum+MaxPRN,1:ParaNum+MaxPRN)=NEQ_InvN
+                NEQ%dx(1:ParaNum+MaxPRN)=NEQ_dx   ! temp save Pk and X in in case of outliers
+            end if
             Ad_Flag=.true.
             write(unit=LogID,fmt='(5X,A5,3F10.3,A8)') '!!!dx',NEQ%dx(1:3),'outlier'
         end if 
@@ -951,7 +951,7 @@ implicit none
     call InvSqrt(Q(1:npar, 1:npar), npar, temp_InvN(1:npar,1:npar)) !  Qaa-1 ! See lambda Eq-2.27, only the fixed InvN
     temp_dx=Epo_NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN2(:,1:npar), temp_InvN(1:npar,1:npar)), dx(1:npar))
 
-    Coor=temp_dx(1:4)
+    Coor(1:ParaNum-GloParaNum)=temp_dx(1:ParaNum-GloParaNum)
     write(unit=LogID,fmt='(A10,3F7.2)') 'fixcoor',temp_dx(1:3)
     return
     
