@@ -160,26 +160,33 @@ implicit none
         end if
 
         ! =================== Outliers Detect =====================
-        NEQ%Vp1(1:N)=(matmul(NEQ%Ap1(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp1(1:N))*sigLC ! unify to carrier phase magnitude
+        NEQ%Vp1(1:N)=(matmul(NEQ%Ap1(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp1(1:N))
+        NEQ%Vp2(1:N)=(matmul(NEQ%Ap2(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp2(1:N))
+        NEQ%Vwl(1:N)=(matmul(NEQ%Awl(1:N, :), NEQ%dx) - NEQ%Lwl(1:N))
+        NEQ%Vw4(1:N)=(matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N))
+        NEQ%Vewl(1:N)=(matmul(NEQ%Aewl(1:N, :), NEQ%dx) - NEQ%Lewl(1:N))
+        do i=1,N
+             NEQ%Vp1(i)= NEQ%Vp1(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight, max P(i,i) is 0.5
+             NEQ%Vp2(i)= NEQ%Vp2(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
+             NEQ%Vwl(i)= NEQ%Vwl(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
+             NEQ%Vw4(i)= NEQ%Vw4(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
+             NEQ%Vewl(i)= NEQ%Vewl(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
+        end do
         NEQ%maxV(1:1)=maxval(dabs(NEQ%Vp1(1:N)))
         NEQ%maxL(1:1)=maxloc(dabs(NEQ%Vp1(1:N)))
-        NEQ%Vp2(1:N)=(matmul(NEQ%Ap2(1:N, :), NEQ%dx(1:ParaNum)) - NEQ%Lp2(1:N))*sigLC
         NEQ%maxV(2:2)=maxval(dabs(NEQ%Vp2(1:N)))
         NEQ%maxL(2:2)=maxloc(dabs(NEQ%Vp2(1:N)))
-        NEQ%Vwl(1:N)=(matmul(NEQ%Awl(1:N, :), NEQ%dx) - NEQ%Lwl(1:N))*sigLC
         NEQ%maxV(3:3)=maxval(dabs(NEQ%Vwl(1:N)))
         NEQ%maxL(3:3)=maxloc(dabs(NEQ%Vwl(1:N)))
-        NEQ%Vw4(1:N)=(matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N))*sigLC
         NEQ%maxV(4:4)=maxval(dabs(NEQ%Vw4(1:N)))
         NEQ%maxL(4:4)=maxloc(dabs(NEQ%Vw4(1:N)))
-        NEQ%Vewl(1:N)=(matmul(NEQ%Aewl(1:N, :), NEQ%dx) - NEQ%Lewl(1:N))*sigLC
         NEQ%maxV(5:5)=maxval(dabs(NEQ%Vewl(1:N)))
         NEQ%maxL(5:5)=maxloc(dabs(NEQ%Vewl(1:N)))
 
         maxV=maxval(dabs(NEQ%maxV))
         maxL=maxloc(dabs(NEQ%maxV),dim=1)
 
-        if ( dabs(maxV)>.4d0*a1*154.d0/(a1*154.d0+a2*120.d0)  ) then
+        if ( dabs(maxV)>.4d0*c/(a1*154.d0+a2*120.d0)/10.23d6  ) then
             if ((maxL)==1) then   ! maxV in P1
                 call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap1(1:N,:), NEQ%Lp1(1:N), &
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(1), NEQ%SumN)
@@ -239,27 +246,27 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)*sigPC/sigLC/sqrt(2.d0*NEQ%P(i,i))   ! back to raw residuals
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)*sigPC/sigLC/sqrt(2.d0*NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)/sqrt(2.d0*NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)/sqrt(2.d0*NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vewl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vewl(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vewl(i)/sqrt(2.d0*NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
         
@@ -623,29 +630,37 @@ implicit none
         end if
         
         ! =================== Outliers Detect =====================
-        Epo_NEQ%Vp1(1:N)=(matmul(Epo_NEQ%Ap1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lp1(1:N))*sigLC ! unify to carrier phase magnitude
+        Epo_NEQ%Vp1(1:N)=(matmul(Epo_NEQ%Ap1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lp1(1:N))
+        Epo_NEQ%Vp2(1:N)=(matmul(Epo_NEQ%Ap2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lp2(1:N))
+        Epo_NEQ%Vl1(1:N)=(matmul(Epo_NEQ%Al1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll1(1:N))
+        Epo_NEQ%Vl2(1:N)=(matmul(Epo_NEQ%Al2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll2(1:N))
+        Epo_NEQ%Vwl(1:N)=(matmul(Epo_NEQ%Awl(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lwl(1:N))
+        Epo_NEQ%Vw4(1:N)=(matmul(Epo_NEQ%Aw4(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lw4(1:N))
+        do i=1,N
+             Epo_NEQ%Vp1(i)= Epo_NEQ%Vp1(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight, max P(i,i) is 0.5
+             Epo_NEQ%Vp2(i)= Epo_NEQ%Vp2(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+             Epo_NEQ%Vl1(i)= Epo_NEQ%Vl1(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+             Epo_NEQ%Vl2(i)= Epo_NEQ%Vl2(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+             Epo_NEQ%Vwl(i)= Epo_NEQ%Vwl(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+             Epo_NEQ%Vw4(i)= Epo_NEQ%Vw4(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+        end do
         Epo_NEQ%maxV(1:1)=maxval(dabs(Epo_NEQ%Vp1(1:N)))
         Epo_NEQ%maxL(1:1)=maxloc(dabs(Epo_NEQ%Vp1(1:N)))
-        Epo_NEQ%Vp2(1:N)=(matmul(Epo_NEQ%Ap2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lp2(1:N))*sigLC
         Epo_NEQ%maxV(2:2)=maxval(dabs(Epo_NEQ%Vp2(1:N)))
         Epo_NEQ%maxL(2:2)=maxloc(dabs(Epo_NEQ%Vp2(1:N)))
-        Epo_NEQ%Vl1(1:N)=(matmul(Epo_NEQ%Al1(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll1(1:N))*sigLC
         Epo_NEQ%maxV(3:3)=maxval(dabs(Epo_NEQ%Vl1(1:N)))
         Epo_NEQ%maxL(3:3)=maxloc(dabs(Epo_NEQ%Vl1(1:N)))
-        Epo_NEQ%Vl2(1:N)=(matmul(Epo_NEQ%Al2(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Ll2(1:N))*sigLC
         Epo_NEQ%maxV(4:4)=maxval(dabs(Epo_NEQ%Vl2(1:N)))
         Epo_NEQ%maxL(4:4)=maxloc(dabs(Epo_NEQ%Vl2(1:N)))
-        Epo_NEQ%Vwl(1:N)=(matmul(Epo_NEQ%Awl(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lwl(1:N))*sigLC
         Epo_NEQ%maxV(5:5)=maxval(dabs(Epo_NEQ%Vwl(1:N)))
         Epo_NEQ%maxL(5:5)=maxloc(dabs(Epo_NEQ%Vwl(1:N)))
-        Epo_NEQ%Vw4(1:N)=(matmul(Epo_NEQ%Aw4(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lw4(1:N))*sigLC
         Epo_NEQ%maxV(6:6)=maxval(dabs(Epo_NEQ%Vw4(1:N)))
         Epo_NEQ%maxL(6:6)=maxloc(dabs(Epo_NEQ%Vw4(1:N)))
 
         maxV=maxval(dabs(Epo_NEQ%maxV))
         maxL=maxloc(dabs(Epo_NEQ%maxV),dim=1)
         
-        if ( (dabs(maxV)>.08d0*a1*154.d0/(a1*154.d0+a2*120.d0))  ) then
+        if ( dabs(maxV)>.04d0 ) then
             if ((maxL)==1) then   ! maxV in P1
                 call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Ap1(1:N,:), Epo_NEQ%Lp1(1:N), &
                        Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(1), Epo_NEQ%SumN)
@@ -707,32 +722,32 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp1(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp1(i)*sigPC/sigLC/sqrt(2.d0*Epo_NEQ%P(i,i))    ! back to raw residuals
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp2(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp2(i)*sigPC/sigLC/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl1(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl1(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl2(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl2(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     

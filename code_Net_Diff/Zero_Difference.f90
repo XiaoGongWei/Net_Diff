@@ -506,7 +506,7 @@ implicit none
 !        if ( (L1/=0.d0) .and. (L2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) ZD%W4(N)=(b1*f1*ZD%L1(N)+b2*f2*ZD%L2(N))/(b1*f1+b2*f2)
 !        if ( (L1/=0.d0) .and. (L3/=0.d0) .and. (a1*f1+a2*f2/=0.d0)  ) ZD%W4(N)=(a1*f1*ZD%L1(N)+a2*f2*LC)/(a1*f1+a2*f2)
         write(unit=LogID,fmt='(A6,1X,A1,I2,2F8.2,2F13.2,E15.7,3F7.2, 2X, 2F7.2,4F13.2)') 'PRN',System,PRN_S,Ele, Azi,Range,  &
-                             s  , Sat_Clk , STD, Ion1, rela, ZD%P1(N), ZD%P2(N),ZD%WL(N), ZD%W4(N),ZD%L1(N), ZD%L2(N)
+                             s  , Sat_Clk , STD, Ion1, rela, ZD%P1(N), ZD%P2(N),ZD%L1(N), ZD%L2(N),ZD%WL(N), ZD%W4(N)
      end do
      ZD%PRNS =  N
      ZD%week =  ObsData%week

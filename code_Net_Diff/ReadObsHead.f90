@@ -341,6 +341,7 @@ implicit none
             !STA%Coor(1:3,i)=STA%Coor(1:3,i)+MATMUL(ObsHead(kth)%Antenna, STA%Rota(i)%Rotation)
         else if (index(keyword,"INTERVAL") /= 0) then
             read(line,*)  ObsHead(kth)%Interval
+            if (kth>STA%FixNum .and. Interval<ObsHead(kth)%Interval) Interval=ObsHead(kth)%Interval
         else if (index(keyword,"TIME OF FIRST OBS") /= 0) then
             read(line,'(5I6,F13.7,5X,A3)') year, mon, day, hour, min, sec, TimeSys
             if (TimeSys=="GLO") then

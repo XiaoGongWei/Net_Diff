@@ -280,7 +280,7 @@ implicit none
                  ObsData(2)%Day,  ObsData(2)%Hour, ObsData(2)%Min, ObsData(2)%Sec, NEU, dsqrt(DOT_PRODUCT(NEU,NEU)),&
                   Flag_Sln, PDOP, STA%STA(2)%Trop%ZHD+STA%STA(2)%Trop%ZWD+dx_Coor(4),  Epo_NEQ%PRNS, Coor, BLH
         else
-        write(CoorID,"(I5,I6,4I4,F5.1,4F12.4,I4,F8.2,F8.3,I3,3F15.3, 2F15.9,F15.6)") mod(epoch,100000),ObsData(2)%Year, ObsData(2)%Mon, & 
+        write(CoorID,"(I5,I6,4I4,F5.1,4F12.4,I4,F8.2,F8.3,I3,3F15.3, 2F15.9,F15.3)") mod(epoch,100000),ObsData(2)%Year, ObsData(2)%Mon, & 
                  ObsData(2)%Day,  ObsData(2)%Hour, ObsData(2)%Min, ObsData(2)%Sec, NEU, dsqrt(DOT_PRODUCT(NEU,NEU)),&
                   Flag_Sln, PDOP, STA%STA(2)%Trop%ZHD+STA%STA(2)%Trop%ZWD,  Epo_NEQ%PRNS, Coor, BLH
         end if
