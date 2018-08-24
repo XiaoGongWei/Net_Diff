@@ -241,11 +241,10 @@ implicit none
         maxL=maxloc(dabs(Rec_Clk_prn(1:N)-Rec_Clk),dim=1)
         if  (dabs(maxV)>LimClk) then
             PRNOUTn=PRNOUTn+1
-            if (PRNOUTn>=10) return
             Rec_Clk=(Rec_Clk*KK-Rec_Clk_prn(maxL)*P(maxL))/(KK-P(maxL))
             KK=KK-P(maxL)
             PRNout(PRNOUTn)=PRNPRN(maxL)
-            write(LogID,'(3X,I3,A4,A36)') PRNPRN(maxL), 'PRN',  '的O-C与均值差异大于1.5d-6s，剔除。'
+            write(LogID,'(3X,A3,I4,A20)') 'PRN', PRNPRN(maxL),  'OMC>1.d-6s,delete.'
             do j=1,PRNOUTn
                 do jj=1,n
                     if (PRNOut(j)==PRNPRN(jj)) then
@@ -259,6 +258,9 @@ implicit none
             exit
         end if
     end do
+    if (PRNOUTn*2>ObsData%PRNS) then
+        write(*,*) '------ERROR-----',' Too many satellite deleted, please check whether the approximate coordinte is correct.'
+    end if
 
     maxEle=0.d0
     if (index(CSmethod,"DD")==0) then

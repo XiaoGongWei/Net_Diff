@@ -526,6 +526,8 @@ implicit none
         ! ****************************************************
 
         ! Add constraints to ionosphere
+        ! Reference: Odijk D. Weighting Ionospheric Correction to Improve Fast GPS Positioning Over Medium Distances[J]. 
+        ! Proceedings of International Technical Meeting of the Satellite Division of the Institute of Navigation, 2000:1113-1123.
         factor=(Baseline*6.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
         if (Baseline>200.d3) then
             factor=1.2d0*exp((90.d0-Min_Lat)/50.d0-1.d0)
@@ -540,6 +542,8 @@ implicit none
             end if
         end do
         ! Add constraints to troposphere
+        ! Reference: Yao Y, Hu C Y Y. A New Method to Accelerate PPP Convergence Time by using a Global Zenith Troposphere Delay Estimate Model[J].
+        ! Journal of Navigation, 2014, 67(5):899-910.
         factor=Baseline*5.d-7+Diff_Hgt*5.d-4 ! log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*5.d-4  ! distance related and height related
         if (TropLen/=0.d0) then
             if (ADmethod=='LS') then
