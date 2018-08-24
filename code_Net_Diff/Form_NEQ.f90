@@ -508,7 +508,7 @@ implicit none
 !            Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/0.02d0**2)    !    (1/0.02**2) ! 0.02m
         if (TropLen/=0.d0) then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
             if (Epo_NEQ%InvN(4,4)==0.d0) then
-!                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+0.01d0**2   !    (0.01**2) ! 0.01m
+!                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(Baseline*5.d-7)**2   !    (0.01**2) ! 0.01m
             else
                 Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.01**2/3600.d0*Interval)    !    (0.01^2/3600*Interval) ! 0.01cm
             end if
@@ -540,7 +540,7 @@ implicit none
             end if
         end do
         ! Add constraints to troposphere
-        factor=log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*1.d-5  ! distance related and height related
+        factor=Baseline*5.d-7+Diff_Hgt*5.d-4 ! log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*5.d-4  ! distance related and height related
         if (TropLen/=0.d0) then
             if (ADmethod=='LS') then
                 Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/factor**2) ! 0.05m
