@@ -744,7 +744,7 @@ use MOD_constant
     real(8) :: FixEle=20.d0, HoldEle=30.d0  ! Fix and hold satellite elevation
     real(8) :: minratio=3.d0
     logical(1) :: partial_AR=.true.
-    integer(1) :: parARnum=2
+    integer(1) :: parARnum=2, par_PRN(2*MaxPRN)=0, par_PRN_Epo(2*MaxPRN)=0
     logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
     real(8) :: Baseline, Diff_Hgt, Min_Lat   ! This is only for long baseline RTK
     integer :: GloParaNum=0   ! This is for GLONASS float RTK

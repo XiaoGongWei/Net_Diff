@@ -31,11 +31,10 @@ use MOD_VAR
 use MOD_STA
 use MOD_GLO_Fre
 use MOD_NEQ_DP
-use MOD_Time
+use MOD_CycleSlip
 implicit none
     type(type_NEQ) :: NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
-    type(cal_time) t
     integer :: i, j, k, m, PRN, N, l
     logical :: AD_flag, flag_par_PRN
     integer(1) :: Flag_Sln
@@ -55,7 +54,7 @@ implicit none
     real(8) :: temp_InvN(2*MaxPRN, 2*MaxPRN),temp_InvN2(ParaNum, 2*MaxPRN), dx(2*MaxPRN), temp_dx(ParaNum)
     integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
     real(8) :: minP, maxQ
-    integer(1) :: flag_partial, flag_fixed, freq, sys, par_PRNS
+    integer(1) :: flag_partial, flag_fixed, freq, sys
 
     !   Velocity estimation of Doppler Data
     if (Combination(3)) then
@@ -316,10 +315,6 @@ implicit none
     end if
     write(LogID,'(A)') ''
     100 if (npar>1) then
-!        write(LambdaID,'(A)') 'InvN'
-!        write(LambdaID,'(14F11.3)') Q(1:npar, 1:npar)
-!        write(LambdaID,'(14F11.3)') amb(1:npar)
-!        call LAMBDA_zhang(lambdaID, npar, Q(1:npar, 1:npar), amb(1:npar), disall)
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
@@ -330,6 +325,7 @@ implicit none
     if (ratio>minratio) then  ! ambiguity fix success
         if (flag_partial==1) then ! If partia       l ambiguity fixed
             ! recover the order of amb and iPOS
+            par_PRN=0
             do i=npar2,1,-1
                 PRN=iPOS2(i)
                 flag_fixed=0
@@ -343,6 +339,7 @@ implicit none
                 iPOS(i)=PRN
                 if (flag_fixed==0) then
                     amb(i)=amb2(i)  ! unfixed ambiguity
+                    par_PRN(PRN)=1   ! record the unfixed PRN, for the fast partial AR in next epoch
                     iPOS(i)=0
                 end if
             end do
@@ -414,6 +411,17 @@ implicit none
         do i=1,npar2  ! Start from the maximum variance satellite
             PRN=iPOS3(i)
             if (PRN==0) cycle
+            if (par_PRN(PRN)==1) then ! First find the previous PRN of partial AR
+                minL=i  
+                do j=i+1,npar2  ! Find the same partial AR PRN in L2
+                    if (PRN+MaxPRN==iPOS3(j) .and. par_PRN(iPOS3(j))==1) then
+                        minL2=j
+                        exit
+                    end if
+                end do
+                exit
+            end if
+            !!   If not, start from the minmum satellite elevation
             if (PRN>maxPRN) PRN=PRN-maxPRN
             do j=1,NEQ%PRNS
                 if (NEQ%PRN(j)==PRN) then
@@ -450,7 +458,7 @@ implicit none
                 m=m+1  ! The location of one satellite in minLL and minLL2
                 l=m+1  ! The location of the other satellite in minLL and minLL2
             end if
-            if (m<=k) then
+            if (m<k) then
                 if (minLL(m)/=0) then
                     amb3(minLL(m))=0.d0
                 end if
@@ -467,7 +475,23 @@ implicit none
                 call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
                 flag_partial=1
                 if (npar>=3) goto 100
-
+            elseif (m==k)  then ! If two satellites still doesn't fix, use the cycle slip one together with last partial AR
+                amb3=amb2
+                iPOS=iPOS2
+                do i=1,npar2
+                    PRN=iPOS2(i)
+                    if (par_PRN(PRN)==1) amb3(i)=0.d0
+                    if (PRN>MaxPRN) then
+                        if (CycleSlip(1)%Slip(PRN-MaxPRN)==1 .or. CycleSlip(2)%Slip(PRN-MaxPRN)==1) then
+                            amb3(i)=0.d0
+                        end if
+                    elseif (PRN<=MaxPRN .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                        amb3(i)=0.d0
+                    end if
+                end do
+                call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
+                flag_partial=1
+                if (npar>=3) goto 100
             end if
         end if  !  if (minL/=0) then
 
@@ -808,6 +832,7 @@ implicit none
     end if
     if (ratio>minratio) then  ! ambiguity fix success
         if (flag_partial==1) then ! If partia       l ambiguity fixed
+            par_PRN_Epo=0
             ! recover the order of amb and iPOS
             do i=npar2,1,-1
                 PRN=iPOS2(i)
@@ -822,6 +847,7 @@ implicit none
                 iPOS(i)=PRN
                 if (flag_fixed==0) then
                     amb(i)=amb2(i)  ! unfixed ambiguity
+                    par_PRN_Epo(PRN)=1   ! record the unfixed PRN, for the fast partial AR in next epoch
                     iPOS(i)=0
                 end if
             end do
@@ -865,6 +891,17 @@ implicit none
         do i=1,npar2  ! Start from the maximum variance satellite
             PRN=iPOS3(i)
             if (PRN==0) cycle
+            if (par_PRN_Epo(PRN)==1) then ! First find the previous PRN of partial AR
+                minL=i  
+                do j=i+1,npar2  ! Find the same partial AR PRN in L2
+                    if (PRN+MaxPRN==iPOS3(j) .and. par_PRN_Epo(iPOS3(j))==1) then
+                        minL2=j
+                        exit
+                    end if
+                end do
+                exit
+            end if
+            !!   If not, start from the minmum satellite elevation
             if (PRN>maxPRN) PRN=PRN-maxPRN
             do j=1,EPO_NEQ%PRNS
                 if (EPO_NEQ%PRN(j)==PRN) then
@@ -901,7 +938,7 @@ implicit none
                 m=m+1  ! The location of one satellite in minLL and minLL2
                 l=m+1  ! The location of the other satellite in minLL and minLL2
             end if
-            if (m<=k) then
+            if (m<k) then
                 if (minLL(m)/=0) then
                     amb3(minLL(m))=0.d0
                 end if
@@ -918,7 +955,23 @@ implicit none
                 call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
                 flag_partial=1
                 if (npar>=3) goto 200
-
+            elseif (m==k)  then ! If two satellites still doesn't fix, use the cycle slip one together with last partial AR
+                amb3=amb2
+                iPOS=iPOS2
+                do i=1,npar2
+                    PRN=iPOS2(i)
+                    if (par_PRN_Epo(PRN)==1) amb3(i)=0.d0
+                    if (PRN>MaxPRN) then
+                        if (CycleSlip(1)%Slip(PRN-MaxPRN)==1 .or. CycleSlip(2)%Slip(PRN-MaxPRN)==1) then
+                            amb3(i)=0.d0
+                        end if
+                    elseif (PRN<=MaxPRN .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                        amb3(i)=0.d0
+                    end if
+                end do
+                call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
+                flag_partial=1
+                if (npar>=3) goto 200
             end if
         end if  !  if (minL/=0) then
 

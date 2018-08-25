@@ -317,7 +317,7 @@ implicit none
              call Cal_Rec_Clk2(k, Obsweek, Obssec, ObsData,AppCoor1, Rotation, ZHD,ZWD,Lat, Hgt, int_doy, PRNOUT, PRNOUTn, Rec_Clk)
              if ((STA%STA(k)%SKD=="K") .or. (STA%STA(k)%SKD=="k")) then
                  if (ObsData%PRNS - PRNOUTn <=3) then
-                     write(unit=LogID,fmt='(A7, I3,A30)')  'Epoch', epoch,'本历元可用卫星过少，不计算。'
+                     write(unit=LogID,fmt='(A7, I3,A30)')  'Epoch', epoch,'too few satellites, skip.'
                      cycle
                  end if
                  

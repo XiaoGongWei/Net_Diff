@@ -123,7 +123,7 @@ implicit none
 !    call Cal_Rec_Clk(Obsweek, Obssec, ObsData, AppCoor, Rotation, Rec_Clk)
     call Cal_Rec_Clk2(k, Obsweek, Obssec, ObsData,AppCoor, Rotation, ZHD,ZWD,Lat, Hgt, int_doy, PRNOUT, PRNOUTn, Rec_Clk)
     if (ObsData%PRNS - PRNOUTn <=3) then
-        write(unit=LogID,fmt='(A5,I3,A30)') '%STA', k, 'too few satellites, skip¡£'
+        write(unit=LogID,fmt='(A5,I3,A30)') '%STA', k, 'too few satellites, skip.'
         return
     end if
 

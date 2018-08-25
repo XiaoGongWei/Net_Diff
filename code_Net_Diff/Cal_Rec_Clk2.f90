@@ -241,6 +241,7 @@ implicit none
         maxL=maxloc(dabs(Rec_Clk_prn(1:N)-Rec_Clk),dim=1)
         if  (dabs(maxV)>LimClk) then
             PRNOUTn=PRNOUTn+1
+            if (PRNOUTn>=10) exit
             Rec_Clk=(Rec_Clk*KK-Rec_Clk_prn(maxL)*P(maxL))/(KK-P(maxL))
             KK=KK-P(maxL)
             PRNout(PRNOUTn)=PRNPRN(maxL)
@@ -258,7 +259,7 @@ implicit none
             exit
         end if
     end do
-    if (PRNOUTn*2>ObsData%PRNS) then
+    if (PRNOUTn*2>ObsData%PRNS .or. PRNOUTn>=10) then
         write(*,*) '------ERROR-----',' Too many satellite deleted, please check whether the approximate coordinte is correct.'
     end if
 
