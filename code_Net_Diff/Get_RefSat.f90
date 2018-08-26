@@ -104,12 +104,22 @@ implicit none
                 elseif ( (Combination(2)==.true.) .and.(SD%Ele(i)>maxEle) ) then
                     if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
                         if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then
+                            if (ar_mode==0) then  ! If float solution
+                                maxele=SD%Ele(i)
+                                RefSat(sys)=SD%PRN(i)
+                            elseif (par_PRN(SD%PRN(i))/=1 .and. par_PRN_Epo(SD%PRN(i))/=1) then   ! If continuous solution, don't use the unfixed satellite
+                                maxele=SD%Ele(i)
+                                RefSat(sys)=SD%PRN(i)
+                            end if
+                        end if
+                    elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
+                        if (ar_mode==0) then  ! If float solution
+                            maxele=SD%Ele(i)
+                            RefSat(sys)=SD%PRN(i)
+                        elseif (par_PRN(SD%PRN(i))/=1 .and. par_PRN_Epo(SD%PRN(i))/=1) then   ! If continuous solution, don't use the unfixed satellite
                             maxele=SD%Ele(i)
                             RefSat(sys)=SD%PRN(i)
                         end if
-                    elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
-                        maxele=SD%Ele(i)
-                        RefSat(sys)=SD%PRN(i)
 !                    elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
 !                        maxele=SD%Ele(i)
 !                        RefSat(sys)=SD%PRN(i)

@@ -13,7 +13,7 @@
 ! WRITTEN BY: Yize Zhang
 ! ================================================
 
-subroutine ParAR(n, Q, amb, PRNS, PRNPRN, P, Last_PAR, flag_partial, Q2, amb2)
+subroutine ParAR(Q, amb, PRNS, PRNPRN, P, Last_PAR, flag_partial, Q2, amb2, iPOS, iPOS2)
 use MOD_constant
 use MOD_VAR
 use MOD_CycleSlip

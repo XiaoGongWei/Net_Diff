@@ -286,19 +286,17 @@ implicit none
     do i=1, 2*maxPRN
         iPOS(i:i)=i
         if (ar_mode/=2 .and. i<=maxPRN) then
-            if (NEQ%Ele(i)<FixEle) amb2(i)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
-        elseif (ar_mode/=2 .and. i>maxPRN) then
-            if (NEQ%Ele(i-maxPRN)<FixEle) amb2(i)=0.d0
+            if (NEQ%Ele(i)<FixEle) then
+                amb2(i)=0.d0; amb2(i+maxPRN)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+            end if
         end if
     end do
     call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
                                         MaxPRN*2, Q, amb, npar, iPOS)
-    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=NEQ%P
-    flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     write(LogID,'(A10)',advance='no') 'amb_float'
     if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
         do i=1,npar
-            write(LogID,'(I6,F10.1)',advance='no') iPOS2(i), amb(i)
+            write(LogID,'(I6,F10.1)',advance='no') iPOS(i), amb(i)
             if (i==npar/2) then
                 write(LogID,'(A)') ''
                 write(LogID,'(A10)',advance='no') ''
@@ -306,14 +304,20 @@ implicit none
         end do
     elseif (a1*f1+a2*f2/=0.d0) then ! L1 frequency
         do i=1,npar
-            write(LogID,'(I6,2F8.1)',advance='no') iPOS2(i), amb(i)
+            write(LogID,'(I6,2F8.1)',advance='no') iPOS(i), amb(i)
         end do
     elseif (b1*f1+b2*f2/=0.d0) then ! L2 frequency
         do i=1,npar
-            write(LogID,'(I6,2F8.1)',advance='no') iPOS2(i)-maxPRN, amb(i)
+            write(LogID,'(I6,2F8.1)',advance='no') iPOS(i)-maxPRN, amb(i)
         end do
     end if
     write(LogID,'(A)') ''
+
+!    call ParAR(Q, amb, NEQ%PRNS, NEQ%PRN, NEQ%P, par_PRN, flag_partial, Q2, amb2, iPOS, iPOS2)
+
+    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=NEQ%P
+    flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
+
     100 if (npar>1) then
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
@@ -344,6 +348,12 @@ implicit none
                 end if
             end do
             npar=npar2
+            do PRN=1,MaxPRN
+                if (NEQ%Ele(PRN)<FixEle .and. NEQ%Ele(PRN)>LimEle) then ! record the unfixed PRN
+                    par_PRN(PRN)=1
+                    par_PRN(PRN+MaxPRN)=1
+                end if
+            end do
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'amb_fix'
         if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
@@ -414,6 +424,7 @@ implicit none
             if (par_PRN(PRN)==1) then ! First find the previous PRN of partial AR
                 minL=i  
                 do j=i+1,npar2  ! Find the same partial AR PRN in L2
+                    if (iPOS3(j)==0) cycle
                     if (PRN+MaxPRN==iPOS3(j) .and. par_PRN(iPOS3(j))==1) then
                         minL2=j
                         exit
@@ -784,6 +795,13 @@ implicit none
     end do
     write(LogID,'(A)') ''
 
+    ! If float solution
+    if (ar_mode==0) then
+        Coor=Epo_NEQ%dx(1:4)
+        Flag_Sln=3
+        return
+    end if
+
     ! Get  L1 and L2 ambigulties
     Epo_NEQ%amb_L1=Epo_NEQ%dx(ParaNum+1:ParaNum+MaxPRN)   ! In cycle
     Epo_NEQ%amb_L2=Epo_NEQ%dx(ParaNum+1+MaxPRN:ParaNum+MaxPRN*2)
@@ -796,31 +814,27 @@ implicit none
     do i=1, 2*maxPRN
         iPOS(i:i)=i
         if (ar_mode/=2 .and. i<=maxPRN) then
-            if (Epo_NEQ%Ele(i)<FixEle) amb2(i)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
-        elseif (ar_mode/=2 .and. i>maxPRN) then
-            if (Epo_NEQ%Ele(i-maxPRN)<FixEle) amb2(i)=0.d0
+            if (Epo_NEQ%Ele(i)<FixEle) then
+                amb2(i)=0.d0; amb2(i+maxPRN)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+            end if
         end if
     end do
     call LAMBDA_Prepare(Epo_NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
                                        MaxPRN*2, Q, amb, npar, iPOS)
-    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=Epo_NEQ%P
-    flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     write(LogID,'(A10)',advance='no') 'L1_amb_float'
     do i=1,npar  ! Dual frequency
-        write(LogID,'(I6,F8.1)',advance='no') iPOS2(i), amb(i)
+        write(LogID,'(I6,F8.1)',advance='no') iPOS(i), amb(i)
         if (i==npar/2) then
             write(LogID,'(A)') ''
             write(LogID,'(A10)',advance='no') ''
         end if
     end do
     write(LogID,'(A)') ''
+
+!    call ParAR(Q, amb, Epo_NEQ%PRNS, Epo_NEQ%PRN, Epo_NEQ%P, par_PRN_EPO, flag_partial, Q2, amb2, iPOS, iPOS2)
     
-    ! If float solution
-    if (ar_mode==0) then
-        Coor=Epo_NEQ%dx(1:4)
-        Flag_Sln=3
-        return
-    end if
+    Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=Epo_NEQ%P
+    flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     
     200 if (npar>1) then
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
@@ -852,7 +866,12 @@ implicit none
                 end if
             end do
             npar=npar2
-            
+            do PRN=1,MaxPRN
+                if (Epo_NEQ%Ele(PRN)<FixEle .and. Epo_NEQ%Ele(PRN)>LimEle) then ! record the unfixed PRN
+                    par_PRN_Epo(PRN)=1
+                    par_PRN_Epo(PRN+MaxPRN)=1
+                end if
+            end do
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'amb_fix'
 
@@ -894,6 +913,7 @@ implicit none
             if (par_PRN_Epo(PRN)==1) then ! First find the previous PRN of partial AR
                 minL=i  
                 do j=i+1,npar2  ! Find the same partial AR PRN in L2
+                    if (iPOS3(j)==0) cycle
                     if (PRN+MaxPRN==iPOS3(j) .and. par_PRN_Epo(iPOS3(j))==1) then
                         minL2=j
                         exit
