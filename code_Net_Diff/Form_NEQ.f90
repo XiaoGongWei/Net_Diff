@@ -499,7 +499,8 @@ implicit none
 !                    Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+0.01d0     !    (0.1**2) ! 0.1m
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+0.5**2/3600.d0*Interval   ! (4m2/3600*Interval)
+                    factor=(Baseline*5.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+factor**2/3600.d0*Interval   ! raw:0.5;  100km: 0.6m ;    500km: 3m
                 end if
 !            end if
         end do
@@ -510,7 +511,8 @@ implicit none
             if (Epo_NEQ%InvN(4,4)==0.d0) then
 !                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(Baseline*5.d-7)**2   !    (0.01**2) ! 0.01m
             else
-                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(0.01**2/3600.d0*Interval)    !    (0.01^2/3600*Interval) ! 0.01cm
+                factor=log(1.d0+Baseline/1.d5)*0.02d0+Diff_Hgt*1.d-5
+                Epo_NEQ%InvN(4,4)=Epo_NEQ%InvN(4,4)+(factor**2/3600.d0*Interval)    !  raw:0.01;    (0.01^2/3600*Interval) ! 0.01cm
             end if
         end if
 
@@ -544,7 +546,7 @@ implicit none
         ! Add constraints to troposphere
         ! Reference: Yao Y, Hu C Y Y. A New Method to Accelerate PPP Convergence Time by using a Global Zenith Troposphere Delay Estimate Model[J].
         ! Journal of Navigation, 2014, 67(5):899-910.
-        factor=Baseline*5.d-7+Diff_Hgt*5.d-4 ! log(1.d0+Baseline/5.d3)*0.01d0+Diff_Hgt*5.d-4  ! distance related and height related
+        factor=log(1.d0+Baseline/5.d4)*0.1d0+Diff_Hgt*5.d-5  ! Baseline*5.d-7+Diff_Hgt*5.d-5 ! distance related and height related
         if (TropLen/=0.d0) then
             if (ADmethod=='LS') then
                 Epo_NEQ%Nbb(4,4)=Epo_NEQ%Nbb(4,4)+(1.d0/factor**2) ! 0.05m
