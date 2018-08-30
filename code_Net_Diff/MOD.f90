@@ -3,20 +3,20 @@
 ! =========== Constant variables module =================
 module MOD_constant
 implicit none
-    integer,parameter :: MaxPRN=105  ! max satellite observed at one epoch
+    integer,parameter :: MaxPRN=110  ! max satellite parameter
     integer :: SatNum=0   ! Satellite Number
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
     integer,parameter :: GNum0=32   ! max GPS satellite number, used for variables defination in MOD
     integer,parameter :: RNum0=27   ! max GLONASS satellite number
     integer,parameter :: CNum0=35   ! max BeiDou satellite number
-    integer,parameter :: NumE0=31   ! max GALILEO satellite number
+    integer,parameter :: NumE0=36   ! max GALILEO satellite number
     integer,parameter :: JNum0=7   ! max QZSS satellite number
     integer,parameter :: INum0=7   ! max IRNSS satellite number
     integer :: GNum=32   ! max GPS satellite number
     integer :: RNum=27   ! max GLONASS satellite number
     integer :: CNum=35   ! max BeiDou satellite number
-    integer :: NumE=31   ! max GALILEO satellite number
+    integer :: NumE=36   ! max GALILEO satellite number
     integer :: JNum=7   ! max QZSS satellite number
     integer :: INum=7   ! max IRNSS satellite number
     real(8), parameter :: c=299792458.0d0   ! velocity of light (m/s)
