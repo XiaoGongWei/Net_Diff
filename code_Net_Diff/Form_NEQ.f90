@@ -217,6 +217,7 @@ implicit none
         if (ar_mode/=2) then ! If not instantaneous AR
             if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(2)%Slip(PRN)==1) ) then ! Cycle Slip in 
                  write(LogID,'(A10,I3,A11)') 'PRN', PRN,'cycle slip'  
+                 NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
                  if (ADmethod=='LS') then
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
@@ -225,6 +226,7 @@ implicit none
                     call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')  ! L2 ambiguity
                  end if
                  if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
 !                    if (ADmethod=='LS') then
 !                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
 !                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
@@ -500,7 +502,7 @@ implicit none
                 elseif (Epo_NEQ%InvN(i,i)>0.d0) then
                     ! Random walk of ionosphere delay
                     factor=(Baseline*5.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
-                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+factor**2/3600.d0*Interval   ! raw:0.5;  100km: 0.6m ;    500km: 3m
+                    Epo_NEQ%InvN(i,i) = Epo_NEQ%InvN(i,i)+factor**2/3600.d0*Interval   ! raw:0.5;  100km: 0.5m;  500km: 2.5m;   1000km: 5m
                 end if
 !            end if
         end do
@@ -530,10 +532,10 @@ implicit none
         ! Add constraints to ionosphere
         ! Reference: Odijk D. Weighting Ionospheric Correction to Improve Fast GPS Positioning Over Medium Distances[J]. 
         ! Proceedings of International Technical Meeting of the Satellite Division of the Institute of Navigation, 2000:1113-1123.
-        factor=(Baseline*6.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
-        if (Baseline>200.d3) then
-            factor=1.2d0*exp((90.d0-Min_Lat)/50.d0-1.d0)
-        end if
+        factor=(Baseline*5.d-6)*exp((90.d0-Min_Lat)/50.d0-1.d0)  ! distance related and latitude related
+!        if (Baseline>500.d3) then
+!            factor=2.5d0*exp((90.d0-Min_Lat)/50.d0-1.d0)
+!        end if
         do i=2*IonoNum+ParaNum+1, 3*IonoNum+ParaNum
             if (any(Epo_NEQ%Al1(:,i)/=0.d0)) then
                     if (ADmethod=='LS') then

@@ -103,7 +103,7 @@ implicit none
         GFEst=meanGFPrev-meanTT*coe  ! a0
         sigma=sqrt(DOT_PRODUCT(CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3),CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3)))
         GFThreshold=csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt)
-        if (abs(GF-GFEst)*c/f1>GFThreshold*1.d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance
+        if (abs(GF-GFEst)*c/f1>GFThreshold*0.7d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
     end if
     end if
     

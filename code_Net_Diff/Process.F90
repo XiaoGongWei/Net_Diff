@@ -858,7 +858,7 @@ implicit none
                      CuParaNum=CuParaNum-3
                  end if
                 if (Num<=CuParaNum) then
-                    write(unit=LogID,fmt='(5X,A30)') '本历元观测值个数过少，不计算。'
+                    write(unit=LogID,fmt='(5X,A40)') 'Too few observation in this epoch, skip.'
                     cycle
                 end if
 !                if (epoch<3)  cycle

@@ -73,8 +73,10 @@ implicit none
                 Rota_S2C(1:3,2)= Rota_S2C(1:3,2)/dsqrt(DOT_PRODUCT(Rota_S2C(1:3,2), Rota_S2C(1:3,2)))
                 call cross(Rota_S2C(1:3,2), Rota_S2C(1:3,3), Rota_S2C(1:3,1))
             end if            
-            ! For QZSS satellites, change to orbit normal mode phase when beta<20 degree.
-            if ( (System=='J') .and. (abs(beta)<20.d0) .and.  ((index(SP3File(len_trim(SP3File)-11:len_trim(SP3File)),'gbm')/=0) .or.  &
+            ! For QZSS satellites, change to orbit normal mode phase when beta<20 degree(only QZS 1)
+            ! See: http://gpsworld.com/innovation-qzs-3-and-qzs-4-join-the-quasi-zenith-satellite-system/
+            if ( (System=='J') .and. (abs(beta)<20.d0) .and. (PRN==GNum+RNum+CNum+NumE+1) .and. &
+             ((index(SP3File(len_trim(SP3File)-11:len_trim(SP3File)),'gbm')/=0) .or.  &
             (index(SP3File(len_trim(SP3File)-11:len_trim(SP3File)),'wum')==0)) ) then ! forQZSS, yaw-fixed, orbit-normal mode
                 call cross( -Sat_Coor_C, Sat_Vel_C, Rota_S2C(1:3,2))   ! Y正交于卫星位置-速度平面
                 Rota_S2C(1:3,2)= Rota_S2C(1:3,2)/dsqrt(DOT_PRODUCT(Rota_S2C(1:3,2), Rota_S2C(1:3,2)))

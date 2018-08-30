@@ -92,7 +92,7 @@ implicit none
 !            if (RefSat(sys)>0) cycle
 !            ! If not found the reference satellite or it's elevation is below 40 degrees or cycle slip occurs in reference satellite
 !            ! it means that a new reference satellite is found
-            maxEle=30.d0
+            maxEle=LimEle ! 30.d0
             do i=1, SD%PRNS
                 ! PC
                 if (SD%Sys(i)/=Sys) cycle

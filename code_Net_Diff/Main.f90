@@ -25,6 +25,7 @@ Use MOD_ObsHead
 use MOD_Var
 use MOD_EOP
 use MOD_Constant
+use MOD_Ant
 implicit none
     character(200) :: ObsFile, NavFile
     type(cal_time) t
@@ -157,7 +158,7 @@ implicit none
         ObsTime= 14.d0
     else
         write(*,*) "Obsveration time system unknown, will default as GPS."
-        pause
+!        pause
         ObsTime=0.d0
     end if
 
@@ -185,6 +186,12 @@ implicit none
     
      ! Get antenna corrections information
     call Get_Ant(MJD)
+    if (JNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0) then
+!        Ant(2+GNum+RNum+CNum+NumE)%PCO(1:3,1)=4.16d0+3.2d0 !??? absolute value is wrong
+!        Ant(2+GNum+RNum+CNum+NumE)%PCO(1:3,2)=4.16d0+3.2d0 !???
+!        Ant(3+GNum+RNum+CNum+NumE)%PCO(1:3,1)=4.7d0+3.2d0
+!        Ant(3+GNum+RNum+CNum+NumE)%PCO(1:3,2)=4.7d0+3.2d0
+    end if
     if (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0 .and. int_year*1000+int_doy>2014197) then
         call Get_BDS_PCO_gbmwum(int_year,int_doy, 1)
     elseif (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'wum') /=0 ) then

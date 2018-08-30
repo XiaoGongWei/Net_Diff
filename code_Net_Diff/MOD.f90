@@ -601,6 +601,7 @@ use MOD_constant
         real(8) :: iono(MaxPRN)=0.d0
         real(8) :: amb_L1(MaxPRN)=0.d0
         real(8) :: amb_L2(MaxPRN)=0.d0
+        integer(1) :: outlier(MaxPRN,2)=0
         real(8) :: ratio=0.d0
     end type
 end module
@@ -640,6 +641,7 @@ implicit none
         real(8) :: amb_W4(MaxPRN)=0.d0
         real(8) :: fixed_amb(MaxPRN*2)=0.99d0
         integer :: fixed_amb_num(MaxPRN*2)=0
+        integer(1) :: outlier(MaxPRN,2)=0
         real(8) :: ratio=0.d0
     end type
 end module

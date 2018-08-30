@@ -195,24 +195,50 @@ implicit none
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(2), NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in P2', 'PRN=',NEQ%PRN(NEQ%maxL(2)),'maxV=',maxV
             elseif  ((maxL)==3) then
-                call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
-                       NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(3), NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in WL', 'PRN=',NEQ%PRN(NEQ%maxL(3)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
                     NEQ%fixed_amb(NEQ%PRN(NEQ%maxL(3)))=0.99d0  ! If outliers, do not hold the amiguity
                     NEQ%fixed_amb_num(NEQ%PRN(NEQ%maxL(3)))=0
+                end if
+                ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
+                NEQ%outlier(NEQ%PRN(NEQ%maxL(3)),1)=NEQ%outlier(NEQ%PRN(NEQ%maxL(3)),1)+1
+                if (ar_mode/=2 .and. NEQ%outlier(NEQ%PRN(NEQ%maxL(3)),1)>=5) then
+                    NEQ%outlier(NEQ%PRN(NEQ%maxL(3)),1)=0
+                    write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
+                    if (ADmethod=='LS') then
+                        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)))
+                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(3)))=0.d0
+                    elseif (ADmethod=='KF') then
+                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
+                    end if
+                else
+                    call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
+                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(3), NEQ%SumN)               
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0 
                 end if
             elseif  ((maxL)==4) then
-                call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
-                       NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in W4', 'PRN=',NEQ%PRN(NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
                     NEQ%fixed_amb(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=0.99d0  ! If outliers, do not hold the amiguity
                     NEQ%fixed_amb_num(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=0
+                end if
+                ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
+                NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)=NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)+1
+                if (ar_mode/=2 .and. NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)>=5) then
+                    NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)=0
+                    write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
+                    if (ADmethod=='LS') then
+                        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)))
+                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(4)))=0.d0
+                    elseif (ADmethod=='KF') then
+                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
+                    end if
+                else
+                    call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
+                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)          
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0
@@ -705,24 +731,62 @@ implicit none
                        Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(2), Epo_NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in P2', 'PRN=',Epo_NEQ%PRN(Epo_NEQ%maxL(2)),'maxV=',maxV
             elseif  ((maxL)==3) then
-                call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al1(1:N,:), Epo_NEQ%Ll1(1:N), &
-                       Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(3), Epo_NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in L1', 'PRN=',Epo_NEQ%PRN(Epo_NEQ%maxL(3)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
                     Epo_NEQ%fixed_amb(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0.99d0  ! If outliers, do not hold the amiguity
                     Epo_NEQ%fixed_amb_num(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0
+                end if
+                ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
+                Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(3)),1)=Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(3)),1)+1
+                if (ar_mode/=2 .and. Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(3)),1)>=5) then
+                    Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(3)),1)=0
+                    write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
+                    if (ADmethod=='LS') then
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
+                        Epo_NEQ%dx(ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0.d0
+                        Epo_NEQ%dx(ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0.d0
+                    elseif (ADmethod=='KF') then
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
+                    end if
+                else
+                    call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al1(1:N,:), Epo_NEQ%Ll1(1:N), &
+                           Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(3), Epo_NEQ%SumN)
+                    call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al2(1:N,:), Epo_NEQ%Ll2(1:N), & 
+                           Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(3), Epo_NEQ%SumN)
+                            ! if we only delete L1, the error in L2 will absorbed into ionosphere delay
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))%n=1.d0
                     STA%STA(2)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))%n=1.d0 
                 end if
             elseif  ((maxL)==4) then
-                call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al2(1:N,:), Epo_NEQ%Ll2(1:N), &
-                       Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(4), Epo_NEQ%SumN)
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in L2', 'PRN=',Epo_NEQ%PRN(Epo_NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
                     Epo_NEQ%fixed_amb(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=0.99d0  ! If outliers, do not hold the amiguity
                     Epo_NEQ%fixed_amb_num(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=0
+                end if
+                ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
+                Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)=Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)+1
+                if (ar_mode/=2 .and. Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)>=5) then
+                    Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)=0
+                    write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
+                    if (ADmethod=='LS') then
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
+                        Epo_NEQ%dx(ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=0.d0
+                        Epo_NEQ%dx(ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=0.d0
+                    elseif (ADmethod=='KF') then
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
+                    end if
+                else
+                    call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al2(1:N,:), Epo_NEQ%Ll2(1:N), &
+                           Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(4), Epo_NEQ%SumN) 
+                    call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al1(1:N,:), Epo_NEQ%Ll1(1:N), &
+                           Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(4), Epo_NEQ%SumN)
+                            ! if we only delete L1, the error in L2 will absorbed into ionosphere delay
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))%n=1.d0
