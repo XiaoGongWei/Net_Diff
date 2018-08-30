@@ -209,7 +209,7 @@ implicit none
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)))
                         NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(3)))=0.d0
                     elseif (ADmethod=='KF') then
-                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
+                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
@@ -234,7 +234,7 @@ implicit none
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)))
                         NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(4)))=0.d0
                     elseif (ADmethod=='KF') then
-                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
+                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
