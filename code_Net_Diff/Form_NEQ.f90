@@ -50,6 +50,22 @@ implicit none
     NEQ%Lp1=0.d0; NEQ%Lp2=0.d0
     NEQ%Lwl=0.d0; NEQ%Lw4=0.d0
 
+!    if (mod(DD%sow,1800.d0)==0.d0) then  ! For reinitialize test
+!        NEQ%Nbb=0.d0
+!        NEQ%InvN=0.d0
+!        NEQ%U=0.d0
+!        NEQ%dx=0.d0
+!        if (If_Est_Iono .and. IonoNum>0) then
+!            Epo_NEQ%Nbb=0.d0
+!            Epo_NEQ%InvN=0.d0
+!            Epo_NEQ%U=0.d0
+!            Epo_NEQ%dx=0.d0
+!        end if
+!        do PRN=1,MaxPRN
+!            CycleSlip(1)%Slip(PRN)=1
+!        end do
+!    end if
+
     if (ar_mode==2) then ! Instantaneous AR
         NEQ%Nbb=0.d0
         NEQ%InvN=0.d0

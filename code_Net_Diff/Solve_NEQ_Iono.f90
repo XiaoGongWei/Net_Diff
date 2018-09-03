@@ -344,7 +344,7 @@ implicit none
     Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=NEQ%P
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
 
-    100 if (npar>1) then
+    100 if (npar>2) then
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
@@ -557,7 +557,7 @@ implicit none
     !¡¡3.1  First change the constant part of error equation in WL and W4
     do i=1, N
         PRN=Epo_NEQ%PRN(i)
-        if (Epo_NEQ%Lwl(i)/=0.d0) then
+        if (Epo_NEQ%Lwl(i)/=0.d0 .and. ratio>minratio) then
             flag_par_PRN=.false.
             do j=1,npar
                 if (iPOS(j)==PRN) then
@@ -599,6 +599,11 @@ implicit none
                 Epo_NEQ%Lw4(i)=0.d0
                 Epo_NEQ%Aw4(i,:)= 0.d0
             end if
+        else
+            Epo_NEQ%Lwl(i)=0.d0
+            Epo_NEQ%Awl(i,:)= 0.d0
+            Epo_NEQ%Lw4(i)=0.d0
+            Epo_NEQ%Aw4(i,:)= 0.d0
         end if
     end do
 
@@ -900,7 +905,7 @@ implicit none
     Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS; P=Epo_NEQ%P
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     
-    200 if (npar>1) then
+    200 if (npar>2) then
         call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         if (nfixed==0) then
             ratio=0.d0
