@@ -498,12 +498,12 @@ implicit none
     end if
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
-            Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/sigLC/2.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater 
-            Epo_NEQ%Lwl(1:N)=DD%WL(1:N)/sigLC/2.d0 ! sqrt(a1**2+a2**2)   ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2), for GPS, it is 5.74, for BeiDou, it is 5.57, for Galileo, it is 4.93
+            Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/sigLC/5.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater 
+            Epo_NEQ%Lwl(1:N)=DD%WL(1:N)/sigLC/5.d0 ! sqrt(a1**2+a2**2)   ! should be sqrt((a1*f1)**2+(a2*f2)**2)/(a1*f1-a2*f2), for GPS, it is 5.74, for BeiDou, it is 5.57, for Galileo, it is 4.93
         end if
 !        if ( (b1/=0.d0) .or. (b2/=0.d0) ) then  ! only for triple frequency
-            Epo_NEQ%Aw4(1:N,:)=Aw4(1:N,:)/sigLC/2.d0 ! sqrt(2.d0)  ! 6.9d0 ! should be sqrt((b1*f1)**2+(b2*f2)**2)/(b1*f1-b2*f2)
-            Epo_NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/2.d0 ! sqrt(2.d0)
+            Epo_NEQ%Aw4(1:N,:)=Aw4(1:N,:)/sigLC/7.d0 ! sqrt(2.d0)  ! 6.9d0 ! should be sqrt((b1*f1)**2+(b2*f2)**2)/(b1*f1-b2*f2)
+            Epo_NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/7.d0 ! sqrt(2.d0)
 !        end if
         
         ! Initial precision and random walk of ionosphere parameter

@@ -846,12 +846,12 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)*5.d0/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)*7.d0/sqrt(2.d0*Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     
@@ -942,7 +942,7 @@ implicit none
                 end if
             end do
         end if  ! if (flag_partial==1) then
-        write(LogID,'(A10)',advance='no') 'amb_fix'
+        write(LogID,'(A10)',advance='no') 'L1_amb_fix'
 
         do i=1,npar  ! Dual frequency
             if (iPOS(i)==0) then
