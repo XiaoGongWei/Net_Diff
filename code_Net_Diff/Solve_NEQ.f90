@@ -241,11 +241,12 @@ implicit none
                 NEQ%dx=NEQ_dx ! temp save Pk and X in in case of outliers
             end if
             Ad_Flag=.true.
-            write(unit=LogID,fmt='(5X,A5,3F10.3,A8)') '!!!dx',NEQ%dx(1:3),'outlier'
+            write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
+        else
+            write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
         end if
         
         ! =================== End of Outliers Detect =====================
-        write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
     end do
     
     ! Write residuals

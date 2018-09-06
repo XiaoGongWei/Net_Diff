@@ -248,6 +248,10 @@ implicit none
             PDOP=PDOP+InvN(i,i)
         end do
         PDOP=dsqrt(PDOP)
+        if (PDOP>MaxPDOP) then
+            write(unit=LogID,fmt='(5X,A5,F5.1,A15)') 'PDOP=', PDOP, '>maxPDOP, skip'
+            cycle
+        end if
 
         !  ======== Least squart estimation for the coordinate ========
         if (DD%PRNS<4) then

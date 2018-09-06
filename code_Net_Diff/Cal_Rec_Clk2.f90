@@ -135,6 +135,9 @@ implicit none
             if ((P2==0.d0) .and. (C2/=0.d0) .and. (IsCNAV) .and. (System=="G")) P2=C2- NavData(PRN)%Nav(2)%TGD(1)*c+NavData(PRN)%Nav(2)%ISCL2C*c   ! L2C
             L1=ObsData%L1(i)
             L2=ObsData%L2(i)
+            if (L2==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                L2=ObsData%L2C(i)
+            end if
         elseif (freq_comb=='L1L3') then
             P1=ObsData%P1(i)
             P2=ObsData%P3(i)
@@ -153,6 +156,9 @@ implicit none
             if ((P2/=0.d0) .and. (IsCNAV) .and. (System=="G")) P2=P2- NavData(PRN)%Nav(2)%TGD(1)*c+NavData(PRN)%Nav(2)%ISCL5Q5*c  ! L5Q5
             L1=ObsData%L2(i)
             L2=ObsData%L3(i)
+            if (L1==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                L1=ObsData%L2C(i)
+            end if
         end if
         if ((P1 /=0.0d0) .and. (P2 /=0.0d0)) then
             Range=(f1*f1*P1-f2*f2*P2)/(f1+f2)/(f1-f2)

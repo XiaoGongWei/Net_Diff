@@ -306,7 +306,7 @@ implicit none
                     elseif (System=="E") then   ! GALILEO
                         if (freq_comb=='L1L2') then   ! E1 E5a
                             f1=10.23d6*154.d0
-                            f2=10.23d6*115.0d0
+                            f2=10.23d6*115.d0
                         elseif (freq_comb=='L1L3') then   ! E1 E5b
                             f1=10.23d6*154.d0
                             f2=10.23d6*118.d0
@@ -335,6 +335,10 @@ implicit none
                         L2=ObsData%L2(i)
                         LLI1=ObsData%LLI1(i)
                         LLI2=ObsData%LLI2(i)
+                        if (L2==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                            L2=ObsData%L2C(i)
+                            LLI2=ObsData%LLI2C(i)
+                        end if
                     elseif (freq_comb=='L1L3') then
                         P1=ObsData%P1(i)
                         P2=ObsData%P3(i)
@@ -357,6 +361,10 @@ implicit none
                         L2=ObsData%L3(i)
                         LLI1=ObsData%LLI2(i)
                         LLI2=ObsData%LLI3(i)
+                        if (L1==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                            L1=ObsData%L2C(i)
+                            LLI1=ObsData%LLI2C(i)
+                        end if
                     end if
                     if ((P1 /=0.0d0) .and. (P2 /=0.0d0)) then
                         Range=(f1*f1*P1-f2*f2*P2)/(f1+f2)/(f1-f2) ! Ionospheric-free combination
@@ -828,8 +836,8 @@ implicit none
                     PDOP=PDOP+invN2(i,i)
                 end do
                 PDOP=dsqrt(PDOP)
-                if (PDOP>MaxPDOP) then
-                    write(unit=LogID,fmt='(5X,A30,F5.1)') 'PDOP³¬ÏÞ£¬²»¼ÆËã¡£PDOP=', PDOP
+                if (PDOP>MaxPDOP .or. isnan(PDOP)) then
+                    write(unit=LogID,fmt='(5X,A5,F5.1,A15)') 'PDOP=', PDOP, '>maxPDOP, skip'
                     cycle
                 end if
 
@@ -838,9 +846,8 @@ implicit none
                 end do
                 
                 do i=6,ParaNum
-                    if (all(A(1:N,5)-A(1:N,i)==0.d0)) then
+                    if (all(A(1:N,5)-A(1:N,i)==0.d0)) then ! Only one system
                         A(1:N,i)=0.d0
-                        CuParaNum=CuParaNum-1
                     end if
                 end do
 
@@ -854,9 +861,6 @@ implicit none
                 end do
 
 
-                 if ( (Pos_State=="S") .and. (epoch>1) ) then
-                     CuParaNum=CuParaNum-3
-                 end if
                 if (Num<=CuParaNum) then
                     write(unit=LogID,fmt='(5X,A40)') 'Too few observation in this epoch, skip.'
                     cycle

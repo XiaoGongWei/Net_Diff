@@ -229,10 +229,10 @@ implicit none
             L3=ObsData%L3(i)
             LLI1=ObsData%LLI1(i)
             LLI2=ObsData%LLI2(i)
-!            if (ObsData%L2C(i)/=0.d0) then
-!                L2=ObsData%L2C(i)
-!                LLI2=ObsData%LLI2C(i)
-!            end if
+            if (L2==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                L2=ObsData%L2C(i)
+                LLI2=ObsData%LLI2C(i)
+            end if
             DP1=ObsData%D1(i)
             DP2=ObsData%D2(i)
         elseif (freq_comb=='L1L3') then
@@ -261,6 +261,10 @@ implicit none
             LLI2=ObsData%LLI3(i)
             DP1=ObsData%D2(i)
             DP2=ObsData%D3(i)
+            if (L1==0.d0 .and. ObsData%L2C(i)/=0.d0) then
+                L1=ObsData%L2C(i)
+                LLI1=ObsData%LLI2C(i)
+            end if
         end if
         if ((P1 /=0.0d0) .and. (P2 /=0.0d0)) then
             Range=(f1*f1*P1-f2*f2*P2)/(f1+f2)/(f1-f2) ! Ionospheric-free combination
