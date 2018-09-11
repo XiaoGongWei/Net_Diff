@@ -254,8 +254,8 @@ implicit none
             write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'     ! In case of cycle slip, so Form_NEQ should be done every epoch.
             cycle
         end if
-        if (DD%PRNS<4) then
-            write(unit=LogID,fmt='(A10,A30)') '%%NEU','Insufficient Sat Num '
+        if (DD%PRNS<3) then
+            write(unit=LogID,fmt='(5X,A20)') 'Insufficient sat num'
             cycle
         end if
 

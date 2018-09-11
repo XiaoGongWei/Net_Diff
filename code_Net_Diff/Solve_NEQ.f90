@@ -302,7 +302,7 @@ implicit none
     amb2=NEQ%dx(ParaNum+1:ParaNum+MaxPRN*2)
     do i=1, 2*maxPRN
         iPOS(i:i)=i
-        if (ar_mode/=2 .and. i<=maxPRN) then
+        if (i<=maxPRN) then
             if (NEQ%Ele(i)<FixEle) then
                 amb2(i)=0.d0; amb2(i+maxPRN)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
             end if

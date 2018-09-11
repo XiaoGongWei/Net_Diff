@@ -289,6 +289,7 @@ implicit none
             write(CoorID,"(A12,5X,2I4)") 'fixele:  ', int(FixEle)
         elseif (ar_mode==2) then
             write(CoorID,"(A12,5X,A15)") 'ar_mode:  ', 'Instantaneous'
+            write(CoorID,"(A12,5X,2I4)") 'fixele:  ', int(FixEle)
         elseif (ar_mode==3) then
             write(CoorID,"(A12,5X,A15)") 'ar_mode:  ', 'Fix and hold'
             write(CoorID,"(A12,5X,2I4)") 'fixholdele:  ', int(FixEle), int(HoldEle)
