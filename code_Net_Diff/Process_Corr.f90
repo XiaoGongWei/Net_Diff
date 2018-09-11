@@ -388,37 +388,37 @@ implicit none
                     end if
 
                     if ((System=="G") .or. (System=='J')) then   ! GPS/QZSS
-                        f1=10.23d6*154d0
-                        f2=10.23d6*120d0
+                        f1=f_L1
+                        f2=f_L2
                     elseif (System=="R") then   ! GLONASS
                         freq=Fre_Chann(PRN-GNum)
                         f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
                         f2=(1246.0d0+freq*0.4375d0)*1.0D6
                     elseif (System=="C") then   ! COMPASS
                         if (freq_comb=='L1L2') then
-                            f1=10.23d6*152.6d0
-                            f2=10.23d6*118.0d0
+                            f1=f_B1
+                            f2=f_B2
                         elseif (freq_comb=='L1L3') then
-                            f1=10.23d6*152.6d0
-                            f2=10.23d6*124.0d0
+                            f1=f_B1
+                            f2=f_B3
                         elseif (freq_comb=='L2L3') then
-                            f1=10.23d6*118.0d0
-                            f2=10.23d6*124.0d0
+                            f1=f_B2
+                            f2=f_B3
                         end if
                     elseif (System=="E") then   ! GALILEO
                         if (freq_comb=='L1L2') then   ! E1 E5a
-                            f1=10.23d6*154.d0
-                            f2=10.23d6*115.0d0
+                            f1=f_E1
+                            f2=f_E5a
                         elseif (freq_comb=='L1L3') then   ! E1 E5b
-                            f1=10.23d6*154.d0
-                            f2=10.23d6*118.d0
+                            f1=f_E1
+                            f2=f_E5b
                         elseif (freq_comb=='L2L3') then   ! E5a E5b
-                            f1=10.23d6*115.0d0
-                            f2=10.23d6*118.0d0
+                            f1=f_E5a
+                            f2=f_E5b
                         end if
                     elseif (System=="I") then   ! IRNSS
-                        f1=10.23d6*115.d0
-                        f2=10.23d6*243.6d0
+                        f1=f_L1
+                        f2=f_S
                     end if
 
                     ! Range

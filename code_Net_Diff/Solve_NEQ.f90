@@ -191,12 +191,13 @@ implicit none
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)))
-                        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(3)))
-                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(3)))=0.d0
-                        NEQ%dx(ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(3)))=0.d0
+                        NEQ%Awl(NEQ%maxL(3), :)=0.d0
+                        NEQ%Lwl(NEQ%maxL(3))=0.d0
+                        NEQ%R(NEQ%maxL(3),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        NEQ%R(:,NEQ%maxL(3))=0.d0
+                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
-                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(3)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
@@ -218,17 +219,19 @@ implicit none
                     NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)=0
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
-                        call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)))
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(4)))
-                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(4)))=0.d0
-                        NEQ%dx(ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(4)))=0.d0
+                        NEQ%Aw4(NEQ%maxL(4), :)=0.d0
+                        NEQ%Lw4(NEQ%maxL(4))=0.d0
+                        NEQ%R(NEQ%maxL(4),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        NEQ%R(:,NEQ%maxL(4))=0.d0
+                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
-                        call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
                         call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(4)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
-                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)              
+                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)    
+                           !   P need to change, inverse of Q 
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0
@@ -236,12 +239,12 @@ implicit none
                 end if
             end if
 
+            Ad_Flag=.true.
+            write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
             if (ADmethod=='KF') then
                 NEQ%InvN=NEQ_InvN
                 NEQ%dx=NEQ_dx ! temp save Pk and X in in case of outliers
             end if
-            Ad_Flag=.true.
-            write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
         else
             write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
         end if
@@ -279,6 +282,7 @@ implicit none
     ! If LC combination
     if (  ( (a1==0.d0) .and. (a2==0.d0) .and. (mod(b1,1.d0)/=0.d0) ) .or. ( (b1==0.d0) .and. (b2==0.d0) .and. (mod(a1,1.d0)/=0.d0) )  ) then
         Coor=NEQ%dx(1:3)
+        Flag_Sln=3
         return
     end if
     ! If float solution
@@ -587,38 +591,38 @@ implicit none
         sys=Epo_NEQ%Sys(i)
 
         if (sys==1) then   ! GPS/QZSS
-            f1=10.23d6*154d0
-            f2=10.23d6*120d0
+            f1=f_L1
+            f2=f_L2
         elseif (sys==2) then   ! GLONASS
             freq=Fre_Chann(PRN-GNum)
             f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
             f2=(1246.0d0+freq*0.4375d0)*1.0D6
         elseif  (sys==3) then   ! COMPASS
             if (freq_comb=='L1L2') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*118.0d0
-!                f3=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B2
+!                f3=f_B3
             elseif (freq_comb=='L1L3') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B3
             elseif (freq_comb=='L2L3') then
-                f1=10.23d6*118.0d0
-                f2=10.23d6*124.0d0
+                f1=f_B2
+                f2=f_B3
             end if
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
-                f1=10.23d6*154.d0
-                f2=10.23d6*115.0d0
+                f1=f_E1
+                f2=f_E5a
             elseif (freq_comb=='L1L3') then   ! E1 E5b
-                f1=10.23d6*154.d0
-                f2=10.23d6*118.d0
+                f1=f_E1
+                f2=f_E5b
             elseif (freq_comb=='L2L3') then   ! E5a E5b
-                f1=10.23d6*115.0d0
-                f2=10.23d6*118.0d0
+                f1=f_E5a
+                f2=f_E5b
             end if
         elseif (sys==5) then   ! IRNSS
-            f1=10.23d6*115.d0
-            f2=10.23d6*243.6d0
+            f1=f_L1
+            f2=f_S
         else
             cycle
         end if

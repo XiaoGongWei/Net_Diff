@@ -37,9 +37,11 @@ implicit none
     real(8), parameter :: f_B1=10.23e6*152.6d0
     real(8), parameter :: f_B2=10.23e6*118.d0
     real(8), parameter :: f_B3=10.23e6*124.d0
-    real(8), parameter :: f_E1=10.23e6*154.6d0
-    real(8), parameter :: f_E5a=10.23e6*115.d0
-    real(8), parameter :: f_E5b=10.23e6*118.d0
+    real(8), parameter :: f_E1=10.23e6*154.d0   ! L1X
+    real(8), parameter :: f_E5a=10.23e6*115.d0   ! L5X
+    real(8), parameter :: f_E5b=10.23e6*118.d0   ! L7X
+    real(8), parameter :: f_E5=10.23e6*116.5d0   ! L8X
+    real(8), parameter :: f_S=10.23e6*243.6d0   ! S Band
 !    f1=10.23d6*152.6d0
 !                        f2=10.23d6*118.0d0
 !!                        f3=10.23d6*124.0d0

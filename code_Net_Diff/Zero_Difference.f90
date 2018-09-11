@@ -168,9 +168,9 @@ implicit none
         end do
 
         if ((System=="G") .or. (System=='J')) then   ! GPS/QZSS
-            f1=10.23d6*154d0
-            f2=10.23d6*120d0
-            f3=10.23d6*115d0
+            f1=f_L1
+            f2=f_L2
+            f3=f_L5
             Sys=1
         elseif (System=="R") then   ! GLONASS
             Kk=Fre_Chann(PRN-GNum)
@@ -179,33 +179,33 @@ implicit none
             Sys=2
         elseif (System=="C") then   ! COMPASS
             if (freq_comb=='L1L2') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*118.0d0
-                f3=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B2
+                f3=f_B3
             elseif (freq_comb=='L1L3') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B3
             elseif (freq_comb=='L2L3') then
-                f1=10.23d6*118.0d0
-                f2=10.23d6*124.0d0
+                f1=f_B2
+                f2=f_B3
             end if
             Sys=3
         elseif (System=="E") then   ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
-                f1=10.23d6*154.d0
-                f2=10.23d6*115.0d0
-                f3=10.23d6*118.0d0
+                f1=f_E1
+                f2=f_E5a
+                f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
-                f1=10.23d6*154.d0
-                f2=10.23d6*118.d0
+                f1=f_E1
+                f2=f_E5b
             elseif (freq_comb=='L2L3') then   ! E5a E5b
-                f1=10.23d6*115.0d0
-                f2=10.23d6*118.0d0
+                f1=f_E5a
+                f2=f_E5b
             end if
             Sys=4
         elseif (System=="I") then   ! IRNSS
-            f1=10.23d6*115.d0
-            f2=10.23d6*243.6d0
+            f1=f_L1
+            f2=f_S
             Sys=5
         else
             cycle

@@ -118,7 +118,7 @@ implicit none
     end do
     do sys=1,5
         if ( (RefSat(sys) /= DD%RefSat(sys))  .and. (DD%RefSat(sys)/=0) .and. (RefSat(sys)/=0) ) then
-            write(LogID,'(I6,2X,I2,A3,I2,A15)') sys, DD%RefSat(sys),'-->',RefSat(sys),'ref sat change'  
+            write(LogID,'(I6,1X,I3,A4,I3,A15)') sys, DD%RefSat(sys),' -->',RefSat(sys),'ref sat change'  
             NEQ%dx(DD%RefSat(sys)+ParaNum)=0.d0-NEQ%dx(RefSat(sys)+ParaNum)  ! old reference satellite
             NEQ%dx(DD%RefSat(sys)+MaxPRN+ParaNum)=0.d0-NEQ%dx(RefSat(sys)+MaxPRN+ParaNum)
             NEQ%InvN(:,DD%RefSat(sys)+ParaNum)= 0.d0 -NEQ%InvN(:,RefSat(sys)+ParaNum)

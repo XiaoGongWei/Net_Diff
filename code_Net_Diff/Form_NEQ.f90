@@ -66,86 +66,80 @@ implicit none
 !        end do
 !    end if
 
-    if (ar_mode==2) then ! Instantaneous AR
-        NEQ%Nbb=0.d0
-        NEQ%InvN=0.d0
-        NEQ%U=0.d0
-        NEQ%dx=0.d0
+    
+    ! Eliminate the unobserved satellite at this epoch
+    do PRN=1, MaxPRN !DD%PRNS
+        flag_del_PRN=.true.
+        do i=1,DD%PRNS
+            if (DD%PRN(i)==PRN) then
+                flag_del_PRN=.false.   ! If this satellite exist in this epoch, do not delete
+                exit
+            end if
+        end do
+        dT(1)=(CycleSlip(1)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(1)%CS(PRN)%SowPrev(3)-DD%Sow
+        dT(2)=(CycleSlip(2)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(2)%CS(PRN)%SowPrev(3)-DD%Sow
+        ! First is the ionosphere parameter
         if (If_Est_Iono .and. IonoNum>0) then
-            Epo_NEQ%Nbb=0.d0
-            Epo_NEQ%InvN=0.d0
-            Epo_NEQ%U=0.d0
-            Epo_NEQ%dx=0.d0
-        end if
-    else
-        ! Eliminate the unobserved satellite at this epoch
-        do PRN=1, MaxPRN !DD%PRNS
-            flag_del_PRN=.true.
-            do i=1,DD%PRNS
-                if (DD%PRN(i)==PRN) then
-                    flag_del_PRN=.false.   ! If this satellite exist in this epoch, do not delete
-                    exit
-                end if
-            end do
-            dT(1)=(CycleSlip(1)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(1)%CS(PRN)%SowPrev(3)-DD%Sow
-            dT(2)=(CycleSlip(2)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(2)%CS(PRN)%SowPrev(3)-DD%Sow
-            ! First is the ionosphere parameter
-            if (If_Est_Iono .and. IonoNum>0) then
-                if (flag_del_PRN .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
+            if (flag_del_PRN .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
 !                    if (ADmethod=='LS') then
 !                            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+2*IonoNum+PRN) !  ionosphere parameter
 !                    elseif (ADmethod=='KF') then  ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
-                            call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+2*IonoNum+PRN, 'dds')  ! ionosphere parameter
+                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+2*IonoNum+PRN, 'dds')  ! ionosphere parameter
 !                    end if
-                end if
             end if
-            ! Then comes to ambiguity parameter
-            if (ADmethod=='LS' .and. abs(NEQ%Nbb(ParaNum+PRN,ParaNum+PRN))<1.d-11) then
-                cycle
-            elseif (ADmethod=='KF' .and. abs(NEQ%InvN(ParaNum+PRN,ParaNum+PRN))<1.d-11) then
-                cycle
+        end if
+        ! Then comes to ambiguity parameter
+        if (ADmethod=='LS' .and. abs(NEQ%Nbb(ParaNum+PRN,ParaNum+PRN))<1.d-11) then      ! From Invsqrt function
+            cycle
+        elseif (ADmethod=='KF' .and. abs(NEQ%InvN(ParaNum+PRN,ParaNum+PRN))>1.d7) then  ! From initial ambiguity covariance
+            cycle
+        end if
+        if (flag_del_PRN .and. any(dT<-10.d0*Interval) .or. ar_mode==2) then   !  If satellite unobserved more than 10 epoches, or instantaneous mode
+            if (ADmethod=='LS') then
+                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
+                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+                NEQ%dx(ParaNum+PRN)=0.d0
+                NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
+            elseif (ADmethod=='KF') then
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')
             end if
-            if (flag_del_PRN .and. any(dT<-3.d0*Interval)) then   !  If satellite unobserved more than 3 epoches. result shows not very good, so don't use.
+            if (If_Est_Iono .and. IonoNum>0) then
                 if (ADmethod=='LS') then
-                    call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
-                    call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
-                    NEQ%dx(ParaNum+PRN)=0.d0
-                    NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
-                elseif (ADmethod=='KF') then
-                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dds')
-                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dds')
-                end if
-                if (If_Est_Iono .and. IonoNum>0) then
-!                    if (ADmethod=='LS') then
+                    call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dds') 
+                    call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dds')
 !                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+PRN)  ! L1 ambiguity
 !                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+IonoNum+PRN) ! L2 ambiguity
 !                        Epo_NEQ%dx(ParaNum+PRN)=0.d0
 !                        Epo_NEQ%dx(ParaNum+IonoNum+PRN)=0.d0
-!                    elseif (ADmethod=='KF') then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
-                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dds')
-                        call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dds')
-!                    end if
-                end if
-                if (ar_mode==3) then ! If fixed and hold mode
-                    NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
-                    NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
-                    NEQ%fixed_amb_num(PRN)=0
-                    NEQ%fixed_amb_num(PRN+MaxPRN)=0
-                    if (If_Est_Iono .and. IonoNum>0) then
-                        Epo_NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
-                        Epo_NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
-                        Epo_NEQ%fixed_amb_num(PRN)=0
-                        Epo_NEQ%fixed_amb_num(PRN+MaxPRN)=0
-                    end if
+                elseif (ADmethod=='KF') then ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
+                    call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+PRN, 'dda')    ! For kalman filter, need initial covariance
+                    call KF_Change(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, ParaNum+IonoNum+PRN, 'dda')
                 end if
             end if
-        end do
-    end if
+            if (ar_mode==3) then ! If fixed and hold mode
+                NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
+                NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                NEQ%fixed_amb_num(PRN)=0
+                NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
+                    Epo_NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                    Epo_NEQ%fixed_amb_num(PRN)=0
+                    Epo_NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                end if
+            end if
+        end if
+    end do
+
     if (Pos_State=="K") then    ! on the fly, kinematic
         if (ADmethod=='LS') then
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 3)
+            NEQ%Nbb(1,1)=1.d0/60.d0**2   ! In case of not enough observations
+            NEQ%Nbb(2,2)=1.d0/60.d0**2
+            NEQ%Nbb(3,3)=1.d0/60.d0**2
         elseif (ADmethod=='KF') then
             call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 1, 'ddp')
             call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, 2, 'ddp')
@@ -192,47 +186,47 @@ implicit none
         sys=DD%Sys(i)
         
         if (sys==1) then   ! GPS/QZSS
-            f1=10.23d6*154d0
-            f2=10.23d6*120d0
-            f3=10.23d6*115d0
+            f1=f_L1
+            f2=f_L2
+            f3=f_L5
         elseif (sys==2) then   ! GLONASS
             freq=Fre_Chann(PRN-GNum)
             f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
             f2=(1246.0d0+freq*0.4375d0)*1.0D6
         elseif  (sys==3) then   ! COMPASS
             if (freq_comb=='L1L2') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*118.0d0
-                f3=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B2
+                f3=f_B3
             elseif (freq_comb=='L1L3') then
-                f1=10.23d6*152.6d0
-                f2=10.23d6*124.0d0
+                f1=f_B1
+                f2=f_B3
             elseif (freq_comb=='L2L3') then
-                f1=10.23d6*118.0d0
-                f2=10.23d6*124.0d0
+                f1=f_B2
+                f2=f_B3
             end if
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
-                f1=10.23d6*154.d0
-                f2=10.23d6*115.0d0
-                f3=10.23d6*118.0d0
+                f1=f_E1
+                f2=f_E5a
+                f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
-                f1=10.23d6*154.d0
-                f2=10.23d6*118.d0
+                f1=f_E1
+                f2=f_E5b
             elseif (freq_comb=='L2L3') then   ! E5a E5b
-                f1=10.23d6*115.0d0
-                f2=10.23d6*118.0d0
+                f1=f_E5a
+                f2=f_E5b
             end if
         elseif (sys==5) then   ! IRNSS
-            f1=10.23d6*115.d0
-            f2=10.23d6*243.6d0
+            f1=f_L1
+            f2=f_S
         else
             cycle
         end if
 
         if (ar_mode/=2) then ! If not instantaneous AR
             if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(2)%Slip(PRN)==1) ) then ! Cycle Slip in 
-                 write(LogID,'(A10,I3,A11)') 'PRN', PRN,'cycle slip'  
+                 write(LogID,'(A8,I2,A12)') DD%System(i), DD%PRN_S(i),'cycle slip'  
                  NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
                  if (ADmethod=='LS') then
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
@@ -439,19 +433,19 @@ implicit none
                 if (ADmethod=='LS') then
                     NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/0.01d0/NEQ_DP%dt  ! This is wrong for Nbb
                 elseif (ADmethod=='KF') then
-                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+0.01d0*NEQ_DP%dt    ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2) ! 0.1m
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+sigDP**2*NEQ_DP%dt    ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2) ! 0.1m
                 end if
             elseif (NEQ_DP%Flag_Sln(5)==2) then ! If partial fixed
                 if (ADmethod=='LS') then
                     NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/0.25d0*NEQ_DP%dt  ! This is wrong for Nbb
                 elseif (ADmethod=='KF') then
-                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+0.25d0*NEQ_DP%dt     ! (1/0.5**2) ! 0.5m
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+(sigDP*3.d0)**2*NEQ_DP%dt     ! (1/0.5**2) ! 0.5m
                 end if
             elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
                 if (ADmethod=='LS') then
                     NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/4.d0*NEQ_DP%dt   ! This is wrong for Nbb
                 elseif (ADmethod=='KF') then
-                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+4.d0*NEQ_DP%dt    ! (1/2.d0**2) ! 2m
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+(sigDP*20.d0)*NEQ_DP%dt    ! (1/2.d0**2) ! 2m
                 end if
             end if
         end do

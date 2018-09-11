@@ -207,7 +207,11 @@ implicit none
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)))
-                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(3)))=0.d0
+                        NEQ%Awl(NEQ%maxL(3), :)=0.d0
+                        NEQ%Lwl(NEQ%maxL(3))=0.d0
+                        NEQ%R(NEQ%maxL(3),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        NEQ%R(:,NEQ%maxL(3))=0.d0
+                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
                     end if
@@ -232,7 +236,11 @@ implicit none
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(4)))
-                        NEQ%dx(ParaNum+NEQ%PRN(NEQ%maxL(4)))=0.d0
+                        NEQ%Aw4(NEQ%maxL(4), :)=0.d0
+                        NEQ%Lw4(NEQ%maxL(4))=0.d0
+                        NEQ%R(NEQ%maxL(4),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        NEQ%R(:,NEQ%maxL(4))=0.d0
+                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
                     end if
@@ -251,12 +259,12 @@ implicit none
                 NEQ%amb_EWL(NEQ%PRN(NEQ%maxL(5)))=0.d0
             end if
 
+            Ad_Flag=.true.
+            write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
             if (ADmethod=='KF') then
                 NEQ%InvN(1:ParaNum+MaxPRN,1:ParaNum+MaxPRN)=NEQ_InvN
                 NEQ%dx(1:ParaNum+MaxPRN)=NEQ_dx   ! temp save Pk and X in in case of outliers
             end if
-            Ad_Flag=.true.
-            write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
         else
             write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
         end if 
@@ -299,6 +307,7 @@ implicit none
     ! If LC combination
     if (  ( (a1==0.d0) .and. (a2==0.d0) .and. (mod(b1,1.d0)/=0.d0) ) .or. ( (b1==0.d0) .and. (b2==0.d0) .and. (mod(a1,1.d0)/=0.d0) )  ) then
         Coor(1:3)=NEQ%dx(1:3)
+        Flag_Sln=3
         return
     end if
     
@@ -752,8 +761,13 @@ implicit none
                     if (ADmethod=='LS') then
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
-                        Epo_NEQ%dx(ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0.d0
-                        Epo_NEQ%dx(ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=0.d0
+                        Epo_NEQ%Al1(Epo_NEQ%maxL(3), :)=0.d0
+                        Epo_NEQ%Ll1(Epo_NEQ%maxL(3))=0.d0
+                        Epo_NEQ%Al2(Epo_NEQ%maxL(3), :)=0.d0
+                        Epo_NEQ%Ll2(Epo_NEQ%maxL(3))=0.d0
+                        Epo_NEQ%R(Epo_NEQ%maxL(3),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        Epo_NEQ%R(:,Epo_NEQ%maxL(3))=0.d0
+                        call InvSqrt( Epo_NEQ%R(1:N,1:N),  N, Epo_NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
@@ -783,8 +797,13 @@ implicit none
                     if (ADmethod=='LS') then
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
-                        Epo_NEQ%dx(ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=0.d0
-                        Epo_NEQ%dx(ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=0.d0
+                        Epo_NEQ%Al1(Epo_NEQ%maxL(4), :)=0.d0
+                        Epo_NEQ%Ll1(Epo_NEQ%maxL(4))=0.d0
+                        Epo_NEQ%Al2(Epo_NEQ%maxL(4), :)=0.d0
+                        Epo_NEQ%Ll2(Epo_NEQ%maxL(4))=0.d0
+                        Epo_NEQ%R(Epo_NEQ%maxL(4),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
+                        Epo_NEQ%R(:,Epo_NEQ%maxL(4))=0.d0
+                        call InvSqrt( Epo_NEQ%R(1:N,1:N),  N, Epo_NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')

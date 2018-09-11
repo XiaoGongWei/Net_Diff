@@ -247,7 +247,7 @@ implicit none
 !    elseif (index(sp3dir(idx-2:idx),'wum') /=0) then ! If the wum orbit, use the wum PCO
 !        AntFile=trim(AntFile)//'wum'
 !    end if
-    arc_epochs=int(arclength/interval)
+    if (FixEle<LimEle) FixEle=LimEle
     
     if (SystemUsed(1)) then
         if (Combination(1)) SatNum=SatNum+GNum

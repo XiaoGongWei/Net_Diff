@@ -214,18 +214,17 @@ implicit none
         if (ar_mode==2)  DD%RefSat=0  ! Instantaneous AR
         call Get_RefSat(SD, DD%RefSat, RefSat)
         if (all(RefSat==0)) then
-            write(LogID,'(5X,A30)') 'no reference satellite found, skip.'
+            write(LogID,'(5X,A35)') 'no reference satellite found. Skip!'
             cycle          ! If no reference satellite found(almost not possible)
         end if
         
         ! ========= Form double difference =============
         call Double_Difference(SD, DD, RefSat)
-        
-        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3+1) ) then
-            write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'
+        if (DD%PRNS==0) then
+            write(unit=LogID,fmt='(5X,A20)') 'No DD observations. '
             cycle
         end if
-
+        
         ! If new reference satellite found, reset the NEQ
         if (ar_mode/=2) then
             call Reset_NEQ(RefSat, DD, NEQ, Epo_NEQ)
@@ -240,6 +239,25 @@ implicit none
         
         ! ======== Form normal equation ===============
         call Form_NEQ(SD, DD, NEQ, Epo_NEQ)
+        
+        !  ======== Least squart estimation for the coordinate ========
+        if (If_Est_Iono .and. IonoNum>0) then
+            call Solve_NEQ_Iono(NEQ, Epo_NEQ, dx_Coor, Flag_Sln)
+        else
+            call Solve_NEQ(NEQ, Epo_NEQ, dx_Coor(1:3), Flag_Sln)
+        end if
+        if (.not.(If_Est_Iono) .and. If_IonoCompensate .and. Flag_Sln<3) then
+            call IonoUpdate(ObsWeek, ObsSec, NEQ, Epo_NEQ) ! Update DD ionosphere residuals
+        end if
+        
+        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3) ) then
+            write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'     ! In case of cycle slip, so Form_NEQ should be done every epoch.
+            cycle
+        end if
+        if (DD%PRNS<4) then
+            write(unit=LogID,fmt='(A10,A30)') '%%NEU','Insufficient Sat Num '
+            cycle
+        end if
 
         Nbb = matmul(  matmul( transpose(NEQ%Ap1(1:NEQ%PRNS,1:3)), NEQ%P(1:NEQ%PRNS,1:NEQ%PRNS) ), NEQ%Ap1(1:NEQ%PRNS,1:3)  )
         call Invsqrt(Nbb, 3, InvN)
@@ -249,23 +267,10 @@ implicit none
         end do
         PDOP=dsqrt(PDOP)
         if (PDOP>MaxPDOP) then
-            write(unit=LogID,fmt='(5X,A5,F5.1,A15)') 'PDOP=', PDOP, '>maxPDOP, skip'
+            write(unit=LogID,fmt='(5X,A5,F5.1,A16)') 'PDOP=', PDOP, '>maxPDOP, skip.'
             cycle
         end if
 
-        !  ======== Least squart estimation for the coordinate ========
-        if (DD%PRNS<4) then
-            write(unit=LogID,fmt='(A10,A30)') '%%NEU','Insufficient Sat Num '
-            cycle
-        end if
-        if (If_Est_Iono .and. IonoNum>0) then
-            call Solve_NEQ_Iono(NEQ, Epo_NEQ, dx_Coor, Flag_Sln)
-        else
-            call Solve_NEQ(NEQ, Epo_NEQ, dx_Coor(1:3), Flag_Sln)
-        end if
-        if (.not.(If_Est_Iono) .and. If_IonoCompensate .and. Flag_Sln<3) then
-            call IonoUpdate(ObsWeek, ObsSec, NEQ, Epo_NEQ) ! Update DD ionosphere residuals
-        end if
 
         ! ================= Write the result ===============
         Coor=STA%STA(2)%Coor+dx_Coor(1:3)
