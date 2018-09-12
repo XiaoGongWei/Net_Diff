@@ -193,7 +193,7 @@ implicit none
         elseif (System=="E") then   ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5
+                f2=f_E5a
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
