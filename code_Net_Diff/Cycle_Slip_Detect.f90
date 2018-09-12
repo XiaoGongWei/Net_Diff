@@ -83,28 +83,31 @@ implicit none
     
     ! ======== GF combination ======
     if ( (index(CSmethod,"GF")/=0) .and. (L1/=0.d0) .and. (L2/=0.d0) ) then
-    GF=L1-L2*f1/f2        ! In cycle
-    TT=(CycleSlip(sta)%CS(PRN)%WeekPrev-Week)*604800.0d0+CycleSlip(sta)%CS(PRN)%SowPrev-Sow
-    if ( (TT(3)<-Interval*10.d0) .and. (CycleSlip(sta)%CScount==99) ) then
-        Slip=1  ! If data missing too long or new satellite ascending
-    elseif ( (CycleSlip(sta)%CS(PRN)%arcLengthGF<3) .and. (CycleSlip(sta)%CScount==99) )then
-        Slip=2  ! If not enough epoches,accumulate data
-    else
-        ! Quadratic polyfit
-        !call Lagrange(TT,CycleSlip(sta)%CS(PRN)%GFPrev,0.d0,GFEst,2) 
-        GFEst=CycleSlip(sta)%CS(PRN)%GFPrev(1)*TT(2)*TT(3)/(TT(1)-TT(2))/(TT(1)-TT(3))+ &
-                    CycleSlip(sta)%CS(PRN)%GFPrev(2)*TT(1)*TT(3)/(TT(2)-TT(1))/(TT(2)-TT(3))+ &
-                    CycleSlip(sta)%CS(PRN)%GFPrev(3)*TT(1)*TT(2)/(TT(3)-TT(1))/(TT(3)-TT(2))
-        ! Linear polyfit
-        meanGFPrev=sum(CycleSlip(sta)%CS(PRN)%GFPrev(1:3))/3.d0
-        meanTT=sum(TT(1:3))/3.d0
-        coe=DOT_PRODUCT(TT(1:3)-meanTT,CycleSlip(sta)%CS(PRN)%GFPrev(1:3))/ &
-            DOT_PRODUCT(TT(1:3)-meanTT,TT(1:3)-meanTT)
-        GFEst=meanGFPrev-meanTT*coe  ! a0
-        sigma=sqrt(DOT_PRODUCT(CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3),CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3)))
-        GFThreshold=csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt)
-        if (abs(GF-GFEst)*c/f1>GFThreshold*0.8d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
-    end if
+        GF=L1-L2*f1/f2        ! In cycle
+        TT=(CycleSlip(sta)%CS(PRN)%WeekPrev-Week)*604800.0d0+CycleSlip(sta)%CS(PRN)%SowPrev-Sow
+        if ( (TT(3)<-Interval*10.d0) .and. (CycleSlip(sta)%CScount==99) ) then
+            Slip=1  ! If data missing too long or new satellite ascending
+        elseif ( (CycleSlip(sta)%CS(PRN)%arcLengthGF<3) .and. (CycleSlip(sta)%CScount==99) )then
+!            Slip=2  ! If not enough epoches,accumulate data
+            dGF=GF-CycleSlip(sta)%CS(PRN)%GFPrev(3)
+!            dGF=dGF*dsind(Ele)   ! dsqrt(CycleSlip(sta)%dT(PRN))
+            if ( abs(dGF)*c/f1>=csGFmin )  Slip=1   ! Be strict for the first 3 epoches
+        else
+            ! Quadratic polyfit
+            !call Lagrange(TT,CycleSlip(sta)%CS(PRN)%GFPrev,0.d0,GFEst,2) 
+            GFEst=CycleSlip(sta)%CS(PRN)%GFPrev(1)*TT(2)*TT(3)/(TT(1)-TT(2))/(TT(1)-TT(3))+ &
+                        CycleSlip(sta)%CS(PRN)%GFPrev(2)*TT(1)*TT(3)/(TT(2)-TT(1))/(TT(2)-TT(3))+ &
+                        CycleSlip(sta)%CS(PRN)%GFPrev(3)*TT(1)*TT(2)/(TT(3)-TT(1))/(TT(3)-TT(2))
+            ! Linear polyfit
+            meanGFPrev=sum(CycleSlip(sta)%CS(PRN)%GFPrev(1:3))/3.d0
+            meanTT=sum(TT(1:3))/3.d0
+            coe=DOT_PRODUCT(TT(1:3)-meanTT,CycleSlip(sta)%CS(PRN)%GFPrev(1:3))/ &
+                DOT_PRODUCT(TT(1:3)-meanTT,TT(1:3)-meanTT)
+            GFEst=meanGFPrev-meanTT*coe  ! a0
+            sigma=sqrt(DOT_PRODUCT(CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3),CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3)))
+            GFThreshold=csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt)
+            if (abs(GF-GFEst)*c/f1>GFThreshold*0.8d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
+        end if
     end if
     
     ! ======== M-W combination ======
@@ -114,16 +117,16 @@ implicit none
     !  MW=N1-N2
     !  dMW=MW2-MW1
     if ( (index(CSmethod,"MW")/=0) .and. (P1/=0.d0) .and. (P2/=0.d0) .and. (L1/=0.d0) .and. (L2/=0.d0) ) then
-!    if ((P1 ==0.0d0) .or. (P2 ==0.0d0)) return  ! If no P1 or P2 data of this satellite, impossible happen
-!    MW=(f1*L1-f2*L2)/(f1-f2) - (f1*P1 +f2*P2)/(f1+f2)  ! In distance(meter)
-!    MW=MW/c*(f1-f2)                                              ! In cycle 
-    MW=L1 - L2 - (P1*f1 + P2*f2)/(f1+f2)*(f1-f2)/c ! L1, L2 here is in cycle
-    if  (CycleSlip(sta)%CS(PRN)%arcLengthMW>=3)  then
-        dMW=MW-CycleSlip(sta)%CS(PRN)%nMWmean
-        sigma2=CycleSlip(sta)%CS(PRN)%nMWmean2 - CycleSlip(sta)%CS(PRN)%nMWmean**2
-        MWThreshold=min(csMWmax, max(csMWslope*sqrt(sigma2),csMWmin))
-        if ( (abs(dMW)>=MWThreshold)  .and. (CycleSlip(sta)%CScount==99) ) Slip=1
-    end if 
+    !    if ((P1 ==0.0d0) .or. (P2 ==0.0d0)) return  ! If no P1 or P2 data of this satellite, impossible happen
+    !    MW=(f1*L1-f2*L2)/(f1-f2) - (f1*P1 +f2*P2)/(f1+f2)  ! In distance(meter)
+    !    MW=MW/c*(f1-f2)                                              ! In cycle 
+        MW=L1 - L2 - (P1*f1 + P2*f2)/(f1+f2)*(f1-f2)/c ! L1, L2 here is in cycle
+        if  (CycleSlip(sta)%CS(PRN)%arcLengthMW>=3)  then
+            dMW=MW-CycleSlip(sta)%CS(PRN)%nMWmean
+            sigma2=CycleSlip(sta)%CS(PRN)%nMWmean2 - CycleSlip(sta)%CS(PRN)%nMWmean**2
+            MWThreshold=min(csMWmax, max(csMWslope*sqrt(sigma2),csMWmin))
+            if ( (abs(dMW)>=MWThreshold)  .and. (CycleSlip(sta)%CScount==99) ) Slip=1
+        end if 
     end if
 
     ! initial cycle slip information if cycle slip happens
@@ -140,19 +143,19 @@ implicit none
         
     ! Update GF information
     if ( (index(CSmethod,"GF")/=0) .and. (L1/=0.d0) .and. (L2/=0.d0) ) then
-    CycleSlip(sta)%CS(PRN)%arcLengthGF=CycleSlip(sta)%CS(PRN)%arcLengthGF+1
-    if (CycleSlip(sta)%CS(PRN)%arcLengthGF>3) CycleSlip(sta)%CS(PRN)%arcLengthGF=3
-    CycleSlip(sta)%CS(PRN)%WeekPrev=eoshift(CycleSlip(sta)%CS(PRN)%WeekPrev,shift=1,boundary=Week)
-    CycleSlip(sta)%CS(PRN)%SowPrev=eoshift(CycleSlip(sta)%CS(PRN)%SowPrev,shift=1,boundary=Sow)
-    CycleSlip(sta)%CS(PRN)%GFPrev=eoshift(CycleSlip(sta)%CS(PRN)%GFPrev,shift=1,boundary=GF)
+        CycleSlip(sta)%CS(PRN)%arcLengthGF=CycleSlip(sta)%CS(PRN)%arcLengthGF+1
+        if (CycleSlip(sta)%CS(PRN)%arcLengthGF>3) CycleSlip(sta)%CS(PRN)%arcLengthGF=3
+        CycleSlip(sta)%CS(PRN)%WeekPrev=eoshift(CycleSlip(sta)%CS(PRN)%WeekPrev,shift=1,boundary=Week)
+        CycleSlip(sta)%CS(PRN)%SowPrev=eoshift(CycleSlip(sta)%CS(PRN)%SowPrev,shift=1,boundary=Sow)
+        CycleSlip(sta)%CS(PRN)%GFPrev=eoshift(CycleSlip(sta)%CS(PRN)%GFPrev,shift=1,boundary=GF)
     end if
 
     ! Update MW information
     if ( (index(CSmethod,"MW")/=0) .and. (P1/=0.d0) .and. (P2/=0.d0) .and. (L1/=0.d0) .and. (L2/=0.d0) ) then
-    CycleSlip(sta)%CS(PRN)%arcLengthMW=CycleSlip(sta)%CS(PRN)%arcLengthMW+1
-    if (CycleSlip(sta)%CS(PRN)%arcLengthMW>10) CycleSlip(sta)%CS(PRN)%arcLengthMW=10
-    CycleSlip(sta)%CS(PRN)%nMWmean=CycleSlip(sta)%CS(PRN)%nMWmean+(MW-CycleSlip(sta)%CS(PRN)%nMWmean)/CycleSlip(sta)%CS(PRN)%arcLengthMW
-    CycleSlip(sta)%CS(PRN)%nMWmean2=CycleSlip(sta)%CS(PRN)%nMWmean2+(MW**2-CycleSlip(sta)%CS(PRN)%nMWmean2)/CycleSlip(sta)%CS(PRN)%arcLengthMW
+        CycleSlip(sta)%CS(PRN)%arcLengthMW=CycleSlip(sta)%CS(PRN)%arcLengthMW+1
+        if (CycleSlip(sta)%CS(PRN)%arcLengthMW>10) CycleSlip(sta)%CS(PRN)%arcLengthMW=10
+        CycleSlip(sta)%CS(PRN)%nMWmean=CycleSlip(sta)%CS(PRN)%nMWmean+(MW-CycleSlip(sta)%CS(PRN)%nMWmean)/CycleSlip(sta)%CS(PRN)%arcLengthMW
+        CycleSlip(sta)%CS(PRN)%nMWmean2=CycleSlip(sta)%CS(PRN)%nMWmean2+(MW**2-CycleSlip(sta)%CS(PRN)%nMWmean2)/CycleSlip(sta)%CS(PRN)%arcLengthMW
     end if
 
     ! ========= LLI ============
@@ -225,11 +228,17 @@ implicit none
         ! Update L1P1 information
         CycleSlip(sta)%CS(PRN)%arcLengthL1P1=CycleSlip(sta)%CS(PRN)%arcLengthL1P1+1
         if (CycleSlip(sta)%CS(PRN)%arcLengthL1P1>int(csL1P1maxLength/Interval)) CycleSlip(sta)%CS(PRN)%arcLengthL1P1=int(csL1P1maxLength/Interval)
-        CycleSlip(sta)%CS(PRN)%LastWeek=Week
-        CycleSlip(sta)%CS(PRN)%LastSow=Sow
         CycleSlip(sta)%CS(PRN)%L1P1mean=CycleSlip(sta)%CS(PRN)%L1P1mean+(L1P1-CycleSlip(sta)%CS(PRN)%L1P1mean)/CycleSlip(sta)%CS(PRN)%arcLengthL1P1
         CycleSlip(sta)%CS(PRN)%L1P1mean2=CycleSlip(sta)%CS(PRN)%L1P1mean2+(L1P1**2-CycleSlip(sta)%CS(PRN)%L1P1mean2)/CycleSlip(sta)%CS(PRN)%arcLengthL1P1
         
+    end if
+    CycleSlip(sta)%CS(PRN)%LastWeek=Week   ! Also used in RTK, to delect whether to delete satellite, see Form_NEQ.f90
+    CycleSlip(sta)%CS(PRN)%LastSow=Sow
+    if (Slip==1) then
+        CycleSlip(sta)%CS(PRN)%arcLengthSlip=0   ! Record this for reference satellite selection
+    elseif (Slip==0) then
+        CycleSlip(sta)%CS(PRN)%arcLengthSlip=CycleSlip(sta)%CS(PRN)%arcLengthSlip+1
+        if (CycleSlip(sta)%CS(PRN)%arcLengthSlip>10) CycleSlip(sta)%CS(PRN)%arcLengthSlip=10
     end if
 
 end subroutine

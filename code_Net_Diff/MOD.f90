@@ -359,6 +359,7 @@ use MOD_constant
         integer :: WeekPrev(3) = 0
         real(8) :: SowPrev(3) = 0.d0, GFPrev(3)
         integer(2) :: arcLengthL1P1  =  0
+        integer(1) :: arcLengthSlip  =  0
         integer :: LastWeek
         real(8) :: LastSow
         real(8) :: L1P1mean, L1P1mean2

@@ -76,11 +76,11 @@ implicit none
                 exit
             end if
         end do
-        dT(1)=(CycleSlip(1)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(1)%CS(PRN)%SowPrev(3)-DD%Sow
-        dT(2)=(CycleSlip(2)%CS(PRN)%WeekPrev(3)-DD%Week)*604800.0d0+CycleSlip(2)%CS(PRN)%SowPrev(3)-DD%Sow
+        dT(1)=(CycleSlip(1)%CS(PRN)%LastWeek-DD%Week)*604800.0d0+CycleSlip(1)%CS(PRN)%LastSow-DD%Sow
+        dT(2)=(CycleSlip(2)%CS(PRN)%LastWeek-DD%Week)*604800.0d0+CycleSlip(2)%CS(PRN)%LastSow-DD%Sow
         ! First is the ionosphere parameter
-        if (If_Est_Iono .and. IonoNum>0) then
-            if (flag_del_PRN .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
+        if (flag_del_PRN .and. If_Est_Iono .and. IonoNum>0) then
+            if (Epo_NEQ%InvN(ParaNum+2*IonoNum+PRN,ParaNum+2*IonoNum+PRN)/=0.d0 .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
 !                    if (ADmethod=='LS') then
 !                            call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+2*IonoNum+PRN) !  ionosphere parameter
 !                    elseif (ADmethod=='KF') then  ! As ionosphere parameter is estimated as randon walk, so we use transformed Kalman Filter instead of Least Square
@@ -208,7 +208,7 @@ implicit none
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5a
+                f2=f_E5
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1

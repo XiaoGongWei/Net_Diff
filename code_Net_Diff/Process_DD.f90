@@ -259,7 +259,7 @@ implicit none
             cycle
         end if
 
-        Nbb = matmul(  matmul( transpose(NEQ%Ap1(1:NEQ%PRNS,1:3)), NEQ%P(1:NEQ%PRNS,1:NEQ%PRNS) ), NEQ%Ap1(1:NEQ%PRNS,1:3)  )
+        Nbb = matmul(  matmul( transpose(DD%A(1:DD%PRNS,1:3)), DD%P(1:DD%PRNS,1:DD%PRNS) ), DD%A(1:DD%PRNS,1:3)  )
         call Invsqrt(Nbb, 3, InvN)
         PDOP=0.d0
         do i=1,3

@@ -43,6 +43,8 @@ implicit none
     integer :: maxL
     real(8) :: NEQ_dx(ParaNum+2*MaxPRN), NEQ_InvN(ParaNum+2*MaxPRN,ParaNum+2*MaxPRN)
     real(8) :: AA(4*NEQ%PRNS,ParaNum+2*MaxPRN), LL(4*NEQ%PRNS), RR(4*NEQ%PRNS,4*NEQ%PRNS)
+    real(8) :: R1(NEQ%PRNS,NEQ%PRNS), R2(NEQ%PRNS,NEQ%PRNS), R3(NEQ%PRNS,NEQ%PRNS), R4(NEQ%PRNS,NEQ%PRNS)
+    real(8) :: P1(NEQ%PRNS,NEQ%PRNS), P2(NEQ%PRNS,NEQ%PRNS), P3(NEQ%PRNS,NEQ%PRNS), P4(NEQ%PRNS,NEQ%PRNS)
     ! for lambda
     integer :: npar, npar2, nfixed
     real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
@@ -102,6 +104,8 @@ implicit none
     NEQ%maxV=0.d0
     NEQ%maxL=0
     N=NEQ%PRNS
+    R1=NEQ%R(1:N,1:N); R2=R1; R3=R1; R4=R1;
+    P1=NEQ%P(1:N,1:N); P2=P1; P3=P1; P4=P1;
     if (ADmethod=='KF') then
         NEQ_InvN=NEQ%InvN
         NEQ_dx=NEQ%dx ! temp save Pk and X in in case of outliers
@@ -117,25 +121,25 @@ implicit none
             if (any(NEQ%Lp1(1:N)/=0.d0)) then
                 AA(K+1:K+N,1:ParaNum)=NEQ%Ap1(1:N,1:ParaNum)
                 LL(K+1:K+N)=NEQ%Lp1(1:N)
-                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                RR(K+1:K+N,K+1:K+N)=R1
                 K=K+N
             end if
             if (any(NEQ%Lp2(1:N)/=0.d0)) then
                 AA(K+1:K+N,1:ParaNum)=NEQ%Ap2(1:N,1:ParaNum)
                 LL(K+1:K+N)=NEQ%Lp2(1:N)
-                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                RR(K+1:K+N,K+1:K+N)=R2
                 K=K+N
             end if
             if (any(NEQ%Lwl(1:N)/=0.d0)) then
                 AA(K+1:K+N,:)=NEQ%Awl(1:N,:)
                 LL(K+1:K+N)=NEQ%Lwl(1:N)
-                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                RR(K+1:K+N,K+1:K+N)=R3
                 K=K+N
             end if
             if (any(NEQ%Lw4(1:N)/=0.d0)) then
                 AA(K+1:K+N,:)=NEQ%Aw4(1:N,:)
                 LL(K+1:K+N)=NEQ%Lw4(1:N)
-                RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
+                RR(K+1:K+N,K+1:K+N)=R4
                 K=K+N
             end if
             call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*MaxPRN), LL(1:K), RR(1:K,1:K))
@@ -152,10 +156,10 @@ implicit none
         NEQ%Vwl(1:N)=(matmul(NEQ%Awl(1:N, :), NEQ%dx) - NEQ%Lwl(1:N))
         NEQ%Vw4(1:N)=(matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N))
         do i=1,N
-             NEQ%Vp1(i)= NEQ%Vp1(i)*sqrt(NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight
-             NEQ%Vp2(i)= NEQ%Vp2(i)*sqrt(NEQ%P(i,i))
-             NEQ%Vwl(i)= NEQ%Vwl(i)*sqrt(NEQ%P(i,i))
-             NEQ%Vw4(i)= NEQ%Vw4(i)*sqrt(NEQ%P(i,i))
+             NEQ%Vp1(i)= NEQ%Vp1(i)*sqrt(P1(i,i))   ! unify to the same weight
+             NEQ%Vp2(i)= NEQ%Vp2(i)*sqrt(P2(i,i))
+             NEQ%Vwl(i)= NEQ%Vwl(i)*sqrt(P3(i,i))
+             NEQ%Vw4(i)= NEQ%Vw4(i)*sqrt(P4(i,i))
         end do
         NEQ%maxV(1:1)=maxval(dabs(NEQ%Vp1(1:N)))
         NEQ%maxL(1:1)=maxloc(dabs(NEQ%Vp1(1:N)))
@@ -166,17 +170,27 @@ implicit none
         NEQ%maxV(4:4)=maxval(dabs(NEQ%Vw4(1:N)))
         NEQ%maxL(4:4)=maxloc(dabs(NEQ%Vw4(1:N)))
 
-        maxV=maxval(dabs(NEQ%maxV))*0.01d0
+        maxV=maxval(dabs(NEQ%maxV))*0.01d0  ! unify to  carrier phase magnitude
         maxL=maxloc(dabs(NEQ%maxV),dim=1)
         
         if ( dabs(maxV)>.21d0*c/(a1*154.d0+a2*120.d0)/10.23d6  ) then
             if ((maxL)==1) then   ! maxV in P1
-                call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap1(1:N,:), NEQ%Lp1(1:N), &
-                       NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(1), NEQ%SumN)
+                if (ADmethod=='LS') then
+                    call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap1(1:N,:), NEQ%Lp1(1:N), &
+                           NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(1), NEQ%SumN)   ! In here, we assume P dosen't change after Minus_NEQ
+                elseif (ADmethod=='KF') then
+                    R1(NEQ%maxL(1),NEQ%maxL(1))=R1(NEQ%maxL(1),NEQ%maxL(1))*50.d0**2 ! Enlarge noise by 10 times. Kalman filter only need R
+                    call InvSqrt( R1,  N, P1)   ! For the correctness of  V
+                end if
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in P1', 'PRN=',NEQ%PRN(NEQ%maxL(1)),'maxV=',maxV
             elseif  ((maxL)==2) then   ! maxV in P2
-                call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap2(1:N,:), NEQ%Lp2(1:N), &
-                       NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(2), NEQ%SumN)
+                if (ADmethod=='LS') then
+                    call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Ap2(1:N,:), NEQ%Lp2(1:N), &
+                           P2, ParaNum,  N, NEQ%maxL(2), NEQ%SumN)   ! In here, we assume P dosen't change after Minus_NEQ
+                elseif (ADmethod=='KF') then
+                    R2(NEQ%maxL(2),NEQ%maxL(2))=R2(NEQ%maxL(2),NEQ%maxL(2))*50.d0**2 ! Enlarge noise by 10 times. Kalman filter only need R
+                    call InvSqrt( R2,  N, P2)   ! For the correctness of  V
+                end if
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in P2', 'PRN=',NEQ%PRN(NEQ%maxL(2)),'maxV=',maxV
             elseif  ((maxL)==3) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in WL', 'PRN=',NEQ%PRN(NEQ%maxL(3)),'maxV=',maxV
@@ -192,22 +206,28 @@ implicit none
                     if (ADmethod=='LS') then
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)))
                         NEQ%Awl(NEQ%maxL(3), :)=0.d0
-                        NEQ%Lwl(NEQ%maxL(3))=0.d0
-                        NEQ%R(NEQ%maxL(3),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
-                        NEQ%R(:,NEQ%maxL(3))=0.d0
-                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
+                        NEQ%Lwl(NEQ%maxL(3))=0.d0   ! For the correctness of Vwl
+                        R3(NEQ%maxL(3),:)=0.d0
+                        R3(:,NEQ%maxL(3))=0.d0
+                        call InvSqrt( R3,  N, P3)   ! For the correctness of next Minus_NEQ and V
                     elseif (ADmethod=='KF') then
                         call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
                     end if
                 else
-                    call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
-                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(3), NEQ%SumN)                    
+                    if (ADmethod=='LS') then
+                        call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
+                               P3, NEQ%N,  N, NEQ%maxL(3), NEQ%SumN)   ! In here, we assume P dosen't change after Minus_NEQ
+                    elseif (ADmethod=='KF') then
+                        R3(NEQ%maxL(3),NEQ%maxL(3))=R3(NEQ%maxL(3),NEQ%maxL(3))*50.d0**2 ! Enlarge noise by 10 times. Kalman filter only need R
+!                        R3(NEQ%maxL(3), :)=0.d0; R3(:, NEQ%maxL(3))=0.d0; 
+!                        NEQ%Awl(NEQ%maxL(3), :)=0.d0; NEQ%Lwl(NEQ%maxL(3))=0.d0   ! For the correctness of kalman filter
+                        call InvSqrt( R3,  N, P3)   ! For the correctness of  V
+                    end if
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0 
                 end if
-                par_PRN(NEQ%PRN(NEQ%maxL(3)))=1  ! For partial fix in this epoch
             elseif  ((maxL)==4) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in W4', 'PRN=',NEQ%PRN(NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
@@ -222,23 +242,26 @@ implicit none
                     if (ADmethod=='LS') then
                         call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(4)))
                         NEQ%Aw4(NEQ%maxL(4), :)=0.d0
-                        NEQ%Lw4(NEQ%maxL(4))=0.d0
-                        NEQ%R(NEQ%maxL(4),:)=0.d0   ! However, this will delete all observations of this satellite in this epoch
-                        NEQ%R(:,NEQ%maxL(4))=0.d0
-                        call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
+                        NEQ%Lw4(NEQ%maxL(4))=0.d0  ! For the correctness of Vw4
+                        R3(NEQ%maxL(4),:)=0.d0
+                        R3(:,NEQ%maxL(4))=0.d0
+                        call InvSqrt( R4,  N, P4)   ! For the correctness of next Minus_NEQ
                     elseif (ADmethod=='KF') then
                         call KF_Change(NEQ_InvN, NEQ_dx,NEQ%N, ParaNum+MaxPRN+NEQ%PRN(NEQ%maxL(4)), 'dda')
                     end if
                 else
-                    call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
-                           NEQ%P(1:N, 1:N), NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)    
-                           !   P need to change, inverse of Q 
+                    if (ADmethod=='LS') then
+                        call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
+                               P4, NEQ%N,  N, NEQ%maxL(4), NEQ%SumN)   ! In here, we assume P dosen't change after Minus_NEQ
+                    elseif (ADmethod=='KF') then
+                        R4(NEQ%maxL(4),NEQ%maxL(4))=R4(NEQ%maxL(4),NEQ%maxL(4))*50.d0**2 ! Enlarge noise by 10 times. Kalman filter only need R
+                        call InvSqrt( R4,  N, P4)   ! For the correctness of  V
+                    end if
                 end if
                 if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0 
                 end if
-                par_PRN(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=1  ! For partial fix in this epoch
             end if
 
             Ad_Flag=.true.
@@ -262,22 +285,22 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)*sigPC/sqrt(NEQ%P(i,i))   ! back to raw residuals
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)*sigPC/sqrt(P1(i,i))   ! back to raw residuals
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)*sigPC/sqrt(NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)*sigPC/sqrt(P2(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)*sigLC/sqrt(NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)*sigLC/sqrt(P3(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)*sigLC/sqrt(NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)*sigLC/sqrt(P4(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
 
@@ -348,7 +371,7 @@ implicit none
     if (ratio>minratio) then  ! ambiguity fix success
         if (flag_partial==1) then ! If partia       l ambiguity fixed
             ! recover the order of amb and iPOS
-            par_PRN=1
+            par_PRN=0
             do i=npar2,1,-1
                 PRN=iPOS2(i)
                 flag_fixed=0
@@ -356,17 +379,23 @@ implicit none
                     if (iPOS(j)==PRN) then
                         amb(i)=amb(j)
                         flag_fixed=1
-                        par_PRN(PRN)=0  ! record the fixed PRN, for the fast partial AR in next epoch
                         exit
                     end if
                 end do
                 iPOS(i)=PRN
                 if (flag_fixed==0) then
                     amb(i)=amb2(i)  ! unfixed ambiguity
+                    par_PRN(PRN)=1   ! record the unfixed PRN, for the fast partial AR in next epoch
                     iPOS(i)=0
                 end if
             end do
             npar=npar2
+            do PRN=1,MaxPRN
+                if (NEQ%Ele(PRN)<FixEle .and. NEQ%Ele(PRN)>LimEle) then ! record the unfixed PRN
+                    par_PRN(PRN)=1
+                    par_PRN(PRN+MaxPRN)=1
+                end if
+            end do
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'amb_fix'
         if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency

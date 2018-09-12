@@ -165,11 +165,11 @@ implicit none
         NEQ%Vw4(1:N)=(matmul(NEQ%Aw4(1:N, :), NEQ%dx) - NEQ%Lw4(1:N))
         NEQ%Vewl(1:N)=(matmul(NEQ%Aewl(1:N, :), NEQ%dx) - NEQ%Lewl(1:N))
         do i=1,N
-             NEQ%Vp1(i)= NEQ%Vp1(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight, max P(i,i) is 0.5
-             NEQ%Vp2(i)= NEQ%Vp2(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
-             NEQ%Vwl(i)= NEQ%Vwl(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
-             NEQ%Vw4(i)= NEQ%Vw4(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
-             NEQ%Vewl(i)= NEQ%Vewl(i)*sigLC*sqrt(2.d0*NEQ%P(i,i))
+             NEQ%Vp1(i)= NEQ%Vp1(i)*sqrt(NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight
+             NEQ%Vp2(i)= NEQ%Vp2(i)*sqrt(NEQ%P(i,i))
+             NEQ%Vwl(i)= NEQ%Vwl(i)*sqrt(NEQ%P(i,i))
+             NEQ%Vw4(i)= NEQ%Vw4(i)*sqrt(NEQ%P(i,i))
+             NEQ%Vewl(i)= NEQ%Vewl(i)*sqrt(NEQ%P(i,i))
         end do
         NEQ%maxV(1:1)=maxval(dabs(NEQ%Vp1(1:N)))
         NEQ%maxL(1:1)=maxloc(dabs(NEQ%Vp1(1:N)))
@@ -182,7 +182,7 @@ implicit none
         NEQ%maxV(5:5)=maxval(dabs(NEQ%Vewl(1:N)))
         NEQ%maxL(5:5)=maxloc(dabs(NEQ%Vewl(1:N)))
 
-        maxV=maxval(dabs(NEQ%maxV))
+        maxV=maxval(dabs(NEQ%maxV))*0.01d0
         maxL=maxloc(dabs(NEQ%maxV),dim=1)
 
         if ( dabs(maxV)>.4d0*c/(a1*154.d0+a2*120.d0)/10.23d6  ) then
@@ -223,6 +223,7 @@ implicit none
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(3)))%n=1.d0 
                 end if
+                par_PRN(NEQ%PRN(NEQ%maxL(3)))=1  ! For partial fix in this epoch
             elseif  ((maxL)==4) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in W4', 'PRN=',NEQ%PRN(NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
@@ -252,6 +253,7 @@ implicit none
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0 
                 end if
+                par_PRN(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=1  ! For partial fix in this epoch
             elseif  ((maxL)==5) then   ! maxV in EWL
                 call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Aewl(1:N,:), NEQ%Lewl(1:N), &
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(5), NEQ%SumN)
@@ -280,27 +282,27 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)*sigPC/sigLC/sqrt(2.d0*NEQ%P(i,i))   ! back to raw residuals
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp1(i)*sigPC/sqrt(NEQ%P(i,i))   ! back to raw residuals
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)*sigPC/sigLC/sqrt(2.d0*NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vp2(i)*sigPC/sqrt(NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)/sqrt(2.d0*NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vwl(i)*sigLC/sqrt(NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)/sqrt(2.d0*NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vw4(i)*sigLC/sqrt(NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vewl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vewl(i)/sqrt(2.d0*NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') NEQ%Vewl(i)*sigLC/sqrt(NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
         
@@ -365,7 +367,7 @@ implicit none
     if (ratio>minratio) then  ! ambiguity fix success
         if (flag_partial==1) then ! If partia       l ambiguity fixed
             ! recover the order of amb and iPOS
-            par_PRN=0
+            par_PRN=1
             do i=npar2,1,-1
                 PRN=iPOS2(i)
                 flag_fixed=0
@@ -373,23 +375,17 @@ implicit none
                     if (iPOS(j)==PRN) then
                         amb(i)=amb(j)
                         flag_fixed=1
+                        par_PRN(PRN)=0  ! record the fixed PRN, for the fast partial AR in next epoch
                         exit
                     end if
                 end do
                 iPOS(i)=PRN
                 if (flag_fixed==0) then
                     amb(i)=amb2(i)  ! unfixed ambiguity
-                    par_PRN(PRN)=1   ! record the unfixed PRN, for the fast partial AR in next epoch
                     iPOS(i)=0
                 end if
             end do
             npar=npar2
-            do PRN=1,MaxPRN
-                if (NEQ%Ele(PRN)<FixEle .and. NEQ%Ele(PRN)>LimEle) then ! record the unfixed PRN
-                    par_PRN(PRN)=1
-                    par_PRN(PRN+MaxPRN)=1
-                end if
-            end do
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'amb_fix'
         if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
@@ -715,12 +711,12 @@ implicit none
         Epo_NEQ%Vwl(1:N)=(matmul(Epo_NEQ%Awl(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lwl(1:N))
         Epo_NEQ%Vw4(1:N)=(matmul(Epo_NEQ%Aw4(1:N, :), Epo_NEQ%dx) - Epo_NEQ%Lw4(1:N))
         do i=1,N
-             Epo_NEQ%Vp1(i)= Epo_NEQ%Vp1(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight, max P(i,i) is 0.5
-             Epo_NEQ%Vp2(i)= Epo_NEQ%Vp2(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
-             Epo_NEQ%Vl1(i)= Epo_NEQ%Vl1(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
-             Epo_NEQ%Vl2(i)= Epo_NEQ%Vl2(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
-             Epo_NEQ%Vwl(i)= Epo_NEQ%Vwl(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
-             Epo_NEQ%Vw4(i)= Epo_NEQ%Vw4(i)*sigLC*sqrt(2.d0*Epo_NEQ%P(i,i))
+             Epo_NEQ%Vp1(i)= Epo_NEQ%Vp1(i)*sqrt(Epo_NEQ%P(i,i))   ! unify to  carrier phase magnitude and the same weight
+             Epo_NEQ%Vp2(i)= Epo_NEQ%Vp2(i)*sqrt(Epo_NEQ%P(i,i))
+             Epo_NEQ%Vl1(i)= Epo_NEQ%Vl1(i)*sqrt(Epo_NEQ%P(i,i))
+             Epo_NEQ%Vl2(i)= Epo_NEQ%Vl2(i)*sqrt(Epo_NEQ%P(i,i))
+             Epo_NEQ%Vwl(i)= Epo_NEQ%Vwl(i)*sqrt(Epo_NEQ%P(i,i))
+             Epo_NEQ%Vw4(i)= Epo_NEQ%Vw4(i)*sqrt(Epo_NEQ%P(i,i))
         end do
         Epo_NEQ%maxV(1:1)=maxval(dabs(Epo_NEQ%Vp1(1:N)))
         Epo_NEQ%maxL(1:1)=maxloc(dabs(Epo_NEQ%Vp1(1:N)))
@@ -735,7 +731,7 @@ implicit none
         Epo_NEQ%maxV(6:6)=maxval(dabs(Epo_NEQ%Vw4(1:N)))
         Epo_NEQ%maxL(6:6)=maxloc(dabs(Epo_NEQ%Vw4(1:N)))
 
-        maxV=maxval(dabs(Epo_NEQ%maxV))
+        maxV=maxval(dabs(Epo_NEQ%maxV))*0.01d0
         maxL=maxloc(dabs(Epo_NEQ%maxV),dim=1)
         
         if ( dabs(maxV)>.04d0 ) then
@@ -783,6 +779,8 @@ implicit none
                     STA%STA(1)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))%n=1.d0
                     STA%STA(2)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))%n=1.d0 
                 end if
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=1  ! For partial fix in this epoch
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(3))+MaxPRN)=1  ! For partial fix in this epoch
             elseif  ((maxL)==4) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in L2', 'PRN=',Epo_NEQ%PRN(Epo_NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
@@ -819,6 +817,8 @@ implicit none
                     STA%STA(1)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))%n=1.d0
                     STA%STA(2)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))%n=1.d0 
                 end if
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=1  ! For partial fix in this epoch
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=1  ! For partial fix in this epoch
            elseif ((maxL)==5) then   ! maxV in WL
                 call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Awl(1:N,:), Epo_NEQ%Lwl(1:N), &
                        Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(5), Epo_NEQ%SumN)
@@ -848,32 +848,32 @@ implicit none
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp1(i)*sigPC/sigLC/sqrt(2.d0*Epo_NEQ%P(i,i))    ! back to raw residuals
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp1(i)*sigPC/sqrt(Epo_NEQ%P(i,i))    ! back to raw residuals
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vp2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp2(i)*sigPC/sigLC/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vp2(i)*sigPC/sqrt(Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl1'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl1(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl1(i)*sigLC/sqrt(Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vl2'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl2(i)/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vl2(i)*sigLC/sqrt(Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vwl'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)*5.d0/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vwl(i)*5.d0*sigLC/sqrt(Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     write(unit=LogID,fmt='(5X,A5)',advance='no') 'Vw4'
     do i=1,N
-        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)*7.d0/sqrt(2.d0*Epo_NEQ%P(i,i))
+        write(unit=LogID,fmt='(F7.3)',advance='no') Epo_NEQ%Vw4(i)*7.d0*sigLC/sqrt(Epo_NEQ%P(i,i))
     end do
     write(unit=LogID,fmt='(A)') ''
     
@@ -937,7 +937,7 @@ implicit none
     end if
     if (ratio>minratio) then  ! ambiguity fix success
         if (flag_partial==1) then ! If partia       l ambiguity fixed
-            par_PRN_Epo=0
+            par_PRN_Epo=1
             ! recover the order of amb and iPOS
             do i=npar2,1,-1
                 PRN=iPOS2(i)
@@ -946,23 +946,17 @@ implicit none
                     if (iPOS(j)==PRN) then
                         amb(i)=amb(j)
                         flag_fixed=1
+                        par_PRN_Epo(PRN)=0  ! record the fixed PRN, for the fast partial AR in next epoch
                         exit
                     end if
                 end do
                 iPOS(i)=PRN
                 if (flag_fixed==0) then
                     amb(i)=amb2(i)  ! unfixed ambiguity
-                    par_PRN_Epo(PRN)=1   ! record the unfixed PRN, for the fast partial AR in next epoch
                     iPOS(i)=0
                 end if
             end do
             npar=npar2
-            do PRN=1,MaxPRN
-                if (Epo_NEQ%Ele(PRN)<FixEle .and. Epo_NEQ%Ele(PRN)>LimEle) then ! record the unfixed PRN
-                    par_PRN_Epo(PRN)=1
-                    par_PRN_Epo(PRN+MaxPRN)=1
-                end if
-            end do
         end if  ! if (flag_partial==1) then
         write(LogID,'(A10)',advance='no') 'L1_amb_fix'
 
