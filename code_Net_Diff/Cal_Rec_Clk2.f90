@@ -51,12 +51,12 @@ implicit none
     character(1) :: System
     real(8) :: P1, P2, C1, C2, Range, L1, L2, Phase, Range_prn(MaxPRN), Phase_prn(MaxPRN), dOMC(MaxPRN), medOMC
     integer :: RefSat=0, k
-    real(8) :: Sat_Coor0(3), Sat_Coor(3), Sat_Vel(3), Sat_XYZ(3),s, t1
+    real(8) :: Sat_Coor(3), Sat_Vel(3), Sat_XYZ(3),s, t1
     real(8) :: Rela, Ele, maxEle, EleELe(MaxPRN)
     real(8) :: Sat_Clk
     real(8) :: STD, Mfh, Mfw
     integer :: n
-    real(8) :: maxV,toe, LimClk
+    real(8) :: maxV, LimClk
     integer :: maxL, PRNPRN(MaxPRN), PRNOUT(10),PRNOUTn
     
     Rec_Clk=0.0D0
@@ -188,7 +188,7 @@ implicit none
             
         ! Calculate the satellite coordinate and the distance between satellite and reciver
         t1=Range/c
-        call Cal_Sat_PosClk(System, Obsweek,Obssec+ObsData%Clk_Bias, PRN, Coor, t1, .true., Sat_Coor0, Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
+        call Cal_Sat_PosClk(System, Obsweek,Obssec+ObsData%Clk_Bias, PRN, Coor, t1, .true., Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)
         if ( all(abs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
         if (dabs(Sat_Clk-9999.0d0)<0.1d0) cycle  ! If no this Satellite clock data
         ! Add the Equivalent Satllite Clock file

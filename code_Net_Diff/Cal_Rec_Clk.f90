@@ -36,9 +36,9 @@ implicit none
     real(8)  :: k, KK, Freq
     character(1) :: System
     real(8) :: P1, P2, C1, C2, Range, t1
-    real(8) :: Sat_Coor(3), Sat_Coor0(3), Sat_Vel(3), s
+    real(8) :: Sat_Coor(3), Sat_Vel(3), s
     real(8) :: Rela, Ele
-    real(8) :: Sat_Clk,toe
+    real(8) :: Sat_Clk
     
     Rec_Clk=0.0D0
     KK=0.0d0
@@ -146,7 +146,7 @@ implicit none
             
             ! Calculate the satellite coordinate and the distance between satellite and reciver
             t1=Range/c
-            call Cal_Sat_PosClk(System, Obsweek,Obssec+ObsData%Clk_Bias, PRN, Coor, t1, .true., Sat_Coor0,Sat_Coor, Sat_Vel,Sat_Clk, s, Rela,toe)
+            call Cal_Sat_PosClk(System, Obsweek,Obssec+ObsData%Clk_Bias, PRN, Coor, t1, .true., Sat_Coor, Sat_Vel,Sat_Clk, s, Rela)
             if ( all(abs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
             if (dabs(Sat_Clk-9999.0d0)<0.1d0) cycle  ! If no this Satellite clock data
 

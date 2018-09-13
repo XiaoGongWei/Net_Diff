@@ -46,7 +46,7 @@ implicit none
     real(8) ::Amb(SatNum,STA%Num)
     real(8) :: RecPCO(3),SatPCO(3)
     real(8) :: Azi, Ele_Sat, SatPCV(3)=0.d0, StaPCV(3)=0.d0
-    real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor0(3),  Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
+    real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
     real(8) :: STD, Ion=0.d0, Ion1=0.d0
     real(8) :: Rec_Clk, Sat_Clk, Ele, EleEle(MaxPRN*2)
     integer :: CuParaNum
@@ -58,7 +58,7 @@ implicit none
     integer :: maxL
     real(8) :: V(40), sigma0, PDOP=0.d0, HDOP, VDOP, ISB(2)
     real(8) :: NEU(3),  Mean_Coor(3), RMS(3), Mean_NEU(3)
-    real(8) :: UERE=0.d0,toe
+    real(8) :: UERE=0.d0
     character(100) :: line
 
     integer(kind=1)  :: I1outerr,t
@@ -498,7 +498,7 @@ implicit none
                     AppCoor2=AppCoor1 +MATMUL(transpose(Rotation),RecPCO)
 
                     ! ********Satellite coordinate and clcok ********
-                    call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor2, t1, .true., Sat_Coor0,  Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
+                    call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor2, t1, .true., Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)
                     if ( all(dabs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
                     if (dabs(Sat_Clk-9999.d0)<0.1d0 ) cycle
                     ! Add the Equivalent Satllite Clock file
@@ -821,8 +821,8 @@ implicit none
                         else
                             
                         end if
-                        write(unit=LogID,fmt='(A6,1X,A1,I2,F8.2,3F15.3,E15.7,3F8.3,2F10.3,2X,3F7.3,3I8)') 'PRN',System,PRN_S,Ele, Range, Phase,s,Sat_Clk, &
-                                        STD, Ion, rela,  L(N-1), L(N),Res(1)%L(PRN*2),ESC(PRN+56),OrbCorr(PRN+56,1),int(Res(1)%sow),int(PCORSow),int(toe)
+                        write(unit=LogID,fmt='(A6,1X,A1,I2,F8.2,3F15.3,E15.7,3F8.3,2F10.3,2X,3F7.3,2I8)') 'PRN',System,PRN_S,Ele, Range, Phase,s,Sat_Clk, &
+                                        STD, Ion, rela,  L(N-1), L(N),Res(1)%L(PRN*2),ESC(PRN+56),OrbCorr(PRN+56,1),int(Res(1)%sow),int(PCORSow)
                     end if
                 end do ! do i=1,ObsData%PRNS
 

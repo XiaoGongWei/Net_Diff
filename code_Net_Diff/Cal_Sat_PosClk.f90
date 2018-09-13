@@ -23,7 +23,7 @@
 ! WRITTEN BY: Yize Zhang, zhyize@163.com, Tongji & SHAO
 !    ===============End of header =================
 
-subroutine Cal_Sat_PosClk(System, Obsweek, Obssec, PRN, Coor, t1, rela_flag, Sat_Coor0,  Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
+subroutine Cal_Sat_PosClk(System, Obsweek, Obssec, PRN, Coor, t1, rela_flag,  Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)
 use MOD_Sp3Data
 use MOD_ClkData
 use MOD_FileID
@@ -35,7 +35,7 @@ implicit none
     real(8) :: Obssec, Coor(3), t1
     logical :: Rela_Flag
     ! Intent out:
-    real(8) :: Sat_Coor0(3), Sat_Coor(3), Sat_Vel(3), Sat_Clk, s , Rela,toe
+    real(8) :: Sat_Coor(3), Sat_Vel(3), Sat_Clk, s , Rela
     ! Local variables
     integer :: error
 
@@ -78,7 +78,7 @@ implicit none
     end if
 
     if (index(Orbit,"SP3")/=0) then   ! If Precise Orbit
-        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsTime+SP3Time, PRN, Coor, t1, rela_flag , Sat_Coor0, Sat_Coor, Sat_Vel, s, Rela)
+        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsTime+SP3Time, PRN, Coor, t1, rela_flag, Sat_Coor, Sat_Vel, s, Rela)
     elseif  (index(Orbit,"BRD")/=0) then
         if (System=="G") then   ! GPS
             call Cal_Sat_Pos_n(System, Obsweek, Obssec+ObsTime, PRN, Coor, t1, Sat_Coor, Sat_Vel, s, Rela)
@@ -106,7 +106,7 @@ implicit none
         elseif (System=="R") then   ! GLONASS
 
         elseif (System=="C") then   ! COMPASS
-             call Cal_Sat_Clk_c(Obsweek, Obssec+ObsTime-14.d0-t1, PRN-GNum-RNum, Sat_Clk,toe)
+             call Cal_Sat_Clk_c(Obsweek, Obssec+ObsTime-14.d0-t1, PRN-GNum-RNum, Sat_Clk)
         elseif (System=="E") then   ! GALILEO
             call Cal_Sat_Clk_e(Obsweek, Obssec+ObsTime-t1, PRN-GNum-RNum-CNum, Sat_Clk)
         elseif (System=="J") then   ! QZSS

@@ -42,7 +42,7 @@ implicit none
     integer(1) :: Sys, LLI1, LLI2
     character(1) :: System
     real(8) :: P1, P2, P3, C1, C2, DP1, DP2, DP3, L1, L2, L3, Range, t1,PC, LC, ZD_L1, ZD_L2, ZD_L3, EWL_amb
-    real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s, toe
+    real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s
     real(8) :: Sat_XYZ(3), Ele, Azi, P, MJD, STD, Ion1, Ion2, Ion3, corr, dist
     real(8) :: dztd, ZTDsec
     character(100) :: line
@@ -281,7 +281,7 @@ implicit none
         t1=Range/c
         
         ! ********Satellite coordinate and clcok ********
-        call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor, t1, .true.,Sat_Coor0, Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
+        call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor, t1, .true., Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)
         if ( all(dabs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
         if (dabs(Sat_Clk-9999.d0)<0.1d0 ) cycle
                

@@ -13,7 +13,7 @@
 ! WRITTEN BY: Yize Zhang, zhyize@163.com, Tongji & SHAO
 ! ==================  End of Header  ===============
 
-subroutine Cal_Sat_Clk_c(GPSweek, GPSsec, PRN, Sat_Clk,toe)
+subroutine Cal_Sat_Clk_c(GPSweek, GPSsec, PRN, Sat_Clk)
 use MOD_constant
 use MOD_NavData
 use MOD_VAR
@@ -27,7 +27,6 @@ implicit none
     
     type(type_NavPRN) :: tempNav
     real(8) :: t, tkr, tk
-    real(8) :: URE(14),toe
 !    real(8) :: e, A, n0,n
 !    real(8) :: Mk, Ek0, Ek, vk, PHI_k
 !    real(8) :: duk, dik, drk
@@ -62,7 +61,6 @@ implicit none
             end if
         end if
     end do
-    toe=tempNav%GPSsec
     if ( (dabs(tkr-delaytmp)>3600.2d0) ) then
         Sat_Clk=9999.d0
         return

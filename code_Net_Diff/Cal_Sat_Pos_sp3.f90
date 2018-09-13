@@ -31,7 +31,7 @@
 ! WRITTEN BY: Yize Zhang, zhyize@163.com, Tongji & SHAO
 ! ================End of Header==============
 
-subroutine Cal_Sat_Pos_sp3(GPSweek, GPSsec, PRN, Rec_Coor,t1, Rela_Flag,Sat_Coor,Sat_Coor2, Sat_Vel, R, Rela)
+subroutine Cal_Sat_Pos_sp3(GPSweek, GPSsec, PRN, Rec_Coor,t1, Rela_Flag, Sat_Coor2, Sat_Vel, R, Rela)
 use MOD_constant
 use MOD_SP3Data
 implicit none

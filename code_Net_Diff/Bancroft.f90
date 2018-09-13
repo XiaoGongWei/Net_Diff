@@ -26,7 +26,7 @@ implicit none
     real(8) :: Obssec
     integer :: i, j, PRN,N, k, KK
     character(1) :: System
-    real(8) :: C1,P1, P2, Range, t1, Rec_Clk, Rela, s, Sat_Coor(3), Sat_Coor0(3), Sat_Clk,toe
+    real(8) :: C1,P1, P2, Range, t1, Rec_Clk, Rela, s, Sat_Coor(3), Sat_Clk
     real(8) :: A(40,4), L(40), V(40), dx(4), Nbb(4,4), InvN(4,4), U(4),sigma0
     real(8) :: Lat,Lon, Hgt, Sat_Vel(3)
     real(8) :: press ,tempre, rhumity, undu, MJD
@@ -138,7 +138,7 @@ implicit none
         t1=Range/c
 
         call Cal_Sat_PosClk(System, Obsweek,Obssec+ObsData%Clk_Bias-Rec_Clk,  & 
-                            PRN,Coor, t1, .true., Sat_Coor0,  Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)                    
+                            PRN,Coor, t1, .true., Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)                    
         if ( all(abs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
         if (dabs(Sat_Clk-9999.0d0)<0.1d0) cycle  ! If no this Satellite clock data
 

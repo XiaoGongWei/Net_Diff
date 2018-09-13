@@ -44,7 +44,7 @@ implicit none
     real(8) ::Amb(SatNum,STA%Num)
     real(8) :: RecPCO(3),SatPCO(3)
     real(8) :: Azi, Ele_Sat, SatPCV(3)=0.d0, StaPCV(3)=0.d0
-    real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor0(3),  Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
+    real(8) :: AppCoor(3),AppCoor1(3),AppCoor2(3),Coor(3), BLH(3), Sat_Coor(3), Sat_Vel(3), s, t1, Rela, Sat_XYZ(3)
     real(8) :: STD, Ion=0.d0, Ion1
     real(8) :: Rec_Clk, Sat_Clk, Ele, EleEle(MaxPRN*2)
     integer :: CuParaNum
@@ -56,7 +56,7 @@ implicit none
     integer :: maxL
     real(8) :: V(MaxPRN*2), sigma0, PDOP=0.d0, HDOP, VDOP, ISB(2)
     real(8) :: NEU(3),  Mean_Coor(3), RMS(3), Mean_NEU(3)
-    real(8) :: UERE=0.d0,toe
+    real(8) :: UERE=0.d0
     
     integer(kind=1)  :: I1outerr,t
     real(8) :: iono_14para(14)    
@@ -401,7 +401,7 @@ implicit none
                     AppCoor2=AppCoor1 +MATMUL(transpose(Rotation),RecPCO)
 
                     ! ********Satellite coordinate and clcok ********
-                    call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor2, t1, .true., Sat_Coor0,  Sat_Coor, Sat_Vel, Sat_Clk, s, Rela,toe)
+                    call Cal_Sat_PosClk(System, Obsweek, Obssec+ObsData%Clk_Bias-Rec_Clk,PRN, AppCoor2, t1, .true., Sat_Coor, Sat_Vel, Sat_Clk, s, Rela)
                     if ( all(dabs(Sat_Coor-9999.0d0)<0.1d0) ) cycle   ! If no data of this PRN
                     if (dabs(Sat_Clk-9999.d0)<0.1d0 ) cycle
                 
