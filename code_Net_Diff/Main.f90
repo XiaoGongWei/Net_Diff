@@ -308,7 +308,9 @@ implicit none
     write(CoorID,"(A12,5X,A5)") 'obscombine:  ', trim(ObsCombine)
     write(CoorID,"(A12,5X,L5)") 'est_iono:  ', If_Est_Iono
     if (index(ObsCombine,'PC')==0) then
-        write(CoorID,"(A12,5X,A)") 'ionfile:  ', trim(IONFile)
+        if (iontype>1) then 
+            write(CoorID,"(A12,5X,A)") 'ionfile:  ', trim(IONFile)
+        end if
         write(CoorID,"(A12,5X,I5)") 'iontype:  ', iontype
     end if
     write(CoorID,"(A12,5X,A5,A6,A5,I5)") 'smooth:  ', Var_smooth,Smooth_Method, Smooth_Combine,int(Smooth_Time)

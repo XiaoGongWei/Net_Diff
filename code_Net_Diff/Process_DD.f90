@@ -185,7 +185,7 @@ implicit none
                     call Bancroft(ObsData(i), i, STA%STA(i)%Coor)   ! If Kinematic
                     if (any(STA%STA(i)%Coor==0.d0)) cycle
                 end if
-            elseif (Combination(3)) then
+            elseif (Combination(3) .and. i==2) then
 !                    call polyfit(NEQ_DP%Sow(2:5)-ObsSec, NEQ_DP%Vel(:,2:5), 4, NEQ_DP%Flag_Sln(2:5), 0.d0, Vel, j)  ! Predict velocity by Quadratic polyfit doppler velocity
 !                    if (all(Vel/=0.d0)) then
 !                        NEQ_DP%dt=Obssec-NEQ_DP%Sow(j)
@@ -278,6 +278,7 @@ implicit none
         call XYZ2BLH(Coor(1), Coor(2), Coor(3), BLH(1), BLH(2), BLH(3))
         if (Flag_Sln<=3) then
             NEQ_DP%Coor=Coor
+            if (dsqrt(DOT_PRODUCT(NEQ_DP%dx(1:3),NEQ_DP%dx(1:3)))<sigDP/2.d0)   NEQ_DP%dx(1:3)=0.d0   ! If less than sigDP, will assumed as static mode
             NEQ_DP%Vel=eoshift(NEQ_DP%Vel,shift=1,dim=2, boundary=NEQ_DP%dx(1:3))
             NEQ_DP%Sow=eoshift(NEQ_DP%Sow,shift=1,boundary=ObsSec)
             NEQ_DP%Flag_Sln=eoshift(NEQ_DP%Flag_Sln,shift=1, boundary=Flag_Sln)

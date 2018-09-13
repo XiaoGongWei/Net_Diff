@@ -439,7 +439,7 @@ implicit none
                 if (ADmethod=='LS') then
                     NEQ%Nbb(i,i)=NEQ%Nbb(i,i)+1.d0/0.25d0*NEQ_DP%dt  ! This is wrong for Nbb
                 elseif (ADmethod=='KF') then
-                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+(sigDP*3.d0)**2*NEQ_DP%dt     ! (1/0.5**2) ! 0.5m
+                    NEQ%InvN(i,i)=NEQ%InvN(i,i)+(sigDP*2.d0)**2*NEQ_DP%dt     ! (1/0.2**2) ! 0.2m
                 end if
             elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
                 if (ADmethod=='LS') then
@@ -595,6 +595,31 @@ implicit none
             end do
         end if
         
+        ! If Doppler velocity used, add constraints to fixed coordinate
+        if (Combination(3) .and. Vel_Used==1) then
+            do i=1,3
+                if (NEQ_DP%Flag_Sln(5)==1) then ! If full fixed
+                    if (ADmethod=='LS') then
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/0.01d0/NEQ_DP%dt  ! This is wrong for Nbb
+                    elseif (ADmethod=='KF') then
+                        Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+sigDP**2*NEQ_DP%dt    ! Precision of estimated position using doppler velocity is 0.1m, (1/0.1**2) ! 0.1m
+                    end if
+                elseif (NEQ_DP%Flag_Sln(5)==2) then ! If partial fixed
+                    if (ADmethod=='LS') then
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/0.25d0*NEQ_DP%dt  ! This is wrong for Nbb
+                    elseif (ADmethod=='KF') then
+                        Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+(sigDP*2.d0)**2*NEQ_DP%dt     ! (1/0.2**2) ! 0.2m
+                    end if
+                elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
+                    if (ADmethod=='LS') then
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/4.d0*NEQ_DP%dt   ! This is wrong for Nbb
+                    elseif (ADmethod=='KF') then
+                        Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+(sigDP*20.d0)*NEQ_DP%dt    ! (1/2.d0**2) ! 2m
+                    end if
+                end if
+            end do
+        end if
+    
         if (ADmethod=='LS') then     ! When Least square, add Nbb
             Epo_NEQ%Nbb     =  Epo_NEQ%Nbb + matmul(  matmul( transpose(Epo_NEQ%Ap1(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap1(1:N,:)  )
             Epo_NEQ%Nbb     =  Epo_NEQ%Nbb +  matmul(  matmul( transpose(Epo_NEQ%Ap2(1:N,:)), Epo_NEQ%P(1:N,1:N) ), Epo_NEQ%Ap2(1:N,:)  )

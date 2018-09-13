@@ -577,14 +577,14 @@ implicit none
 !                Epo_NEQ%Lwl(i)= Epo_NEQ%Lwl(i) -  Epo_NEQ%amb_WL(PRN)*Epo_NEQ%Awl(i,ParaNum+PRN)
                 Epo_NEQ%Awl(i,ParaNum+PRN)= 0.d0
 !                ! Add N1-N2 constraints instead of Wide lane observation
-                Epo_NEQ%Awl(i,:)=0.d0
-                Epo_NEQ%Lwl(i)=0.d0
-                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)+1.d0/0.05d0**2
-                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)+1.d0/0.05d0**2
-                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)-1.d0/0.05d0**2
-                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)-1.d0/0.05d0**2
-                EPO_NEQ%U(ParaNum+PRN)=EPO_NEQ%U(ParaNum+PRN)+NEQ%amb_WL(PRN)/0.05d0**2  ! In cycle
-                EPO_NEQ%U(ParaNum+MaxPRN+PRN)=EPO_NEQ%U(ParaNum+MaxPRN+PRN)-NEQ%amb_WL(PRN)/0.05d0**2
+!                Epo_NEQ%Awl(i,:)=0.d0
+!                Epo_NEQ%Lwl(i)=0.d0
+!                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)+1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)+1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)-1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)-1.d0/0.05d0**2
+!                EPO_NEQ%U(ParaNum+PRN)=EPO_NEQ%U(ParaNum+PRN)+NEQ%amb_WL(PRN)/0.05d0**2  ! In cycle
+!                EPO_NEQ%U(ParaNum+MaxPRN+PRN)=EPO_NEQ%U(ParaNum+MaxPRN+PRN)-NEQ%amb_WL(PRN)/0.05d0**2
                 ! EWL-WL ambiguity   ! No need, because WL already constraint the N1-N2 ambiguity. If triple frequency, then this can be can be applied 
                 if (NEQ%amb_EWL(PRN)/=99.d0 .and. Epo_NEQ%Lw4(i)/=0.d0) then  ! 99 is in case that integer amb_EWL is 0
                     NEQ%amb_W4(PRN)=NEQ%amb_EWL(PRN)+NEQ%amb_WL(PRN)
