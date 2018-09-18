@@ -132,7 +132,7 @@ implicit none
         end if
     end do
 
-    if (Pos_State=="K") then    ! on the fly, kinematic
+    if (Pos_State=="K") then    ! kinematic
         if (ADmethod=='LS') then
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 1)
             call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, 2)

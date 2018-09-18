@@ -55,6 +55,7 @@ implicit none
     real(8) ::  U(ParaNum+SatNum), invN(ParaNum+SatNum,ParaNum+SatNum), invN2(4,4), dx(ParaNum+SatNum)
     character(2) :: Code(MaxPRN*2)
     real(8) :: maxV, outlier
+    integer(1) :: out(SatNum)
     integer :: maxL
     real(8) :: V(40), sigma0, PDOP=0.d0, HDOP, VDOP, ISB(2)
     real(8) :: NEU(3),  Mean_Coor(3), RMS(3), Mean_NEU(3)
@@ -82,6 +83,7 @@ implicit none
     InvN=0.d0
     U=0.d0
     dx=0.d0
+    out=0
 
     ! %%%%%% open augmentation files %%%%%%%%%%%% 
     ! Open LC correction file
@@ -1000,11 +1002,23 @@ implicit none
                         Num=Num-1
                         if (Num<CuParaNum) exit
                         Ad_Flag=.true.
-                        write(unit=LogID,fmt='(5X,A5,3F10.3,I3,F10.3,A8)') '!!!dx', dx(1:3),PRNPRN(maxL), maxV,'outlier'
+                        write(unit=LogID,fmt='(A10,3F15.3,I4,A4,F10.3)') 'outlier', dx(1:3),PRNPRN(maxL), Code(maxL), maxV
+                        if (Code(maxL)=='LC') then
+                            out(PRNPRN(maxL))=out(PRNPRN(maxL))+1
+                        end if
+                        if (out(PRNPRN(maxL))>=5 .and. Code(maxL)=='LC') then ! Eliminate the ambiguity parameter when continuous 5 epoch outlier
+                            out(PRNPRN(maxL))=0
+                            write(LogID,'(10X,A88)')  'May due to undetected cycle slip or multipath, will eliminate the original ambiguity.'
+                            if (ADmethod=='LS') then
+                                call Elimi_Para(Nbb,U,SatNum+ParaNum,PRNPRN(maxL)+ParaNum)
+                            elseif (ADmethod=='KF') then
+                                call KF_Change(InvN,dx,SatNum+ParaNum,PRNPRN(maxL)+ParaNum,'amb')
+                            end if
+                        end if
                     end if
-                    write(unit=LogID,fmt='(5X,A5,3F15.3)') '!!dx',dx(1:3)
-                    write(unit=LogID,fmt='(5X,A5,3F15.3,A7,F10.3)') '!!XYZ',AppCoor+dx(1:3),'sigma', sigma0
                 end do  ! do while (Ad_Flag)
+                write(unit=LogID,fmt='(5X,A5,3F15.3)') '!!dx',dx(1:3)
+                write(unit=LogID,fmt='(5X,A5,3F15.3,A7,F10.3)') '!!XYZ',AppCoor+dx(1:3),'sigma', sigma0
 !                if (Num<CuParaNum) cycle
                 do i=1,N
                     if (V(i)/=0.d0) then

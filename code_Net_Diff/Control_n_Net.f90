@@ -21,7 +21,7 @@ implicit none
     integer :: year, mon, day, hour, min, n,PRN, idx
     real(8) :: sec
     
-    ConFile="Control_Net.txt"
+    
     inquire(file=ConFile,exist=alive)
     if (.not. alive) then
         write(*,*) "Control file: """//trim(ConFile)//""" doesn't exist!"

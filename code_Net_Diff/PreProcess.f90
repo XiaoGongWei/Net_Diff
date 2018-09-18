@@ -36,7 +36,7 @@ implicit none
     real(8) ::  Amb(91),tempamb
 
     real(8) :: Lat,Lon,Hgt, Rotation(3,3)
-    real(8) :: Sat_Coor0(3), Sat_Coor(3), Sat_Vel(3), AppCoor(3) , s, t1, Rela, Sat_Clk,SAT_XYZ(3), ELe
+    real(8) :: Sat_Coor(3), Sat_Vel(3), AppCoor(3) , s, t1, Rela, Sat_Clk,SAT_XYZ(3), ELe
     
     character(len=81) :: line
     
@@ -197,9 +197,9 @@ implicit none
                 Sat_Coor=9999.d0
                 if (index(Orbit,"SP3")/=0) then   ! If Precise Orbit
                     if ((System=="G") .or. (System=="R"))then   ! GPS or GLONASS
-                        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsData%Clk_Bias, PRN, AppCoor, t1, .true. , Sat_Coor0,  Sat_Coor, Sat_Vel, s, Rela)
+                        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsData%Clk_Bias, PRN, AppCoor, t1, .true. , Sat_Coor, Sat_Vel, s, Rela)
                     elseif (System=="C") then   ! COMPASS
-                        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsData%Clk_Bias-14.d0, PRN-56, AppCoor, t1, .true. , Sat_Coor0,  Sat_Coor, Sat_Vel, s, Rela)
+                        call Cal_Sat_Pos_sp3(Obsweek, Obssec+ObsData%Clk_Bias-14.d0, PRN-56, AppCoor, t1, .true. , Sat_Coor, Sat_Vel, s, Rela)
                     end if
                 elseif  (index(Orbit,"BRD")/=0) then
                     if (System=="G") then   ! GPS

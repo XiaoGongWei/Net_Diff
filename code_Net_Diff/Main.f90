@@ -27,6 +27,7 @@ use MOD_EOP
 use MOD_Constant
 use MOD_Ant
 implicit none
+    integer :: nargin
     character(200) :: ObsFile, NavFile
     type(cal_time) t
     character(7) :: str_day
@@ -40,6 +41,14 @@ implicit none
     character(1) :: temp2
      real(8) :: MJD
      logical :: alive
+
+     
+    nargin=iargc()
+    if (nargin>0) then
+        call get_command_argument(1, ConFile)
+    else
+        ConFile="Control_Net.txt"
+    end if
 
     call Control_Net
     call Coor_Table
