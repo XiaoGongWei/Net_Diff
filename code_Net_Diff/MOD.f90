@@ -518,6 +518,7 @@ use MOD_constant
         integer(1) :: Sys(MAXPRN)=0
         character(1) :: System(MAXPRN)
         integer :: RefSat(5)          =  0     ! reference satellite
+        integer :: RefSys   =  0   ! Reference system
         integer :: PRN(MAXPRN) =  0
         integer(1) :: PRN_S(MAXPRN) =  0
         real(8)  :: Ele(MAXPRN)    =  0.d0
@@ -755,6 +756,7 @@ use MOD_constant
     integer :: GloParaNum=0   ! This is for GLONASS float RTK
     real(8) ::   a1= 1.d0 , a2= 0.d0 ! L1
     real(8) ::  b1= 0.d0 , b2= 1.d0  ! L2
+    logical :: If_TC=.false.
     logical :: If_IonoCompensate=.false.
      integer(1) :: Vel_Used=0  ! 0: no velocity; 1: Doppler; 2: IMU
 !    real(8),parameter ::   a1= 1.d0 , a2= 0.d0 ! L1 

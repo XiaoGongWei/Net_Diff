@@ -752,7 +752,7 @@ implicit none
                         end if
                         CuParaNum=CuParaNum+3
                     elseif (Pos_State=="S") then
-                        if (dabs(InvN(i,i))==0.d0) CuParaNum=CuParaNum+3
+                        if (dabs(InvN(1,1))==0.d0) CuParaNum=CuParaNum+3
                     elseif (Pos_State=="F") then
                         A(1:N,1:3)=0.d0
                     end if

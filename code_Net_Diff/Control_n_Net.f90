@@ -130,6 +130,13 @@ implicit none
             read(line,*) temp, ar_mode
         elseif (index(line,"fixholdele") /= 0)   then
             read(line,*) temp, FixEle, HoldEle
+        elseif (index(line,"tightcombine") /= 0)   then
+            read(line,*) temp, temp
+            if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
+                If_TC=.true.
+            else
+                If_TC=.false.
+            end if
         elseif (index(line,"est_iono") /= 0)   then
             read(line,*) temp, temp
             if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
@@ -250,7 +257,7 @@ implicit none
     if (FixEle<LimEle) FixEle=LimEle
     
     if (SystemUsed(1)) then
-        if (Combination(1)) SatNum=SatNum+GNum
+        if (Combination(2)) SatNum=SatNum+GNum
         ParaNum=ParaNum+1
         INT_SystemUsed(1)=1
     else
