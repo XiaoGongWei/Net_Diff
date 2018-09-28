@@ -38,7 +38,7 @@ implicit none
     integer :: epoch,Obsweek
     real(8) :: Obssec
     integer :: error, data_flag
-    integer(1) :: Flag_Sln
+    integer(1) :: Flag_Sln, RefSys
     integer :: i, j, RefSat(5), sys
     integer :: EpochUsed
     real(8) :: dx_Coor(4), Coor(3), BLH(3), Mean_Coor(3), NEU(3), RMS(3), Mean_NEU(3)
@@ -46,7 +46,7 @@ implicit none
     real(8) :: Vel(3)
     character(100) :: line
 
-    ParaNum=3  ! no tropsphere and clock for single system double difference
+    ParaNum=4  ! Coodinate and troposphere parameter
     if (If_Est_Iono) then       ! If estimate ionosphere
         IonoNum=MaxPRN
     end if
@@ -66,8 +66,8 @@ implicit none
 !        read(AmbID(2),'(A)') line
 !        if (index(line,'*SITE ____EPOCH___ TRO')/=0) exit
 !    end do
-    if (TropLen/=0.d0) then       ! If estimate troposphere
-        ParaNum=ParaNum+1
+    if (If_TC) then  ! It tightly combined
+        ParaNum=ParaNum+ 5*4  ! 5 system
     end if
     if (GloParaNum>0) then
         ParaNum=ParaNum+GloParaNum
@@ -212,11 +212,12 @@ implicit none
         ! ========== Check reference satellite in this epoch ============
         if ( (arc_epochs/=0) .and. (mod(epoch,arc_epochs)==1) )  DD%RefSat=0  ! 
         if (ar_mode==2)  DD%RefSat=0  ! Instantaneous AR
-        call Get_RefSat(SD, DD%RefSat, RefSat)
+        call Get_RefSat(SD, DD%RefSat, RefSat, RefSys)
         if (all(RefSat==0)) then
             write(LogID,'(5X,A35)') 'no reference satellite found. Skip!'
             cycle          ! If no reference satellite found(almost not possible)
         end if
+        if (If_TC) RefSat=RefSat(1)
         
         ! ========= Form double difference =============
         call Double_Difference(SD, DD, RefSat)
@@ -227,14 +228,34 @@ implicit none
         
         ! If new reference satellite found, reset the NEQ
         if (ar_mode/=2) then
-            call Reset_NEQ(RefSat, DD, NEQ, Epo_NEQ)
+            call Reset_NEQ(RefSat, DD, NEQ, Epo_NEQ, RefSys)
         end if
 
         if (.not.(If_Est_Iono) .and. If_IonoCompensate) then
             call IonoCompensate(Obsweek,Obssec, RefSat, DD,Epo_NEQ) ! Compensate DD ionosphere residuals
         end if
         do sys=1, 5   ! mark the reference satellite
-            if (RefSat(sys)/=0) DD%RefSat(sys)=RefSat(sys)
+            if (RefSat(sys)/=0 .and. INT_SystemUsed(sys)/=0) then
+                DD%RefSat(sys)=RefSat(sys)
+                if (CycleSlip(1)%Slip(DD%RefSat(Sys))==1 .or. CycleSlip(2)%Slip(DD%RefSat(Sys))==1) then
+                    ! If reference satellite cycle slip, set all the other satellites cycle slip
+                    write(LogID,'(A20,2I3)') 'ref sat cycle slip', sys, DD%RefSat(Sys)
+                    if (If_TC) then
+                        CycleSlip(1)%Slip=1
+                    elseif (sys==1) then
+                        CycleSlip(1)%Slip(1:GNum)=1
+                        CycleSlip(1)%Slip(GNum+RNum+CNum+NumE+1:GNum+RNum+CNum+NumE+JNum)=1
+                    elseif (sys==2) then
+                        CycleSlip(1)%Slip(GNum+1:GNum+RNum)=1
+                    elseif (sys==3) then
+                        CycleSlip(1)%Slip(GNum+RNum+1:GNum+RNum+CNum)=1
+                    elseif (sys==4) then
+                        CycleSlip(1)%Slip(GNum+RNum+CNum+1:GNum+RNum+CNum+NumE)=1
+                    end if
+                    CycleSlip(1)%Slip(DD%RefSat(Sys))=0
+                    CycleSlip(2)%Slip(DD%RefSat(Sys))=0
+                end if
+            end if
         end do
         
         ! ======== Form normal equation ===============
@@ -250,6 +271,30 @@ implicit none
             call IonoUpdate(ObsWeek, ObsSec, NEQ, Epo_NEQ) ! Update DD ionosphere residuals
         end if
         
+        ! Remove integer value of the ambiguity solution in case of bias from wrong apporximate ambiguity on difference frequency
+        If (If_TC) then
+            NEQ%amb_WL=NEQ%dx(ParaNum+1:ParaNum+MaxPRN)  ! *(a1*f1+a2*f2)/c   ! In cycle
+            NEQ%amb_W4=NEQ%dx(ParaNum+1+MaxPRN:ParaNum+MaxPRN*2) ! *(b1*f1+b2*f2)/c
+            if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
+                NEQ%amb_L1 = (b2*NEQ%amb_WL - a2* NEQ%amb_W4)/(a1*b2-a2*b1)   ! In cycle
+                NEQ%amb_L2 = (-b1*NEQ%amb_WL + a1*NEQ%amb_W4)/(a1*b2-a2*b1)
+            elseif (a1*f1+a2*f2/=0.d0) then ! L1 frequency
+                NEQ%amb_L1=NEQ%amb_WL
+            elseif (b1*f1+b2*f2/=0.d0) then ! L2 frequency
+                NEQ%amb_L2=NEQ%amb_W4
+            end if
+            ! remove integer value of the ambiguity solution and add to zero-differenced approximate ambiguity
+            NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN)=mod(NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN),1.d0)
+            ZD(2)%amb0(:,1)= ZD(2)%amb0(:,1)+NEQ%amb_L1-mod(NEQ%amb_L1,1.d0)  ! Maybe wrong if wide lane combination
+            ZD(2)%amb0(:,2)= ZD(2)%amb0(:,2)+NEQ%amb_L2-mod(NEQ%amb_L2,1.d0)
+        end if
+
+        ! Release the cycle slip information
+        do i=1, DD%PRNS
+            CycleSlip(1)%Slip(DD%PRN(i))=0
+            CycleSlip(2)%Slip(DD%PRN(i))=0
+        end do
+
         if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3) ) then
             write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'     ! In case of cycle slip, so Form_NEQ should be done every epoch.
             cycle
@@ -293,6 +338,13 @@ implicit none
         write(CoorID,"(I5,I6,4I4,F5.1,4F12.4,I4,F8.2,F8.3,I3,3F15.3, 2F15.9,F15.3)") mod(epoch,100000),ObsData(2)%Year, ObsData(2)%Mon, & 
                  ObsData(2)%Day,  ObsData(2)%Hour, ObsData(2)%Min, ObsData(2)%Sec, NEU, dsqrt(DOT_PRODUCT(NEU,NEU)),&
                   Flag_Sln, PDOP, STA%STA(2)%Trop%ZHD+STA%STA(2)%Trop%ZWD,  Epo_NEQ%PRNS, Coor, BLH
+        end if
+        if (If_Posfile .and. Flag_Sln<=2) then
+            write(PosID,"(I4,A1,I2.2,A1,I2.2,1X,I2.2,A1,I2.2,A1,I2.2,A1,I3.3,3F15.4,I4,I4)") ObsData(2)%Year, '/', ObsData(2)%Mon, '/', ObsData(2)%Day, &
+                &       ObsData(2)%Hour, ':', ObsData(2)%Min, ':', int(ObsData(2)%Sec),'.',int(mod(ObsData(2)%Sec,1.d0)*1000.d0), Coor, 1, Epo_NEQ%PRNS
+        elseif (If_Posfile .and. Flag_Sln>2) then
+            write(PosID,"(I4,A1,I2.2,A1,I2.2,1X,I2.2,A1,I2.2,A1,I2.2,A1,I3.3,3F15.4,I4,I4)") ObsData(2)%Year, '/', ObsData(2)%Mon, '/', ObsData(2)%Day, &
+                &       ObsData(2)%Hour, ':', ObsData(2)%Min, ':', int(ObsData(2)%Sec),'.',int(mod(ObsData(2)%Sec,1.d0)*1000.d0), Coor, 2, Epo_NEQ%PRNS
         end if
         write(unit=LogID,fmt='(A10,3F10.3)') '%%NEU',NEU
 

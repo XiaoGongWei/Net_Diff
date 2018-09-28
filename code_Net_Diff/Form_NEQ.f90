@@ -33,13 +33,13 @@ implicit none
     type(type_NEQ) ::  NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
     ! Local variables
-    integer :: N, i, j, k, PRN, sys, freq
+    integer :: N, i, j, k, PRN, sys, freq, Sys_PRN
     real(8)  :: Awl(MaxPRN, ParaNum+2*MaxPRN+IonoNum),Aw4(MaxPRN, ParaNum+2*MaxPRN+IonoNum)
     real(8) :: Aewl(MaxPRN,ParaNum)
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
     real(8)  :: Al1(MaxPRN, ParaNum+3*IonoNum), Al2(MaxPRN, ParaNum+3*IonoNum)
     logical :: flag_del_PRN
-    real(8) :: dT(2), factor
+    real(8) :: dT(2), factor, maxEle
     real(8) :: Kk(ParaNum+3*IonoNum,1)  ! Kalman gain
 
     
@@ -208,7 +208,7 @@ implicit none
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5a
+                f2=f_E5
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -264,6 +264,9 @@ implicit none
          ! For P1
          if ( DD%P1(i)/=0.d0 ) then
              Ap1(i,1:ParaNum)=DD%A(i,1:ParaNum)
+             if (If_TC .and. sys/=DD%RefSys) then
+                Ap1(i, 4+sys*4-3)=1.d0
+             end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap1(i,ParaNum+IonoNum*2+PRN)=1.d0  ! Ionosphere parameter
                 if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>10 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
@@ -281,6 +284,9 @@ implicit none
          ! For P2
          if ( DD%P2(i)/=0.d0 ) then
              Ap2(i,1:ParaNum)=DD%A(i,1:ParaNum)
+             if (If_TC .and. sys/=DD%RefSys) then
+                Ap2(i, 4+sys*4-2)=1.d0
+             end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap2(i,ParaNum+IonoNum*2+PRN)=f1**2/f2**2  ! Ionosphere parameter
                 if (If_IonoCompensate .and. Epo_NEQ%ratio>minratio .and. EPO_NEQ%fixed_amb_num(PRN)>5 .and. DD%Ele(PRN)>FixEle) then ! if EPO_NEQ fix and hold ambiguity
@@ -300,6 +306,9 @@ implicit none
              if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+PRN, ParaNum+PRN)/=0.d0) then
                  Awl(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Awl(i,ParaNum+PRN)=c/(a1*f1+a2*f2)  ! 1.d0
+                 if (If_TC .and. sys/=DD%RefSys) then
+                    Awl(i, 4+sys*4-1)=1.d0
+                 end if
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
                     Awl(i,ParaNum+IonoNum*2+PRN)= f1/f2 ! Ionosphere parameter
@@ -322,6 +331,9 @@ implicit none
              if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+MaxPRN+PRN, ParaNum+MaxPRN+PRN)/=0.d0) then
                  Aw4(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Aw4(i,ParaNum+MaxPRN+PRN)=c/(b1*f1+b2*f2)  !1.d0
+                 if (If_TC .and. sys/=DD%RefSys) then
+                    Aw4(i, 4+sys*4)=1.d0
+                 end if
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
                     Aw4(i,ParaNum+MaxPRN+PRN)=c/(f1-f3)    ! L1-L3 wide lane ambiguity parameter
@@ -343,6 +355,9 @@ implicit none
          ! For L1
          if ( DD%L1(i)/=0.d0 ) then
              Al1(i,1:ParaNum)=DD%A(i,1:ParaNum)
+             if (If_TC .and. sys/=DD%RefSys) then
+                Al1(i, 4+sys*4-1)=1.d0
+             end if
              if (If_Est_Iono .and. IonoNum>0) then     ! Danger: For first epoch, if no psedo-range or WL help, NEQ can't be solved
                 Al1(i,ParaNum+PRN)= c/f1   ! ambiguity parameter 
                 Al1(i,ParaNum+2*IonoNum+PRN)= -1.d0 ! Ionosphere parameter
@@ -353,6 +368,9 @@ implicit none
          ! For L2
          if ( DD%L2(i)/=0.d0 ) then
              Al2(i,1:ParaNum)=DD%A(i,1:ParaNum)
+             if (If_TC .and. sys/=DD%RefSys) then
+                Al2(i, 4+sys*4)=1.d0
+             end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Al2(i,ParaNum+MaxPRN+PRN)= c/f2 ! ambiguity parameter
                 Al2(i,ParaNum+2*IonoNum+PRN)=  -f1**2/f2**2  ! Ionosphere parameter
@@ -383,7 +401,7 @@ implicit none
         NEQ%Aw4(1:N,:)=Aw4(1:N,1:ParaNum+MaxPRN*2)/sigLC/sqrt(b1**2+b2**2)
         NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/sqrt(b1**2+b2**2)
     end if
-    if (ParaNum==4) then    ! Don't estimate tropsphere parameter in NEQ Only in EPO_NEQ for long baseline need to estimate it.
+    if (TropLen/=0.d0 .and. If_Est_Iono) then    ! Don't estimate tropsphere parameter in NEQ. Only in EPO_NEQ for long baseline need to estimate it.
         NEQ%Ap1(1:N,4)=0.d0
         NEQ%Ap2(1:N,4)=0.d0
         NEQ%Aewl(1:N,4)=0.d0
@@ -395,6 +413,45 @@ implicit none
         do i=1,GloParaNum
             if (NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)==0.d0) then
                 NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)=0.5d0**2  ! 1m
+            end if
+        end do
+    end if
+    
+    ! If tight combined RTK, set initial precision and random walk of DISB parameter
+    if (If_TC) then
+        do sys=1,5
+            if (sys==DD%RefSys) cycle
+            if (sys==1) then
+                if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+            elseif (sys==5) then
+                if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
+            else
+                if (.not.(SystemUsed(sys))) cycle
+            end if
+            if (NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then
+                maxEle=0.d0
+                Sys_PRN=0
+                do j=1,DD%PRNS  ! Find the maximum elevation satellite
+                    PRN=DD%PRN(j)
+                    if (DD%Sys(j)==sys .and. DD%Ele(PRN)>maxEle) then
+                        maxEle=DD%Ele(PRN)
+                        Sys_PRN=DD%PRN(j)
+                    end if
+                end do
+                if (Sys_PRN==0) exit  ! If no satellite in this epoch
+                NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.001d0**2   ! L1
+                NEQ%InvN(ParaNum+Sys_PRN+MaxPRN, ParaNum+Sys_PRN+MaxPRN)=0.001d0**2   ! L2
+                NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
+                NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P1
+                NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
+!                NEQ%dx(4+sys*4-1)=12.55d0*c/f_E1
+                NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+!                NEQ%dx(4+sys*4)=23.75d0*c/f_E5a
+            else   ! Random walk of DISB
+                NEQ%InvN(4+sys*4-3,4+sys*4-3)=NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*Interval     ! P1
+                NEQ%InvN(4+sys*4-2,4+sys*4-2)=NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*Interval     ! P1
+                NEQ%InvN(4+sys*4-1,4+sys*4-1)=NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*Interval   ! L1
+                NEQ%InvN(4+sys*4,4+sys*4)=NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*Interval                ! L2
             end if
         end do
     end if

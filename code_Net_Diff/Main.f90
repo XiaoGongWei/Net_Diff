@@ -235,7 +235,7 @@ implicit none
     write(CoorID,"(A12,A)") 'eopfile:  ',trim(EOPFile)
     write(CoorID,"(A12,A)") 'antfile:  ',trim(AntFile)
     write(CoorID,"(A12,A)") 'planetfile:  ',trim(PlanetFile)
-    !write(CoorID,"(A12,A)") 'tidefile:  ',trim(TideFile)
+    write(CoorID,"(A12,A)") 'tidefile:  ',trim(TideFile)
     write(CoorID,"(A12,A)") 'glofrefile:  ',trim(GloFreFile)
     write(CoorID,"(A12,A)") 'p1c1file:  ',trim(P1C1File)
     write(CoorID,"(A12,A)") 'dcbfile:  ',trim(DCBFile)
@@ -305,6 +305,7 @@ implicit none
         end if
         write(CoorID,"(A12,5X,L5,I3)") 'partial_ar:  ', partial_AR, parARnum
         write(CoorID,"(A12,5X,F5.1)") 'minratio:  ', minratio
+        write(CoorID,"(A12,5X,L5)") 'tightcombine:  ', If_TC
         write(CoorID,"(A12,5X,L5)") 'est_wl_amb:  ', If_Est_WL
     end if
     if ((proc_mod>=1) .and. (proc_mod<=3)) then
@@ -323,11 +324,127 @@ implicit none
         write(CoorID,"(A12,5X,I5)") 'iontype:  ', iontype
     end if
     write(CoorID,"(A12,5X,A5,A6,A5,I5)") 'smooth:  ', Var_smooth,Smooth_Method, Smooth_Combine,int(Smooth_Time)
+    write(CoorID,"(A12,5X,L5)") 'posfile:  ', If_posfile
     write(CoorID,"(A12,5X,A)") 'outdir:  ', trim(OutDir)
     write(CoorID,"(A)") "--End of header========================================"
     write(CoorID,"(A5,A27,4A12, A4,2A8,A3,6A15)") "Epoch","GPST(yyyymmddhhmmss)","N Error/m","E Error/m","U Error/m","Pos Error/m", &
                            "Q", "PDOP","ZTD","N","X/m(ECEF)","Y/m(ECEF)","Z/m(ECEF)","Lat/deg","Lon/deg","Hgt/m"
      write(CoorID,"(A)") "++Coordinate================================================================="
+
+     if (If_posfile) then
+        PosID=FileID_Mark
+        FileID_Mark=FileID_Mark+1
+        write(temp,"(I1)") Sta%FixNum
+        write(temp2,'(I1)') int(delay/60)
+        open(unit=PosID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".pos",action="write",err=100)
+        write(PosID,"(A40)") "%===============NET Diff================="
+        write(PosID,"(A40)") "%Developed by Yize Zhang, zhyize@163.com"
+        write(PosID,"(A1,A15,A7)") "%", "day: ",str_day
+        write(PosID,"(A1,A20)") "%", "Station Fixed: "
+        do i=1,STA%FixNum
+            write(PosID,"(A1,5X,A5,3F15.3,3F10.3,A25)") "%", STA%STA(i)%Name,STA%STA(i)%TrueCoor, STA%STA(i)%NEU, STA%STA(i)%Ant_Type
+        end do
+        write(PosID,"(A1,A20)") "%", "Station Estimated:"
+        do i=STA%FixNum+1,STA%Num
+            write(PosID,"(A1,5X,A5,3F15.3,3F10.3,A25)") "%", STA%STA(i)%Name,STA%STA(i)%Coor,STA%STA(i)%NEU, STA%STA(i)%Ant_Type
+        end do
+        write(PosID,"(A1,A12,A)") "%", 'eopfile:  ',trim(EOPFile)
+        write(PosID,"(A1,A12,A)") "%", 'antfile:  ',trim(AntFile)
+        write(PosID,"(A1,A12,A)") "%", 'planetfile:  ',trim(PlanetFile)
+        write(PosID,"(A1,A12,A)") "%", 'tidefile:  ',trim(TideFile)
+        write(PosID,"(A1,A12,A)") "%", 'glofrefile:  ',trim(GloFreFile)
+        write(PosID,"(A1,A12,A)") "%", 'p1c1file:  ',trim(P1C1File)
+        write(PosID,"(A1,A12,A)") "%", 'dcbfile:  ',trim(DCBFile)
+        write(PosID,"(A1,A12,A)") "%", 'obsdir:  ',trim(ObsDir)
+        write(PosID,"(A1,A12,5X,A5)") "%", 'obstype:  ',ObsType
+        if (ObsType=='x71') then
+            write(PosID,"(A1,A12,I5)") "%", 'IORQ:  ',IorQ
+        end if
+        if  (index(Orbit,"BRD")/=0) then
+            write(PosID,"(A1,A12,A)") "%", 'navdir:  ',trim(NavDir)
+        elseif (index(Orbit,"SP3")/=0) then
+            write(PosID,"(A1,A12,A)") "%", 'sp3file:  ',trim(SP3File)
+        end if
+        if (index(Clk,"CLK")/=0) then
+            write(PosID,"(A1,A12,A)") "%", 'clkfile:  ',trim(ClkFile)
+        end if
+        write(PosID,"(A1,A12,5X,F5.1)") "%", 'interva(s):  ', interval
+        write(PosID,"(A1,A12,5X,I5)") "%", 'limele:  ', int(limele)
+        write(PosID,"(A1,A12,5X,I5)") "%", 'limSNR:  ', int(limSNR)
+        write(PosID,"(A1,A12,5X,I5)") "%", 'maxpdop:  ', int(MaxPDOP)
+        write(PosID,"(A1,A12,5X,A8,A5,A5)") "%", 'trop_model:  ', trim(cdattype), trim(cztd), trim(cmap)
+        if (TropLen>0) then
+            write(PosID,"(A1,A12,5X,I5)") "%", 'trop_len:  ', int(TropLen)
+        end if
+        call GPST2UTC(GPSweek_st, GPSsec_st, MJD,year,mon,day,hour,min,sec)
+        write(PosID,"(A1,A12,5X,I5,4I3,F5.1,I5,I8)") "%", 't_start: ', year,mon,day,hour,min,sec, GPSweek_st, int(GPSsec_st)
+        call GPST2UTC(GPSweek_end, GPSsec_end, MJD,year,mon,day,hour,min,sec)
+        write(PosID,"(A1,A12,5X,I5,4I3,F5.1,I5,I8)") "%", 't_end:  ', year,mon,day,hour,min,sec, GPSweek_end, int(GPSsec_end)
+        write(PosID,"(A1,A12,5X,A5)") "%", 'freq_comb:  ',freq_comb
+        if (Combination(1)) then
+            write(PosID,"(A1,A12,5X,A5,F5.1)",advance='no') '%', 'combination:  ','PC',sigPC
+        end if
+        if (Combination(2)) then
+            write(PosID,"(A5,F7.3)",advance='no') 'LC',sigLC
+        end if
+        if (Combination(3)) then
+            write(PosID,"(A5,F5.2)",advance='no') 'DP',sigDP
+        end if
+        write(PosID,"(A)") ''
+        write(PosID,"(A1,A12,5X,6L5)") "%", 'systemused:  ', SystemUsed(1:6)
+        write(PosID,"(A1,A12,5X,A5)") "%", 'admethod:  ', ADmethod
+        write(PosID,"(A1,A12,5X,A5)") "%", 'pos_state:  ', Pos_State
+        !write(PosID,"(A1,A12,5X,A5)") "%", 'posmethod:  ', PosMethod
+        write(PosID,"(A1,A12,5X,I5)") "%", 'proc_mod:  ', proc_mod
+        if ((proc_mod>=1) .and. (proc_mod<=3)) then
+            write(PosID,"(A1,A12,5X,A)") "%", 'pcorfile:  ', trim(pcorfile)
+        end if
+        if ((proc_mod==2) .or. (proc_mod==3)) then
+            write(PosID,"(A1,A12,5X,A)") "%", 'orbcorrfile:  ', trim(orbcorrfile)
+        end if
+        if (proc_mod==3) then
+            write(PosID,"(A1,A12,5X,A)") "%", 'zonecorrfile:  ', trim(zonecorrfile)
+        end if
+        if (proc_mod==5) then
+            write(PosID,"(A1,A12,5X,4F5.1)") "%", 'dd_coe:  ', a1, a2, b1, b2
+            if (ar_mode==0) then
+                write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Float'
+            elseif (ar_mode==1) then
+                write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Continuous'
+                write(PosID,"(A1,A12,5X,2I4)") "%", 'fixele:  ', int(FixEle)
+            elseif (ar_mode==2) then
+                write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Instantaneous'
+                write(PosID,"(A1,A12,5X,2I4)") "%", 'fixele:  ', int(FixEle)
+            elseif (ar_mode==3) then
+                write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Fix and hold'
+                write(PosID,"(A1,A12,5X,2I4)") "%", 'fixholdele:  ', int(FixEle), int(HoldEle)
+            end if
+            write(PosID,"(A1,A12,5X,L5,I3)") "%", 'partial_ar:  ', partial_AR, parARnum
+            write(PosID,"(A1,A12,5X,F5.1)") "%", 'minratio:  ', minratio
+            write(PosID,"(A1,A12,5X,L5)") "%", 'tightcombine:  ', If_TC
+            write(PosID,"(A1,A12,5X,L5)") "%", 'est_wl_amb:  ', If_Est_WL
+        end if
+        if ((proc_mod>=1) .and. (proc_mod<=3)) then
+            write(PosID,"(A1,A12,5X,I5)") "%", 'delay:  ', int(delay0)
+            write(PosID,"(A1,A12,5X,I5)") "%", 'clktype:  ', clktype
+        end if
+        write(PosID,"(A1,A12,5X,L5)") "%", 'isb:  ', If_ISB
+        write(PosID,"(A1,A12,5X,L5)") "%", 'ifb:  ', If_IFB
+        write(PosID,"(A1,A12,5X,A)") "%", 'cycleslip:  ', CSmethod
+        write(PosID,"(A1,A12,5X,A5)") "%", 'obscombine:  ', trim(ObsCombine)
+        write(PosID,"(A1,A12,5X,L5)") "%", 'est_iono:  ', If_Est_Iono
+        if (index(ObsCombine,'PC')==0) then
+            if (iontype>1) then 
+                write(PosID,"(A1,A12,5X,A)") "%", 'ionfile:  ', trim(IONFile)
+            end if
+            write(PosID,"(A1,A12,5X,I5)") "%", 'iontype:  ', iontype
+        end if
+        write(PosID,"(A1,A12,5X,A5,A6,A5,I5)") "%", 'smooth:  ', Var_smooth,Smooth_Method, Smooth_Combine,int(Smooth_Time)
+        write(PosID,"(A1,A12,5X,L5)") "%",'posfile:  ', If_posfile
+        write(PosID,"(A1,A12,5X,A)") "%", 'outdir:  ', trim(OutDir)
+        write(PosID,"(A)") '% (x/y/z-ecef=WGS84,Q=1:fix,2:float,ns=# of satellites)'
+        write(PosID,"(A)") '%  GPST                      x-ecef(m)      y-ecef(m)      z-ecef(m)   Q  ns'
+    end if
 
     LogID=FileID_Mark
     FileID_Mark=FileID_Mark+1
@@ -389,6 +506,7 @@ implicit none
         close(LambdaID, status='delete')
     end if
     close(CoorID)
+    close(PosID)
     
     call CPU_time(t%t_end)!(time_end1)
     write(*,"(A16F10.2,A1)") "Total time:" , t%t_end - t%t_begin,"s"

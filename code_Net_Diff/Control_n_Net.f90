@@ -31,6 +31,7 @@ implicit none
     ConID=FileID_Mark
     FileID_Mark=FileID_Mark+1
     open(unit=ConID, file=ConFile)
+    CoorTable=ConFile   ! If no coordinate file, default coordiante and satellite settiing is in the control file
     
     do while(.true.)
         read(unit=ConID,fmt='(A)',end=200) line
@@ -242,6 +243,11 @@ implicit none
                     pause
                     stop
                 end if
+            end if
+        elseif (index(line,"posfile") /= 0)   then
+            read(line,*) temp, temp
+            if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
+                If_posfile=.true.
             end if
         elseif (index(line,"outdir") /= 0)   then
             read(line,"(12X,A)") OutDir

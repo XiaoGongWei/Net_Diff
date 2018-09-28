@@ -7,12 +7,13 @@
 !         DD                            double difference structure
 !         NEQ                         normal equation structure
 !         Epo_NEQ                 current epoch normal equation structure
+!         RefSys                     reference satellite system, valid in tightly combined RTK
 ! OUTPUT:
 !
 ! WRITTEN BY: Yize Zhang, zhyize@163.com, Tongji & SHAO
 ! =================End of header=================
 
-subroutine Reset_NEQ(RefSat, DD, NEQ, Epo_NEQ)
+subroutine Reset_NEQ(RefSat, DD, NEQ, Epo_NEQ, RefSys)
 use MOD_DD
 use MOD_NEQ
 use MOD_Epo_NEQ
@@ -25,8 +26,15 @@ implicit none
     type(type_NEQ) :: NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
     integer :: RefSat(5)
+    integer(1) :: RefSys
     ! Local variables
-    integer :: i, j, sys
+    integer :: i, j, sys, maxsys
+    
+    if (If_TC) then
+        maxsys=1
+    else
+        maxsys=5
+    end if
 
     j=0
     do i=ParaNum+1,NEQ%N+IonoNum
@@ -116,7 +124,7 @@ implicit none
             end if
         end if
     end do
-    do sys=1,5
+    do sys=1,maxsys
         if ( (RefSat(sys) /= DD%RefSat(sys))  .and. (DD%RefSat(sys)/=0) .and. (RefSat(sys)/=0) ) then
             write(LogID,'(I6,1X,I3,A4,I3,A15)') sys, DD%RefSat(sys),' -->',RefSat(sys),'ref sat change'  
             NEQ%dx(DD%RefSat(sys)+ParaNum)=0.d0-NEQ%dx(RefSat(sys)+ParaNum)  ! old reference satellite
@@ -184,6 +192,37 @@ implicit none
             end if
         end if
     end do
+
+    ! For DISB in tightly combined RTK
+    if (If_TC .and. DD%RefSys/=RefSys) then
+        do sys=1,5
+            if (sys==RefSys) cycle
+            if (sys==1) then
+                if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+            elseif (sys==5) then
+                if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
+            else
+                if (.not.(SystemUsed(sys))) cycle
+            end if
+            NEQ%dx(4+sys*4-3:4+sys*4)=NEQ%dx(4+sys*4-3:4+sys*4) - NEQ%dx(4+RefSys*4-3:4+RefSys*4) ! old reference system
+            NEQ%InvN(:,4+sys*4-3:4+sys*4)= NEQ%InvN(:,4+sys*4-3:4+sys*4) - NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)
+            NEQ%InvN(4+sys*4-3:4+sys*4,:)= NEQ%InvN(4+sys*4-3:4+sys*4,:) - NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)
+            if (If_Est_Iono .and. IonoNum>0) then
+                Epo_NEQ%dx(4+sys*4-3:4+sys*4)=Epo_NEQ%dx(4+sys*4-3:4+sys*4) - Epo_NEQ%dx(4+RefSys*4-3:4+RefSys*4)  ! old reference system
+                Epo_NEQ%InvN(:,4+sys*4-3:4+sys*4)= 0.d0 -Epo_NEQ%InvN(:,4+sys*4-3:4+sys*4) - Epo_NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)
+                Epo_NEQ%InvN(4+sys*4-3:4+sys*4,:)= 0.d0 -Epo_NEQ%InvN(4+sys*4-3:4+sys*4,:) - Epo_NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)
+            end if
+        end do
+        NEQ%dx(4+RefSys*4-3:4+RefSys*4)=0.d0   ! New reference system
+        NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)=0.d0
+        NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)=0.d0
+        if (If_Est_Iono .and. IonoNum>0) then
+            Epo_NEQ%dx(4+RefSys*4-3:4+RefSys*4)=0.d0
+            Epo_NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)= 0.d0
+            Epo_NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)= 0.d0
+        end if
+        DD%RefSys=RefSys
+    end if
 
     ! For GLONASS IFB change
     if (GloParaNum>0) then  ! If GLONASS

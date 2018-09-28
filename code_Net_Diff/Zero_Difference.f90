@@ -39,7 +39,7 @@ implicit none
     real(8) :: StaPCO(2)=0.d0,SatPCO(2)=0.d0,SatPCV(2)=0.d0, StaPCV(2)=0.d0, Ele_Sat
 
     integer :: i, j, N, PRN, PRN_S, Kk, PRNOUT(10), PRNOUTn=0, freq, N_DP
-    integer(1) :: Sys, LLI1, LLI2
+    integer(1) :: Sys, LLI1, LLI2, Slip
     character(1) :: System
     real(8) :: P1, P2, P3, C1, C2, DP1, DP2, DP3, L1, L2, L3, Range, t1,PC, LC, ZD_L1, ZD_L2, ZD_L3, EWL_amb
     real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s
@@ -193,7 +193,7 @@ implicit none
         elseif (System=="E") then   ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5a
+                f2=f_E5
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -226,6 +226,10 @@ implicit none
             if ((P2==0.d0) .and. (C2/=0.d0) .and. (IsCNAV) .and. (System=="G")) P2=C2- NavData(PRN)%Nav(2)%TGD(1)*c+NavData(PRN)%Nav(2)%ISCL2C*c   ! L2C
             L1=ObsData%L1(i)
             L2=ObsData%L2(i)
+!            if (k==2 .and. PRN>GNum+RNum .and. PRN<GNum+RNum+6) then
+!                L1=L1-0.5d0
+!                L2=L2-0.5d0
+!            end if
             L3=ObsData%L3(i)
             LLI1=ObsData%LLI1(i)
             LLI2=ObsData%LLI2(i)
@@ -294,13 +298,13 @@ implicit none
             Azi=Azi+360.d0
         end if
 
-        if (Ele>30.d0) then
+        if (Ele<LimEle) then
+            write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
+            cycle
+        elseif (Ele>30.d0) then
             P=1.d0/(0.5d0+0.5d0/sind(Ele))**2 !1.d0   ! 0.3 is refer from RTKLIB
         elseif (Ele>LimEle) then
             P=1.d0/(0.5d0+0.5d0/sind(Ele))**2 !4*dsind(Ele)**2   !
-        else
-            write(LogID,'(A6,1X,A1,I2,F8.2,A20)')  'PRN', System, PRN_S, Ele, 'elevation too low'
-            cycle
         end if
 
         ! **************** Satellite and Receiver PCO PCV ***************
@@ -386,20 +390,22 @@ implicit none
         end if
 
         ! If not instantaneous AR
-        call Cycle_Slip_Detect(k, Obsweek, Obssec, P1, P2, L1, L2, LLI1, LLI2, PRN, Ele, CycleSlip(k)%Slip(PRN))
+        call Cycle_Slip_Detect(k, Obsweek, Obssec, P1, P2, L1, L2, LLI1, LLI2, PRN, Ele, Slip)
         if (Var_smooth=='y' .or. Var_smooth=='Y') then ! If smooth pseudorange
             ! Smooth the pseudo-range, this is very important for instanteous AR
             ! It is better to use after station difference, for it eliminates the ionosphere effect and can easily applied in single frequency
             if ((index(Smooth_Method,"Hatch") /=0)) then
-                call Hatch_Filter(PRN, P1, P2, Range, L1*c/f1, L2*c/f2, Ele, k, CycleSlip(k)%Slip(PRN))
+                call Hatch_Filter(PRN, P1, P2, Range, L1*c/f1, L2*c/f2, Ele, k, Slip)
             elseif ((index(Smooth_Method,"Dop") /=0)) then
                 if (k==1) then
-                    call Hatch_Filter(PRN, P1, P2, Range, L1*c/f1, L2*c/f2, Ele, k, CycleSlip(k)%Slip(PRN))
+                    call Hatch_Filter(PRN, P1, P2, Range, L1*c/f1, L2*c/f2, Ele, k, Slip)
                 else
                     call Doppler_Filter(Obssec, PRN, P1, P2, Range, DP1, DP2,k)
                 end if
             end if
         end if
+!        CycleSlip(k)%Slip(PRN)=Slip
+        if (Slip==1) CycleSlip(k)%Slip(PRN)=1  ! Record the slip flag, this will include cycle slip information of previous information
 
         ! ****** Form zero difference ********
         N                    =    N+1
@@ -442,11 +448,11 @@ implicit none
             ZD%EWL(N)=(c*L2+Ion2*f2-c*L3-Ion3*f3)/(f2 - f3)-corr
         end if
 
-!        if (CycleSlip(k)%Slip(PRN)==1) then
-!            ZD%amb0(PRN,1)=nint(L1-P1/c*f1)  ! For tightly coupled multi-system RTK
-!            ZD%amb0(PRN,2)=nint(L2-P2/c*f2)
-!            ZD%amb0(PRN,3)=nint(L3-P3/c*f3)
-!        end if
+        if (CycleSlip(k)%Slip(PRN)==1) then
+            ZD%amb0(PRN,1)=real(nint(L1-Range/c*f1))  ! For tightly combined multi-system RTK
+            ZD%amb0(PRN,2)=real(nint(L2-Range/c*f2))
+            ZD%amb0(PRN,3)=real(nint(L3-Range/c*f3))
+        end if
         if (L1/=0.d0)      ZD_L1=(L1-ZD%amb0(PRN,1))*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
         if (L2/=0.d0)      ZD_L2=(L2-ZD%amb0(PRN,2))*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
         if (L3/=0.d0)      ZD_L3=(L3-ZD%amb0(PRN,3))*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance

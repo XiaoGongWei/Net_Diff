@@ -22,7 +22,7 @@ implicit none
     integer :: RefSat(5)
     ! Local variables
     integer :: N, N0
-    integer(1) :: i, j, sys, L_ref(5), freq
+    integer(1) :: i, j, k, sys, L_ref(5), freq, maxsys
 
     DD%PRN=0;      DD%A=0.d0
     DD%Q=0.d0;     DD%P=0.d0;     DD%Ele=0.d0
@@ -31,9 +31,15 @@ implicit none
     DD%WL=0.d0;  DD%W4=0.d0
     DD%EWL=0.d0;DD%EWL_amb=99.d0; DD%WL_amb=99.d0
 
+    if (If_TC) then
+        maxsys=1
+    else
+        maxsys=5
+    end if
+
     ! find the order of the reference satellite
     do i=1,SD%PRNS
-        do sys=1,5
+        do sys=1,maxsys
             if (SD%PRN(i)==RefSat(sys)) then
                 L_ref(sys)=i
                 exit
@@ -44,26 +50,28 @@ implicit none
     ! ******Start to do double difference *******
     N=0
     N0=1
-    do sys=1,5
-        if (sys==1) then
-            if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
-        elseif (sys==5) then
-            if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
-        else
-            if (.not.(SystemUsed(sys))) cycle
+    do sys=1,maxsys
+        if (.not.(If_TC)) then  ! If not tightly combined
+            if (sys==1) then
+                if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+            elseif (sys==5) then
+                if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
+            else
+                if (.not.(SystemUsed(sys))) cycle
+            end if
         end if
         if (RefSat(sys)==0) cycle
         do j=1,SD%PRNS   ! in the other satellites
-            if (SD%Sys(j)/=sys) cycle
+            if (SD%Sys(j)/=sys .and. .not.(If_TC)) cycle
             if (SD%PRN(j)==RefSat(sys)) cycle
             N                        =    N+1
-            DD%Sys(N)   =    Sys
+            DD%Sys(N)   =    SD%Sys(j)
             DD%System(N)       =    SD%System(j)
             DD%PRN(N)       =    SD%PRN(j)
             DD%PRN_S(N)       =    SD%PRN_S(j)
             DD%Ele(DD%PRN(N))       =    SD%Ele(j)
             DD%Q(N,N)       =    SD%Q(j)
-            if (sys==2 .and. GloParaNum>0) then  ! If GLONASS
+            if (SD%Sys(j)==2 .and. GloParaNum>0) then  ! If GLONASS
                 SD%A(L_ref(sys),ParaNum-GloParaNum+1:ParaNum)=0.d0  ! Set the reference GLONASS satellite IFB as zero
             end if
             DD%A(N, :)    =    SD%A(j,:) - SD%A(L_ref(sys),:)

@@ -45,6 +45,15 @@ implicit none
         read(unit=CoorTableID,fmt='(A)',end=200) line
         if (index(line,"!") /= 0)  line=line(1:index(line,"!")-1)
         if (len_trim(line)==0) cycle
+        if ((index(line,"+station coordinate") /= 0) .or. (index(line,"*name") /= 0))   then
+            exit
+        end if
+    end do
+
+    do while(.true.)
+        read(unit=CoorTableID,fmt='(A)',end=200) line
+        if (index(line,"!") /= 0)  line=line(1:index(line,"!")-1)
+        if (len_trim(line)==0) cycle
         if ((index(line(1:1),"+") /= 0) .or. (index(line(1:1),"*") /= 0))   then
             cycle
         elseif (index(line(1:1),"-") /= 0)   then
@@ -84,6 +93,14 @@ implicit none
     i=0
     j=0
     rewind(unit=CoorTableID)
+    do while(.true.)
+        read(unit=CoorTableID,fmt='(A)',end=200) line
+        if (index(line,"!") /= 0)  line=line(1:index(line,"!")-1)
+        if (len_trim(line)==0) cycle
+        if ((index(line,"+station coordinate") /= 0) .or. (index(line,"*name") /= 0))   then
+            exit
+        end if
+    end do
     do while(.true.)
         read(unit=CoorTableID,fmt='(A)',end=200) line
         if (index(line,"!") /= 0)  line=line(1:index(line,"!")-1)

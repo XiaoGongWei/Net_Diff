@@ -118,6 +118,7 @@ implicit none
     integer(1), save :: ClkID     ! Clock Data File(Input)
     integer(1), allocatable,save :: ObsID(:)
     integer(1), save :: CoorID
+    integer(1), save :: PosID  ! Pos File((Output)
     integer(1), save :: LogID  ! Log File((Output)
      integer(1), save :: CSID   ! For cycle slip 
     integer(1), save :: ResO_CID  ! For Process_Corr
@@ -759,6 +760,7 @@ use MOD_constant
     logical :: If_TC=.false.
     logical :: If_IonoCompensate=.false.
      integer(1) :: Vel_Used=0  ! 0: no velocity; 1: Doppler; 2: IMU
+    logical :: If_posfile=.false.
 !    real(8),parameter ::   a1= 1.d0 , a2= 0.d0 ! L1 
 !    real(8), parameter ::  b1= 0.d0 , b2= 1.d0  ! L2 
 !    real(8),parameter ::   a1= 1.d0 , a2= -1.d0 ! Wide-Lane

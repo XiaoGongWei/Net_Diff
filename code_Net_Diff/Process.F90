@@ -938,6 +938,10 @@ implicit none
             write(unit=LogID,fmt='(5X,A5,3F10.3)') '!!NEU',NEU
             write(CoorID,"(I5,I6,4I4,F5.1,4F12.3,I4, F8.2, F8.3,I3,3F15.3, 2F15.9,F15.3)") mod(epoch,100000),ObsData%Year, ObsData%Mon, ObsData%Day,  &
      &       ObsData%Hour, ObsData%Min, ObsData%Sec, NEU,dsqrt(DOT_PRODUCT(NEU,NEU)), 0, PDOP, dx(4)+ZHD+ZWD, ObsNum, Coor, BLH
+            if (If_Posfile) then
+                write(PosID,"(I4,A1,I2.2,A1,I2.2,1X,I2.2,A1,I2.2,A1,I2.2,A1,I3.3,3F15.4,I4,I4)") ObsData%Year, '/', ObsData%Mon, '/', ObsData%Day, &
+                 &       ObsData%Hour, ':', ObsData%Min, ':', int(ObsData%Sec),'.',int(mod(ObsData%Sec,1.d0)*1000.d0), Coor, 2, ObsNum
+            end if
             RMS(1)=RMS(1)+NEU(1)*NEU(1)
             RMS(2)=RMS(2)+NEU(2)*NEU(2)
             RMS(3)=RMS(3)+NEU(3)*NEU(3)
