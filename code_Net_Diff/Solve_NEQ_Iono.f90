@@ -835,9 +835,18 @@ implicit none
             end if
 
             Ad_Flag=.true.
+        else
+            write(unit=LogID,fmt='(A10,4F7.2)') 'dx_L1_float',Epo_NEQ%dx(1:4)
+            if (If_TC) then
+                write(unit=LogID,fmt='(A10)', advance='no') 'DISB'
+                do i=1,5
+                    if (INT_SystemUsed(i)==0) cycle
+                    write(unit=LogID,fmt='(4F7.2)', advance='no') Epo_NEQ%dx(4+i*4-3:4+i*4)
+                end do
+                write(unit=LogID,fmt='(A)') ''
+            end if
         end if
         ! =================== End of Outliers Detect =====================
-        write(unit=LogID,fmt='(A10,4F7.2)') 'dx_L1_float',Epo_NEQ%dx(1:4)
     end do
     
     ! Write residuals

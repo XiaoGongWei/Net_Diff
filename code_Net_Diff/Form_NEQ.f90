@@ -624,6 +624,45 @@ implicit none
             end if
         end if
         
+        ! If tight combined RTK, set initial precision and random walk of DISB parameter
+        if (If_TC) then
+            do sys=1,5
+                if (sys==DD%RefSys) cycle
+                if (sys==1) then
+                    if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+                elseif (sys==5) then
+                    if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
+                else
+                    if (.not.(SystemUsed(sys))) cycle
+                end if
+                if (Epo_NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then
+                    maxEle=0.d0
+                    Sys_PRN=0
+                    do j=1,DD%PRNS  ! Find the maximum elevation satellite
+                        PRN=DD%PRN(j)
+                        if (DD%Sys(j)==sys .and. DD%Ele(PRN)>maxEle) then
+                            maxEle=DD%Ele(PRN)
+                            Sys_PRN=DD%PRN(j)
+                        end if
+                    end do
+                    if (Sys_PRN==0) exit  ! If no satellite in this epoch
+                    Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.001d0**2   ! L1
+                    Epo_NEQ%InvN(ParaNum+Sys_PRN+MaxPRN, ParaNum+Sys_PRN+MaxPRN)=0.001d0**2   ! L2
+                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
+                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P1
+                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
+    !                Epo_NEQ%dx(4+sys*4-1)=12.55d0*c/f_E1
+                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+    !                Epo_NEQ%dx(4+sys*4)=23.75d0*c/f_E5a
+                else   ! Random walk of DISB
+                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*Interval     ! P1
+                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*Interval     ! P1
+                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*Interval   ! L1
+                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=Epo_NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*Interval                ! L2
+                end if
+            end do
+        end if
+
         ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
         if (ar_mode==3) then !
             do PRN=1, 2*maxPRN

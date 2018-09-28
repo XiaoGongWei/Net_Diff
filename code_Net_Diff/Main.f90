@@ -221,7 +221,7 @@ implicit none
     write(temp,"(I1)") Sta%FixNum
     write(temp2,'(I1)') int(delay/60)
     open(unit=CoorID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".txt",action="write",err=100)
-    write(CoorID,"(A40)") "===============NET Diff================="
+    write(CoorID,"(A40)") "===============NET Diff V1.2================="
     write(CoorID,"(A40)") "Developed by Yize Zhang, zhyize@163.com"
     write(CoorID,"(A15,A7)") "day: ",str_day
     write(CoorID,"(A20)") "Station Fixed: "
@@ -337,7 +337,7 @@ implicit none
         write(temp,"(I1)") Sta%FixNum
         write(temp2,'(I1)') int(delay/60)
         open(unit=PosID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".pos",action="write",err=100)
-        write(PosID,"(A40)") "%===============NET Diff================="
+        write(PosID,"(A40)") "%============NET Diff V1.2==============="
         write(PosID,"(A40)") "%Developed by Yize Zhang, zhyize@163.com"
         write(PosID,"(A1,A15,A7)") "%", "day: ",str_day
         write(PosID,"(A1,A20)") "%", "Station Fixed: "
