@@ -92,7 +92,7 @@ implicit none
             read(unit=line,fmt='(I6)') imap
             i=0
         elseif (index(keyword,"EPOCH OF CURRENT MAP") /= 0) then
-            read(unit=line,fmt='(6I6)') year, mon, Iday, hour, min, sec
+            read(unit=line,fmt='(5I6)') year, mon, Iday, hour, min !, sec
             call UTC2GPST(year, mon, Iday, hour, min, 0.d0, IONData(imap)%week,IONData(imap)%sow)
         elseif (index(keyword,"LAT/LON1/LON2/DLON/H") /= 0) then
             i=i+1
