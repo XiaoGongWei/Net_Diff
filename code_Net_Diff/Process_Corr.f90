@@ -385,7 +385,7 @@ implicit none
                     end do
                     if (SatSelected(PRN)==0) cycle
                     
-                    if ((proc_mod==3) .and. (Res(1)%L((PRN-56)*2)==0.d0)) then
+                    if ((proc_mod==3) .and. (Res(1)%L((PRN-GNum-RNum)*2)==0.d0)) then
                         cycle
                     end if
 
@@ -747,7 +747,7 @@ implicit none
                     ObsNum=ObsNum+1   
                     ! ================ For Phase =================
                     if ((Combination(2)==.false.) .or. (Phase==0.d0)) then
-                        write(unit=LogID,fmt='(A6,1X,A1,I2,F8.2,2F15.3,E15.7,4F8.3,F10.3)') 'PRN',System,PRN_S,Ele, Range, s, Sat_Clk,STD, Ion,rela, ESC(PRN+56), L(N)
+                        write(unit=LogID,fmt='(A6,1X,A1,I2,F8.2,2F15.3,E15.7,4F8.3,F10.3)') 'PRN',System,PRN_S,Ele, Range, s, Sat_Clk,STD, Ion,rela, ESC(PRN), L(N)
                         cycle
                     end if
 
@@ -824,7 +824,7 @@ implicit none
                             
                         end if
                         write(unit=LogID,fmt='(A6,1X,A1,I2,F8.2,3F15.3,E15.7,3F8.3,2F10.3,2X,3F7.3,2I8)') 'PRN',System,PRN_S,Ele, Range, Phase,s,Sat_Clk, &
-                                        STD, Ion, rela,  L(N-1), L(N),Res(1)%L(PRN*2),ESC(PRN+56),OrbCorr(PRN+56,1),int(Res(1)%sow),int(PCORSow)
+                                        STD, Ion, rela,  L(N-1), L(N),Res(1)%L(PRN*2),ESC(PRN),OrbCorr(PRN,1),int(Res(1)%sow),int(PCORSow)
                     end if
                 end do ! do i=1,ObsData%PRNS
 

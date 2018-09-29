@@ -43,19 +43,19 @@ implicit none
             if ( (freq_comb=="L1L2") .or. (proc_mod==3) ) then
                 read(line(26:36),*) pcor1
                 read(line(50:60),*) pcor2
-                ESC(PRN+56)=(152.6d0**2*pcor1-118.d0**2*pcor2)/(152.6d0+118.d0)/(152.6d0-118.d0)
+                ESC(PRN+GNum+RNum)=(152.6d0**2*pcor1-118.d0**2*pcor2)/(152.6d0+118.d0)/(152.6d0-118.d0)
             elseif (freq_comb=="L1L3") then
                 read(line(26:36),*) pcor1
                 read(line(74:84),*) pcor2
-                ESC(PRN+56)=(152.6d0**2*pcor1-124.d0**2*pcor2)/(152.6d0+124.d0)/(152.6d0-124.d0)
+                ESC(PRN+GNum+RNum)=(152.6d0**2*pcor1-124.d0**2*pcor2)/(152.6d0+124.d0)/(152.6d0-124.d0)
             elseif (freq_comb=="L2L3") then
                 read(line(50:60),*) pcor1
                 read(line(74:84),*) pcor2
-                ESC(PRN+56)=(118.0d0**2*pcor1-124.d0**2*pcor2)/(118.0d0+124.d0)/(118.0d0-124.d0)
+                ESC(PRN+GNum+RNum)=(118.0d0**2*pcor1-124.d0**2*pcor2)/(118.0d0+124.d0)/(118.0d0-124.d0)
             end if
             PCORSow=sow + dt
         end if
-        ESC(PRN+56)=-ESC(PRN+56)
+        ESC(PRN+GNum+RNum)=-ESC(PRN+GNum+RNum)
     end do
 !    ESC=0.d0
 

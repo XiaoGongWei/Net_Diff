@@ -41,9 +41,9 @@ implicit none
             cycle  ! Ôç£¬¼ÌÐø
         end if
         if (IQt==IQ) then
-            read(line(24:32),*) OrbCorr(PRN+56,1)
-            read(line(54:63),*) OrbCorr(PRN+56,2)
-            read(line(84:93),*) OrbCorr(PRN+56,3)
+            read(line(24:32),*) OrbCorr(PRN+GNum+RNum,1)
+            read(line(54:63),*) OrbCorr(PRN+GNum+RNum,2)
+            read(line(84:93),*) OrbCorr(PRN+GNum+RNum,3)
             OrbCorrSow=sow + dt
         end if
 
