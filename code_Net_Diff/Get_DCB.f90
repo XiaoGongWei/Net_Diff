@@ -61,7 +61,7 @@ implicit none
     if (.not. alive) then
         if ( (index(Clk,"CLK")/=0) .and. ( (index(ObsCombine,"PC")==0) .or. (index(freq_comb,'L1L2')==0) ) ) then  ! If precise clock and not L1L2 combination
             write(*,*) "No Multi-GNSS DCB exist. It will affect the real clock."
-!            pause
+            pause
         elseif ( (index(Clk,"BRD")/=0) .and. (SystemUsed(2)) .and. ( (index(ObsCombine,"P1")==0) .and. (index(ObsCombine,'G1')==0) ) ) then  ! If precise clock and not L1L2 combination
             write(*,*) "No Multi-GNSS DCB exist. It will affect the real clock of GLONASS."
 !            pause
@@ -94,7 +94,7 @@ implicit none
 
         do while(.true.)
             read(unit=DCBID,fmt="(A)") line
-            if ((index(line,"-BIAS/SOLUTION") /= 0) .or. (index(line(16:19),"    ")==0)) then
+            if ((index(line,"-BIAS/SOLUTION") /= 0) .or. (index(line(16:19),"    ")==0) .or. (index(line,"OSB") /= 0)) then
                 exit
             elseif ((index(line(1:4),"DSB") /= 0) .or. (index(line(1:4),"DCB") /= 0)) then
                 if (index(line(1:4),"DSB") /= 0) then

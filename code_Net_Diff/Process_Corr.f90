@@ -919,7 +919,13 @@ implicit none
                     if (If_Est_Iono .and. (index(ObsCombine,"P1") /=0 .or. index(ObsCombine,"P2") /=0 .or. index(ObsCombine,"P3") /=0)) then
                         do i=1, SatNum
                             if (InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)>0.d0 .and. any(A(1:N, ParaNum-SatNum+i)/=0.d0) ) then
-                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+4.d0/3600.d0*Interval
+                                if (iontype==2 .and. Ion>0.d0) then
+                                    InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+4.d-2/3600.d0*Interval
+                                elseif (Ion==0.d0) then
+                                    InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+4.d0/3600.d0*Interval
+                                else  ! Broascast
+                                    InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+1.d0/3600.d0*Interval
+                                end if
                             elseif (any(A(1:N, ParaNum-SatNum+i)/=0.d0)) then
                                 InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=0.5d0**2
                             end if
