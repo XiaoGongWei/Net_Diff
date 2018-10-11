@@ -303,7 +303,7 @@ implicit none
             write(CoorID,"(A12,5X,A15)") 'ar_mode:  ', 'Fix and hold'
             write(CoorID,"(A12,5X,2I4)") 'fixholdele:  ', int(FixEle), int(HoldEle)
         end if
-        write(CoorID,"(A12,5X,L5,I3)") 'partial_ar:  ', partial_AR, parARnum
+        write(CoorID,"(A12,5X,L5,I3)") 'partial_ar:  ', partial_AR, parARmode
         write(CoorID,"(A12,5X,F5.1)") 'minratio:  ', minratio
         write(CoorID,"(A12,5X,L5)") 'tightcombine:  ', If_TC
         write(CoorID,"(A12,5X,L5)") 'est_wl_amb:  ', If_Est_WL
@@ -419,7 +419,7 @@ implicit none
                 write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Fix and hold'
                 write(PosID,"(A1,A12,5X,2I4)") "%", 'fixholdele:  ', int(FixEle), int(HoldEle)
             end if
-            write(PosID,"(A1,A12,5X,L5,I3)") "%", 'partial_ar:  ', partial_AR, parARnum
+            write(PosID,"(A1,A12,5X,L5,I3)") "%", 'partial_ar:  ', partial_AR, parARmode
             write(PosID,"(A1,A12,5X,F5.1)") "%", 'minratio:  ', minratio
             write(PosID,"(A1,A12,5X,L5)") "%", 'tightcombine:  ', If_TC
             write(PosID,"(A1,A12,5X,L5)") "%", 'est_wl_amb:  ', If_Est_WL
@@ -483,8 +483,8 @@ implicit none
         call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         call Process_Corr    ! 加分区改正数或等效钟差
-!    elseif (proc_mod==4) then
-!        call Process2      ! 2min 站间差
+    elseif (proc_mod==4) then
+        call Process_AR      ! PPP ambiguity resolution
     elseif (proc_mod==5) then
         call Process_DD    ! RTK
     else

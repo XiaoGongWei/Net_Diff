@@ -34,7 +34,7 @@ implicit none
     type(type_Epo_NEQ) :: Epo_NEQ
     ! Local variables
     integer :: N, i, j, k, PRN, sys, freq, Sys_PRN
-    real(8)  :: Awl(MaxPRN, ParaNum+2*MaxPRN+IonoNum),Aw4(MaxPRN, ParaNum+2*MaxPRN+IonoNum)
+    real(8)  :: Awl(MaxPRN, ParaNum+2*SatNum+IonoNum),Aw4(MaxPRN, ParaNum+2*SatNum+IonoNum)
     real(8) :: Aewl(MaxPRN,ParaNum)
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
     real(8)  :: Al1(MaxPRN, ParaNum+3*IonoNum), Al2(MaxPRN, ParaNum+3*IonoNum)
@@ -61,14 +61,14 @@ implicit none
 !            Epo_NEQ%U=0.d0
 !            Epo_NEQ%dx=0.d0
 !        end if
-!        do PRN=1,MaxPRN
+!        do PRN=1,SatNum
 !            CycleSlip(1)%Slip(PRN)=1
 !        end do
 !    end if
 
     
     ! Eliminate the unobserved satellite at this epoch
-    do PRN=1, MaxPRN !DD%PRNS
+    do PRN=1, SatNum !DD%PRNS
         flag_del_PRN=.true.
         do i=1,DD%PRNS
             if (DD%PRN(i)==PRN) then
@@ -97,12 +97,12 @@ implicit none
         if (flag_del_PRN .and. any(dT<-10.d0*Interval) .or. ar_mode==2) then   !  If satellite unobserved more than 10 epoches, or instantaneous mode
             if (ADmethod=='LS') then
                 call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
-                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+                call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+SatNum+PRN)
                 NEQ%dx(ParaNum+PRN)=0.d0
-                NEQ%dx(ParaNum+MaxPRN+PRN)=0.d0
+                NEQ%dx(ParaNum+SatNum+PRN)=0.d0
             elseif (ADmethod=='KF') then
                 call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')
-                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')
+                call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+SatNum+PRN, 'dda')
             end if
             if (If_Est_Iono .and. IonoNum>0) then
                 if (ADmethod=='LS') then
@@ -119,14 +119,14 @@ implicit none
             end if
             if (ar_mode==3) then ! If fixed and hold mode
                 NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
-                NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                NEQ%fixed_amb(PRN+SatNum)=0.99d0
                 NEQ%fixed_amb_num(PRN)=0
-                NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                NEQ%fixed_amb_num(PRN+SatNum)=0
                 if (If_Est_Iono .and. IonoNum>0) then
                     Epo_NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity
-                    Epo_NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                    Epo_NEQ%fixed_amb(PRN+SatNum)=0.99d0
                     Epo_NEQ%fixed_amb_num(PRN)=0
-                    Epo_NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                    Epo_NEQ%fixed_amb_num(PRN+SatNum)=0
                 end if
             end if
         end if
@@ -208,7 +208,7 @@ implicit none
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5a
+                f2=f_E5
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -230,10 +230,10 @@ implicit none
                  NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
                  if (ADmethod=='LS') then
                      call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+PRN)
-                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+MaxPRN+PRN)
+                     call Elimi_Para(NEQ%Nbb, NEQ%U, NEQ%N, ParaNum+SatNum+PRN)
                  elseif (ADmethod=='KF') then
                     call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+PRN, 'dda')  ! L1 ambiguity
-                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+MaxPRN+PRN, 'dda')  ! L2 ambiguity
+                    call KF_Change(NEQ%InvN, NEQ%dx,NEQ%N, ParaNum+SatNum+PRN, 'dda')  ! L2 ambiguity
                  end if
                  if (If_Est_Iono .and. IonoNum>0) then
                     Epo_NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
@@ -247,14 +247,14 @@ implicit none
                  end if
                  if (ar_mode==3) then ! If fixed and hold mode
                     NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity if cycle slip occurs
-                    NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                    NEQ%fixed_amb(PRN+SatNum)=0.99d0
                     NEQ%fixed_amb_num(PRN)=0
-                    NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                    NEQ%fixed_amb_num(PRN+SatNum)=0
                     if (If_Est_Iono .and. IonoNum>0) then
                         Epo_NEQ%fixed_amb(PRN)=0.99d0   ! Reinitialize the fixed ambiguity if cycle slip occurs
-                        Epo_NEQ%fixed_amb(PRN+MaxPRN)=0.99d0
+                        Epo_NEQ%fixed_amb(PRN+SatNum)=0.99d0
                         Epo_NEQ%fixed_amb_num(PRN)=0
-                        Epo_NEQ%fixed_amb_num(PRN+MaxPRN)=0
+                        Epo_NEQ%fixed_amb_num(PRN+SatNum)=0
                     end if
                  end if
             end if
@@ -328,15 +328,15 @@ implicit none
 
          ! For W4
          if ( DD%W4(i)/=0.d0 ) then
-             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+MaxPRN+PRN, ParaNum+MaxPRN+PRN)/=0.d0) then
+             if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+SatNum+PRN, ParaNum+SatNum+PRN)/=0.d0) then
                  Aw4(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
-                 Aw4(i,ParaNum+MaxPRN+PRN)=c/(b1*f1+b2*f2)  !1.d0
+                 Aw4(i,ParaNum+SatNum+PRN)=c/(b1*f1+b2*f2)  !1.d0
                  if (If_TC .and. sys/=DD%RefSys) then
                     Aw4(i, 4+sys*4)=1.d0
                  end if
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
-                    Aw4(i,ParaNum+MaxPRN+PRN)=c/(f1-f3)    ! L1-L3 wide lane ambiguity parameter
+                    Aw4(i,ParaNum+SatNum+PRN)=c/(f1-f3)    ! L1-L3 wide lane ambiguity parameter
                     Aw4(i,ParaNum+IonoNum*2+PRN)= f1/f3 ! Ionosphere parameter
                     Epo_NEQ%SumN=Epo_NEQ%SumN+1
                     NEQ%SumN=NEQ%SumN-1  ! W4 not used in NEQ for long baseline
@@ -372,7 +372,7 @@ implicit none
                 Al2(i, 4+sys*4)=1.d0
              end if
              if (If_Est_Iono .and. IonoNum>0) then 
-                Al2(i,ParaNum+MaxPRN+PRN)= c/f2 ! ambiguity parameter
+                Al2(i,ParaNum+SatNum+PRN)= c/f2 ! ambiguity parameter
                 Al2(i,ParaNum+2*IonoNum+PRN)=  -f1**2/f2**2  ! Ionosphere parameter
              end if
              Epo_NEQ%SumN=Epo_NEQ%SumN+1
@@ -394,11 +394,11 @@ implicit none
     NEQ%Lewl(1:N)=DD%EWL(1:N)/sigLC/30.d0 
     NEQ%amb_EWL=DD%EWL_amb
     if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
-        NEQ%Awl(1:N,:)=Awl(1:N,1:ParaNum+MaxPRN*2)/sigLC/sqrt(a1**2+a2**2)
+        NEQ%Awl(1:N,:)=Awl(1:N,1:ParaNum+SatNum*2)/sigLC/sqrt(a1**2+a2**2)
 !        NEQ%Lwl(1:N)=DD%WL(1:N)/sigLC/sqrt(a1**2+a2**2)         ! Already done in former loop
     end if
     if ( (b1/=0.d0) .or. (b2/=0.d0) ) then
-        NEQ%Aw4(1:N,:)=Aw4(1:N,1:ParaNum+MaxPRN*2)/sigLC/sqrt(b1**2+b2**2)
+        NEQ%Aw4(1:N,:)=Aw4(1:N,1:ParaNum+SatNum*2)/sigLC/sqrt(b1**2+b2**2)
         NEQ%Lw4(1:N)=DD%W4(1:N)/sigLC/sqrt(b1**2+b2**2)
     end if
     if (TropLen/=0.d0 .and. If_Est_Iono) then    ! Don't estimate tropsphere parameter in NEQ. Only in EPO_NEQ for long baseline need to estimate it.
@@ -428,7 +428,60 @@ implicit none
             else
                 if (.not.(SystemUsed(sys))) cycle
             end if
-            if (NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then
+
+            ! Code DISB, doesn't affected by different frequency
+            if (NEQ%InvN(4+sys*4-3,4+sys*4-3)==0.d0) then
+                NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
+                NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P2
+            else   ! Random walk of code DISB
+                NEQ%InvN(4+sys*4-3,4+sys*4-3)=NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)    ! P1
+                NEQ%InvN(4+sys*4-2,4+sys*4-2)=NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)     ! P2
+            end if
+            if (If_Est_Iono .and. IonoNum>0) then 
+                if (Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)==0.d0) then
+                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
+                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P2
+                else   ! Random walk of code DISB
+                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)    ! P1
+                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)     ! P2
+                end if
+            end if
+
+            ! Check if cycle slip for all satellites in this system. If yes, reset  phase DISB and set all satellites in this system as cycle slip due to frequency difference.
+            ! !!!!!!!!!This is very helpful in urban environment
+            Sys_PRN=0
+            do j=1,DD%PRNS
+                PRN=DD%PRN(j)
+                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(2)%Slip(PRN)==0) .and. DD%Sys(j)==sys) then
+                    Sys_PRN=DD%PRN(j)
+                end if
+            end do
+            if (Sys_PRN==0) then
+                NEQ%InvN(4+sys*4-1,:)=0.d0
+                NEQ%InvN(:, 4+sys*4-1)=0.d0
+                NEQ%InvN(4+sys*4,:)=0.d0
+                NEQ%InvN(:, 4+sys*4)=0.d0
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%InvN(4+sys*4-1,:)=0.d0
+                    Epo_NEQ%InvN(:, 4+sys*4-1)=0.d0
+                    Epo_NEQ%InvN(4+sys*4,:)=0.d0
+                    Epo_NEQ%InvN(:, 4+sys*4)=0.d0                    
+                end if
+                if (sys==1) then
+                    CycleSlip(2)%Slip(1:GNum)=1
+                    CycleSlip(2)%Slip(GNum+RNum+CNum+NumE+1:GNum+RNum+CNum+NumE+JNum)=1
+                elseif (sys==2) then
+                    CycleSlip(2)%Slip(GNum+1:GNum+RNum)=1
+                elseif (sys==3) then
+                    CycleSlip(2)%Slip(GNum+RNum+1:GNum+RNum+CNum)=1
+                elseif (sys==4) then
+                    CycleSlip(2)%Slip(GNum+RNum+CNum+1:GNum+RNum+CNum+NumE)=1
+                elseif (sys==5) then
+                    CycleSlip(2)%Slip(GNum+RNum+CNum+NumE+JNum+1:GNum+RNum+CNum+NumE+JNum+INum)=1
+                end if
+            end if
+
+            if (NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then ! Phase DISB is determined by maximum elevation satellite and includes its ambiguity
                 maxEle=0.d0
                 Sys_PRN=0
                 do j=1,DD%PRNS  ! Find the maximum elevation satellite
@@ -438,29 +491,38 @@ implicit none
                         Sys_PRN=DD%PRN(j)
                     end if
                 end do
-                if (Sys_PRN==0) exit  ! If no satellite in this epoch
-                NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.001d0**2   ! L1
-                NEQ%InvN(ParaNum+Sys_PRN+MaxPRN, ParaNum+Sys_PRN+MaxPRN)=0.001d0**2   ! L2
-                NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
-                NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P1
-                NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
-!                NEQ%dx(4+sys*4-1)=12.55d0*c/f_E1
-                NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
-!                NEQ%dx(4+sys*4)=23.75d0*c/f_E5a
+                if (Sys_PRN>0) then
+                    NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
+                    NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
+                    NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
+                    NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+                    if (If_Est_Iono .and. IonoNum>0) then
+                        Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
+                        Epo_NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
+                        Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
+                        Epo_NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+                    end if
+                end if
             else   ! Random walk of DISB
-                NEQ%InvN(4+sys*4-3,4+sys*4-3)=NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*Interval     ! P1
-                NEQ%InvN(4+sys*4-2,4+sys*4-2)=NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*Interval     ! P1
-                NEQ%InvN(4+sys*4-1,4+sys*4-1)=NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*Interval   ! L1
-                NEQ%InvN(4+sys*4,4+sys*4)=NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*Interval                ! L2
+                NEQ%InvN(4+sys*4-1,4+sys*4-1)=NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)   ! L1
+                NEQ%InvN(4+sys*4,4+sys*4)=NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)                ! L2
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)   ! L1
+                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=Epo_NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)                ! L2
+                end if
             end if
         end do
+        NEQ%week=DD%week
+        NEQ%sow=DD%sow
+        Epo_NEQ%week=DD%week
+        Epo_NEQ%sow=DD%sow
     end if
     ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
     if (ar_mode==3) then !
-        do PRN=1, 2*maxPRN
+        do PRN=1, 2*SatNum
             if (NEQ%fixed_amb(PRN)/=0.99d0) then
                 NEQ%fixed_amb_num(PRN)=NEQ%fixed_amb_num(PRN)+1
-                if (PRN<=maxPRN) then
+                if (PRN<=SatNum) then
                     if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity >10 epoches
                         if (ADmethod=='LS') then
                             NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0*(1.d0/0.01**2) ! 1cm
@@ -469,8 +531,8 @@ implicit none
                             call KF_Gain_one(NEQ%InvN, NEQ%dx,NEQ%N, PRN+ParaNum, 1.d0*(NEQ%fixed_amb(PRN)), 0.01d0)
                         end if
                     end if
-                elseif (PRN>maxPRN) then
-                    if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >10 epoches
+                elseif (PRN>SatNum) then
+                    if (NEQ%fixed_amb_num(PRN)>10 .and. NEQ%Ele(PRN-SatNum)>HoldEle) then  ! If the same ambiguity >10 epoches
 !                        if (ADmethod=='LS') then
                             NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+1.d0*(1/0.01**2) ! 1cm
                             NEQ%U(PRN+ParaNum)=NEQ%U(PRN+ParaNum)+real(NEQ%fixed_amb(PRN))*(1.d0/0.01**2) ! 1cm
@@ -647,7 +709,7 @@ implicit none
                     end do
                     if (Sys_PRN==0) exit  ! If no satellite in this epoch
                     Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.001d0**2   ! L1
-                    Epo_NEQ%InvN(ParaNum+Sys_PRN+MaxPRN, ParaNum+Sys_PRN+MaxPRN)=0.001d0**2   ! L2
+                    Epo_NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.001d0**2   ! L2
                     Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
                     Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P1
                     Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
@@ -665,10 +727,10 @@ implicit none
 
         ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
         if (ar_mode==3) then !
-            do PRN=1, 2*maxPRN
+            do PRN=1, 2*SatNum
                 if (If_Est_Iono .and. IonoNum>0 .and. Epo_NEQ%fixed_amb(PRN)/=0.99d0) then
                     Epo_NEQ%fixed_amb_num(PRN)=Epo_NEQ%fixed_amb_num(PRN)+1
-                    if (PRN<=maxPRN) then
+                    if (PRN<=SatNum) then
                         if (Epo_NEQ%fixed_amb_num(PRN)>50 .and. Epo_NEQ%Ele(PRN)>HoldEle) then  ! If the same ambiguity > 50 epoches
                             if (ADmethod=='LS') then
                                 Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+(1.d0/0.01d0**2) !  ! 1cm
@@ -677,8 +739,8 @@ implicit none
                                 call KF_Gain_one(Epo_NEQ%InvN, Epo_NEQ%dx,Epo_NEQ%N, PRN+ParaNum, 1.d0*(Epo_NEQ%fixed_amb(PRN)), 0.01d0)
                             end if
                         end if
-                    elseif (PRN>maxPRN) then
-                        if (Epo_NEQ%fixed_amb_num(PRN)>50 .and. Epo_NEQ%Ele(PRN-maxPRN)>HoldEle) then  ! If the same ambiguity >50 epoches
+                    elseif (PRN>SatNum) then
+                        if (Epo_NEQ%fixed_amb_num(PRN)>50 .and. Epo_NEQ%Ele(PRN-SatNum)>HoldEle) then  ! If the same ambiguity >50 epoches
                             if (ADmethod=='LS') then
                                 Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)=Epo_NEQ%Nbb(PRN+ParaNum,PRN+ParaNum)+(1.d0/0.01d0**2) ! (1/0.01**2) ! 1cm
                                 Epo_NEQ%U(PRN+ParaNum)=Epo_NEQ%U(PRN+ParaNum)+real(Epo_NEQ%fixed_amb(PRN))*(1.d0/0.01d0**2)

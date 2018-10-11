@@ -153,7 +153,7 @@ implicit none
     ! Update MW information
     if ( (index(CSmethod,"MW")/=0) .and. (P1/=0.d0) .and. (P2/=0.d0) .and. (L1/=0.d0) .and. (L2/=0.d0) ) then
         CycleSlip(sta)%CS(PRN)%arcLengthMW=CycleSlip(sta)%CS(PRN)%arcLengthMW+1
-        if (CycleSlip(sta)%CS(PRN)%arcLengthMW>10) CycleSlip(sta)%CS(PRN)%arcLengthMW=10
+        if (CycleSlip(sta)%CS(PRN)%arcLengthMW>120) CycleSlip(sta)%CS(PRN)%arcLengthMW=120
         CycleSlip(sta)%CS(PRN)%nMWmean=CycleSlip(sta)%CS(PRN)%nMWmean+(MW-CycleSlip(sta)%CS(PRN)%nMWmean)/CycleSlip(sta)%CS(PRN)%arcLengthMW
         CycleSlip(sta)%CS(PRN)%nMWmean2=CycleSlip(sta)%CS(PRN)%nMWmean2+(MW**2-CycleSlip(sta)%CS(PRN)%nMWmean2)/CycleSlip(sta)%CS(PRN)%arcLengthMW
     end if

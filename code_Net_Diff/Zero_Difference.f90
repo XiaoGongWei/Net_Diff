@@ -193,7 +193,7 @@ implicit none
         elseif (System=="E") then   ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5a
+                f2=f_E5
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -404,8 +404,19 @@ implicit none
                 end if
             end if
         end if
-!        CycleSlip(k)%Slip(PRN)=Slip
         if (Slip==1) CycleSlip(k)%Slip(PRN)=1  ! Record the slip flag, this will include cycle slip information of previous information
+        
+!        if (k==2 .and.  sys==3) then ! BeiDou
+!            P1=P1+0.68d0
+!            P2=P2+0.86d0
+!            L1=L1-2.44d0/c*f1
+!            L2=L2-2.66d0/c*f2
+!        elseif (k==2 .and.  sys==4) then ! Galileo
+!            P1=P1-0.88d0
+!            P2=P2+1.19d0
+!            L1=L1-3.04d0/c*f1
+!            L2=L2-3.26d0/c*f2
+!        end if
 
         ! ****** Form zero difference ********
         N                    =    N+1
@@ -449,10 +460,18 @@ implicit none
         end if
 
         if (CycleSlip(k)%Slip(PRN)==1) then
-            ZD%amb0(PRN,1)=real(nint(L1-Range/c*f1))  ! For tightly combined multi-system RTK
+            ZD%amb0(PRN,1)=real(nint(L1-Range/c*f1))
             ZD%amb0(PRN,2)=real(nint(L2-Range/c*f2))
             ZD%amb0(PRN,3)=real(nint(L3-Range/c*f3))
+!            if (k==2 .and.  sys==1 .and. PRN==17) then ! GPS
+!                ZD%amb0(PRN,1)=ZD%amb0(PRN,1)+4.d0
+!                ZD%amb0(PRN,2)=ZD%amb0(PRN,2)+3.d0
+!            end if
+        elseif (IF_TC) then
         end if
+            ZD%amb1(PRN,1)=real(nint(L1-Range/c*f1))  ! For tightly combined multi-system RTK
+            ZD%amb1(PRN,2)=real(nint(L2-Range/c*f2))
+            ZD%amb1(PRN,3)=real(nint(L3-Range/c*f3))
         if (L1/=0.d0)      ZD_L1=(L1-ZD%amb0(PRN,1))*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
         if (L2/=0.d0)      ZD_L2=(L2-ZD%amb0(PRN,2))*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
         if (L3/=0.d0)      ZD_L3=(L3-ZD%amb0(PRN,3))*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
@@ -516,7 +535,7 @@ implicit none
 !        if ( (L1/=0.d0) .and. (L2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) ZD%W4(N)=(b1*f1*ZD%L1(N)+b2*f2*ZD%L2(N))/(b1*f1+b2*f2)
 !        if ( (L1/=0.d0) .and. (L3/=0.d0) .and. (a1*f1+a2*f2/=0.d0)  ) ZD%W4(N)=(a1*f1*ZD%L1(N)+a2*f2*LC)/(a1*f1+a2*f2)
         write(unit=LogID,fmt='(A6,1X,A1,I2,2F8.2,2F13.2,E15.7,3F7.2, 2X, 2F7.2,4F13.2)') 'PRN',System,PRN_S,Ele, Azi,Range,  &
-                             s  , Sat_Clk , STD, Ion1, rela, ZD%P1(N), ZD%P2(N),ZD%L1(N), ZD%L2(N),ZD%WL(N), ZD%W4(N)
+                             s  , Sat_Clk , STD, Ion1, rela, ZD%P1(N), ZD%P2(N),ZD%L1(N), ZD%L2(N),ZD%amb0(PRN,1), ZD%amb0(PRN,2) ! ZD%WL(N), ZD%W4(N)
      end do
      ZD%PRNS =  N
      ZD%week =  ObsData%week

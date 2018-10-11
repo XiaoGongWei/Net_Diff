@@ -96,9 +96,10 @@ implicit none
     out=0
 
     ! ************ open CNES bias file ***************
+!    DCBFile='E:\gbm\cnt20043.bia'
     inquire(file=DCBFile,exist=alive)
     if (.not. alive) then
-            write(*,*) "******ERROR******: Can''t find Multi-GNSS bias file."
+            write(*,*) "******ERROR******: Can''t find Multi-GNSS bias file: "//trim(DCBFile)
             pause
             stop
         return
@@ -113,7 +114,7 @@ implicit none
         if (index(line, "*BIAS") /= 0) then
             read(unit=DCBID,fmt='(A)', iostat=error) line
             if (index(line,"OSB") == 0) then
-                write(*,*) "******ERROR******: Can''t find Multi-GNSS bias file."
+                write(*,*) "******ERROR******: Format of bias file incorrect: " // trim(line)
                 pause
                 stop
             end if
@@ -375,7 +376,10 @@ implicit none
                         L2=ObsData%L2C(i)
                         LLI2=ObsData%LLI2C(i)
                     end if
-                    P1=P1 +Bias%P1(PRN)*c  ! Add code and phase bias for PPP-AR
+                    ! Add code and phase bias for PPP-AR 
+                    ! Reference: D. Laurichesse, "Phase biases estimation for integer ambiguity resolution", 
+                    ! PPP-RTK & open standards Symposium , March 2012, Portland, Frankfurt am Mai
+                    P1=P1 +Bias%P1(PRN)*c
                     P2=P2 +Bias%P2(PRN)*c
                     L1=L1+Bias%L1(PRN)*f1
                     L2=L2+Bias%L2(PRN)*f2
@@ -764,13 +768,14 @@ implicit none
                     elseif ((System=="I") .and. (If_ISB)) then
                         A(N,5+INT_SystemUsed(1)+GLOIFB+INT_SystemUsed(2)+INT_SystemUsed(3)+INT_SystemUsed(4)+INT_SystemUsed(5))=PP(N)
                     end if
-                    Bias%WL_amb(PRN)=CycleSlip(k)%CS(PRN)%nMWmean+dx_windup  ! Wide lane ambiguity, WL_amb=N1-N2
-                    write(LogID,'(A10, I3,F12.2)') 'WL_amb', PRN, Bias%WL_amb(PRN)
-!                    if (CycleSlip(k)%CS(PRN)%arcLengthMW>=10 .and. abs(mod(Bias%WL_amb(PRN),1.d0))<0.3) then
+                    Bias%WL_amb(PRN)=L1 - L2 - (P1*f1 + P2*f2)/(f1+f2)*(f1-f2)/c+dx_windup ! CycleSlip(k)%CS(PRN)%nMWmean+dx_windup  ! Wide lane ambiguity, WL_amb=N1-N2
+                    write(LogID,'(F9.3, I3,F12.2)') 999.999, PRN, Bias%WL_amb(PRN)
+!                    if (CycleSlip(k)%CS(PRN)%arcLengthMW>=10 .and. abs(mod(Bias%WL_amb(PRN),1.d0))<0.4) then
 !                        Bias%WL_amb(PRN)=nint(Bias%WL_amb(PRN))   ! round to nearest WL ambiguity
 !                    end if
                     Bias%WL_amb(PRN)=0.d0
-                    A(N, PRN+ParaNum)=PP(N)*c/(f1+f2)   ! IF ambiguity in distance: (c*f1*N1-c*f2*N2)/(f1^2-f2^2)=c/(f1+f2)*N1+c*f2/(f1^2-f2^2)*(N1-N2)
+!                    A(N, PRN+ParaNum)=PP(N)*c/(f1+f2)   ! IF ambiguity in distance: (c*f1*N1-c*f2*N2)/(f1^2-f2^2)=c/(f1+f2)*N1+c*f2/(f1^2-f2^2)*(N1-N2)
+                    A(N, PRN+ParaNum)=PP(N)*c/f1  ! For single frequency
                     if (If_Est_Iono .and. (index(ObsCombine,"P1") /=0 .or. index(ObsCombine,"P2") /=0 .or. index(ObsCombine,"P3") /=0)) then
                         A(N, PRN+ParaNum-SatNum)= - PP(N)  ! Ionosphere parameter
                     end if

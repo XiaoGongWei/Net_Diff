@@ -48,24 +48,8 @@ implicit none
 
     ParaNum=4  ! Coodinate and troposphere parameter
     if (If_Est_Iono) then       ! If estimate ionosphere
-        IonoNum=MaxPRN
+        IonoNum=SatNum
     end if
-!    AmbID(1)=FileID_Mark
-!    FileID_Mark=FileID_Mark+1
-!!    open(unit=AmbID(1), file='E:\TUMSAT\long_baseline3\dztd_koma_143',action="read")
-!    open(unit=AmbID(1), file='E:\Program\Fortran\Matlab_PPP\Net_Diff\for_redistribution_files_only\test\RTK_longbaseline\hkws1570.18zpd',action="read")
-!    do while(.true.)
-!        read(AmbID(1),'(A)') line
-!        if (index(line,'*SITE ____EPOCH___ TRO')/=0) exit
-!    end do
-!    AmbID(2)=FileID_Mark
-!    FileID_Mark=FileID_Mark+1
-!!    open(unit=AmbID(2), file='E:\TUMSAT\long_baseline3\dztd_kaiy_143',action="read")
-!    open(unit=AmbID(2), file='E:\Program\Fortran\Matlab_PPP\Net_Diff\for_redistribution_files_only\test\RTK_longbaseline\hksl1570.18zpd',action="read")
-!    do while(.true.)
-!        read(AmbID(2),'(A)') line
-!        if (index(line,'*SITE ____EPOCH___ TRO')/=0) exit
-!    end do
     if (If_TC) then  ! It tightly combined
         ParaNum=ParaNum+ 5*4  ! 5 system
     end if
@@ -73,13 +57,13 @@ implicit none
         ParaNum=ParaNum+GloParaNum
     end if
     allocate(ZD(1)%A(MaxPRN,ParaNum), ZD(2)%A(MaxPRN,ParaNum), SD%A(MaxPRN,ParaNum), DD%A(MaxPRN,ParaNum) )
-    allocate(NEQ%Ap1(MaxPRN,ParaNum),NEQ%Ap2(MaxPRN,ParaNum),NEQ%Awl(MaxPRN,MaxPRN*2+ParaNum),NEQ%Aw4(MaxPRN,MaxPRN*2+ParaNum))
+    allocate(NEQ%Ap1(MaxPRN,ParaNum),NEQ%Ap2(MaxPRN,ParaNum),NEQ%Awl(MaxPRN,SatNum*2+ParaNum),NEQ%Aw4(MaxPRN,SatNum*2+ParaNum))
     allocate(NEQ%Aewl(MaxPRN,ParaNum))
-    allocate(NEQ%Nbb(MaxPRN*2+ParaNum,MaxPRN*2+ParaNum),NEQ%InvN(MaxPRN*2+ParaNum,MaxPRN*2+ParaNum))
-    allocate(NEQ%U(MaxPRN*2+ParaNum),NEQ%dx(MaxPRN*2+ParaNum) )
+    allocate(NEQ%Nbb(SatNum*2+ParaNum,SatNum*2+ParaNum),NEQ%InvN(SatNum*2+ParaNum,SatNum*2+ParaNum))
+    allocate(NEQ%U(SatNum*2+ParaNum),NEQ%dx(SatNum*2+ParaNum) )
     NEQ%Ap1=0.d0; NEQ%Lp1=0.d0; NEQ%Ap2=0.d0; NEQ%Lp2=0.d0
     NEQ%Awl=0.d0; NEQ%Lwl=0.d0; NEQ%Aw4=0.d0; NEQ%Lw4=0.d0
-    NEQ%Nbb=0.d0; NEQ%InvN=0.d0; NEQ%U=0.d0; NEQ%dx=0.d0; NEQ%N=MaxPRN*2+ParaNum
+    NEQ%Nbb=0.d0; NEQ%InvN=0.d0; NEQ%U=0.d0; NEQ%dx=0.d0; NEQ%N=SatNum*2+ParaNum
     allocate(Epo_NEQ%Ap1(MaxPRN,ParaNum+3*IonoNum),Epo_NEQ%Ap2(MaxPRN,ParaNum+3*IonoNum),Epo_NEQ%Al1(MaxPRN,ParaNum+3*IonoNum),Epo_NEQ%Al2(MaxPRN,ParaNum+3*IonoNum))
     allocate(Epo_NEQ%Awl(MaxPRN,ParaNum+3*IonoNum),Epo_NEQ%Aw4(MaxPRN,ParaNum+3*IonoNum))
     allocate(Epo_NEQ%Nbb(ParaNum+3*IonoNum,ParaNum+3*IonoNum),Epo_NEQ%InvN(ParaNum+3*IonoNum,ParaNum+3*IonoNum),Epo_NEQ%U(ParaNum+3*IonoNum),Epo_NEQ%dx(ParaNum+3*IonoNum) )
@@ -225,6 +209,28 @@ implicit none
             write(unit=LogID,fmt='(5X,A20)') 'No DD observations. '
             cycle
         end if
+
+        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3) ) then
+            write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'     ! In case of cycle slip, so Form_NEQ should be done every epoch.
+            cycle
+        end if
+        if (DD%PRNS<3) then
+            write(unit=LogID,fmt='(5X,A20)') 'Insufficient sat num'
+            cycle
+        end if
+
+        Nbb = matmul(  matmul( transpose(DD%A(1:DD%PRNS,1:3)), DD%P(1:DD%PRNS,1:DD%PRNS) ), DD%A(1:DD%PRNS,1:3)  )
+        call Invsqrt(Nbb, 3, InvN)
+        PDOP=0.d0
+        do i=1,3
+            PDOP=PDOP+InvN(i,i)
+        end do
+        PDOP=dsqrt(PDOP)
+        if (PDOP>MaxPDOP) then
+            write(unit=LogID,fmt='(5X,A5,F5.1,A16)') 'PDOP=', PDOP, '>maxPDOP, skip.'
+            cycle
+        end if
+
         
         ! If new reference satellite found, reset the NEQ
         if (ar_mode/=2) then
@@ -234,6 +240,12 @@ implicit none
         if (.not.(If_Est_Iono) .and. If_IonoCompensate) then
             call IonoCompensate(Obsweek,Obssec, RefSat, DD,Epo_NEQ) ! Compensate DD ionosphere residuals
         end if
+        
+        ! ============Change DD intial ambiguity value, for a better AR due to different frequency =================
+!        if (If_TC .and. RefSat(1)/=DD%RefSat(1)) then  ! Seems not good
+!            call Reset_Amb(ZD, DD, RefSat(1), NEQ, Epo_NEQ)
+!        end if
+
         do sys=1, 5   ! mark the reference satellite
             if (RefSat(sys)/=0 .and. INT_SystemUsed(sys)/=0) then
                 DD%RefSat(sys)=RefSat(sys)
@@ -270,51 +282,12 @@ implicit none
         if (.not.(If_Est_Iono) .and. If_IonoCompensate .and. Flag_Sln<3) then
             call IonoUpdate(ObsWeek, ObsSec, NEQ, Epo_NEQ) ! Update DD ionosphere residuals
         end if
-        
-        ! Remove integer value of the ambiguity solution in case of bias from wrong apporximate ambiguity on difference frequency
-        If (If_TC) then
-            NEQ%amb_WL=NEQ%dx(ParaNum+1:ParaNum+MaxPRN)  ! *(a1*f1+a2*f2)/c   ! In cycle
-            NEQ%amb_W4=NEQ%dx(ParaNum+1+MaxPRN:ParaNum+MaxPRN*2) ! *(b1*f1+b2*f2)/c
-            if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
-                NEQ%amb_L1 = (b2*NEQ%amb_WL - a2* NEQ%amb_W4)/(a1*b2-a2*b1)   ! In cycle
-                NEQ%amb_L2 = (-b1*NEQ%amb_WL + a1*NEQ%amb_W4)/(a1*b2-a2*b1)
-            elseif (a1*f1+a2*f2/=0.d0) then ! L1 frequency
-                NEQ%amb_L1=NEQ%amb_WL
-            elseif (b1*f1+b2*f2/=0.d0) then ! L2 frequency
-                NEQ%amb_L2=NEQ%amb_W4
-            end if
-            ! remove integer value of the ambiguity solution and add to zero-differenced approximate ambiguity
-            NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN)=mod(NEQ%dx(ParaNum+1:ParaNum+2*MaxPRN),1.d0)
-            ZD(2)%amb0(:,1)= ZD(2)%amb0(:,1)+NEQ%amb_L1-mod(NEQ%amb_L1,1.d0)  ! Maybe wrong if wide lane combination
-            ZD(2)%amb0(:,2)= ZD(2)%amb0(:,2)+NEQ%amb_L2-mod(NEQ%amb_L2,1.d0)
-        end if
 
         ! Release the cycle slip information
         do i=1, DD%PRNS
             CycleSlip(1)%Slip(DD%PRN(i))=0
             CycleSlip(2)%Slip(DD%PRN(i))=0
         end do
-
-        if ( (any(DD%RefSat-RefSat/=0)) .and. (DD%PRNS<3) ) then
-            write(LogID,'(5X,A40)') 'Too few sat & no previous ref sat. Skip!'     ! In case of cycle slip, so Form_NEQ should be done every epoch.
-            cycle
-        end if
-        if (DD%PRNS<3) then
-            write(unit=LogID,fmt='(5X,A20)') 'Insufficient sat num'
-            cycle
-        end if
-
-        Nbb = matmul(  matmul( transpose(DD%A(1:DD%PRNS,1:3)), DD%P(1:DD%PRNS,1:DD%PRNS) ), DD%A(1:DD%PRNS,1:3)  )
-        call Invsqrt(Nbb, 3, InvN)
-        PDOP=0.d0
-        do i=1,3
-            PDOP=PDOP+InvN(i,i)
-        end do
-        PDOP=dsqrt(PDOP)
-        if (PDOP>MaxPDOP) then
-            write(unit=LogID,fmt='(5X,A5,F5.1,A16)') 'PDOP=', PDOP, '>maxPDOP, skip.'
-            cycle
-        end if
 
 
         ! ================= Write the result ===============

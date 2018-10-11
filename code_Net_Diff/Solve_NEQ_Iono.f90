@@ -41,18 +41,18 @@ implicit none
     real(8) :: Coor(4)
     real(8) :: maxV
     integer :: maxL
-    real(8) :: NEQ_dx(ParaNum+MaxPRN), NEQ_InvN(ParaNum+MaxPRN,ParaNum+MaxPRN)  ! This is only for Wide Lane ambiguity resolution
+    real(8) :: NEQ_dx(ParaNum+SatNum), NEQ_InvN(ParaNum+SatNum,ParaNum+SatNum)  ! This is only for Wide Lane ambiguity resolution
     real(8) :: Epo_dx(ParaNum+3*IonoNum), Epo_InvN(ParaNum+3*IonoNum,ParaNum+3*IonoNum)
     real(8) :: AA(6*Epo_NEQ%PRNS,ParaNum+3*IonoNum), LL(6*Epo_NEQ%PRNS), RR(6*Epo_NEQ%PRNS,6*Epo_NEQ%PRNS)
     ! for lambda
     integer :: npar, npar2, nfixed
-    real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
-    real(8) :: Q(2*MaxPRN, 2*maxPRN), Q2(2*MaxPRN, 2*maxPRN), P(MaxPRN, maxPRN)
-    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN), dz(2*MAxPRN)
-!    real(8) :: dx(2*MaxPRN), temp_Nbb(ParaNum+MaxPRN,ParaNum+MaxPRN), temp_InvN(ParaNum+MaxPRN,ParaNum+MaxPRN)
-!    real(8) :: temp_U(ParaNum+MaxPRN), temp_dx(ParaNum+MaxPRN), temp_Nbb2(2*MaxPRN,ParaNum+MaxPRN)
-    real(8) :: temp_InvN(2*MaxPRN, 2*MaxPRN),temp_InvN2(ParaNum, 2*MaxPRN), dx(2*MaxPRN), temp_dx(ParaNum)
-    integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
+    real(8) :: Ps, Qzhat(2*SatNum, 2*SatNum), Z(2*SatNum, 2*SatNum), mu
+    real(8) :: Q(2*SatNum, 2*SatNum), Q2(2*SatNum, 2*SatNum), P(MaxPRN, maxPRN)
+    real(8) :: disall(2), ratio, ratio2, amb(2*SatNum), amb2(2*SatNum), amb3(2*SatNum), dz(2*SatNum)
+!    real(8) :: dx(2*SatNum), temp_Nbb(ParaNum+SatNum,ParaNum+SatNum), temp_InvN(ParaNum+SatNum,ParaNum+SatNum)
+!    real(8) :: temp_U(ParaNum+SatNum), temp_dx(ParaNum+SatNum), temp_Nbb2(2*SatNum,ParaNum+SatNum)
+    real(8) :: temp_InvN(2*SatNum, 2*SatNum),temp_InvN2(ParaNum, 2*SatNum), dx(2*SatNum), temp_dx(ParaNum)
+    integer :: iPOS(2*SatNum), iPOS2(2*SatNum), iPOS3(2*SatNum), minL, minL2, minLL(SatNum),minLL2(SatNum)
     real(8) :: minP, maxQ
     integer(1) :: flag_partial, flag_fixed, freq, sys
 
@@ -115,8 +115,8 @@ implicit none
     NEQ%maxL=0
     N=NEQ%PRNS
     if (ADmethod=='KF') then
-        NEQ_InvN=NEQ%InvN(1:ParaNum+MaxPRN,1:ParaNum+MaxPRN)
-        NEQ_dx=NEQ%dx(1:ParaNum+MaxPRN)   ! temp save Pk and X in in case of outliers
+        NEQ_InvN=NEQ%InvN(1:ParaNum+SatNum,1:ParaNum+SatNum)
+        NEQ_dx=NEQ%dx(1:ParaNum+SatNum)   ! temp save Pk and X in in case of outliers
     end if
     do while(AD_flag)
         Ad_Flag=.false.
@@ -139,7 +139,7 @@ implicit none
                 K=K+N
             end if
             if (any(NEQ%Lwl(1:N)/=0.d0)) then
-                AA(K+1:K+N,1:ParaNum+MaxPRN)=NEQ%Awl(1:N,1:ParaNum+MaxPRN)
+                AA(K+1:K+N,1:ParaNum+SatNum)=NEQ%Awl(1:N,1:ParaNum+SatNum)
                 LL(K+1:K+N)=NEQ%Lwl(1:N)
                 RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
                 K=K+N
@@ -150,7 +150,7 @@ implicit none
                 RR(K+1:K+N,K+1:K+N)=NEQ%R(1:N,1:N)
                 K=K+N
             end if
-            call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*MaxPRN), LL(1:K), RR(1:K,1:K))
+            call KF_Gain(NEQ%InvN, NEQ%dx, NEQ%N, K, AA(1:K,1:ParaNum+2*SatNum), LL(1:K), RR(1:K,1:K))
         end if
         if (any(isnan(NEQ%dx))) then
             write(*,*)  "-------ERROR-------: NEQ%dx=nan, please check"
@@ -213,7 +213,7 @@ implicit none
                         NEQ%R(:,NEQ%maxL(3))=0.d0
                         call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
-                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
+                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+SatNum, ParaNum+NEQ%PRN(NEQ%maxL(3)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Awl(1:N,:), NEQ%Lwl(1:N), &
@@ -227,8 +227,8 @@ implicit none
             elseif  ((maxL)==4) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in W4', 'PRN=',NEQ%PRN(NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
-                    NEQ%fixed_amb(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=0.99d0  ! If outliers, do not hold the amiguity
-                    NEQ%fixed_amb_num(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=0
+                    NEQ%fixed_amb(NEQ%PRN(NEQ%maxL(4))+SatNum)=0.99d0  ! If outliers, do not hold the amiguity
+                    NEQ%fixed_amb_num(NEQ%PRN(NEQ%maxL(4))+SatNum)=0
                 end if
                 ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
                 NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)=NEQ%outlier(NEQ%PRN(NEQ%maxL(4)),2)+1
@@ -243,7 +243,7 @@ implicit none
                         NEQ%R(:,NEQ%maxL(4))=0.d0
                         call InvSqrt( NEQ%R(1:N,1:N),  N, NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
-                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+MaxPRN, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
+                        call KF_Change(NEQ_InvN, NEQ_dx,ParaNum+SatNum, ParaNum+NEQ%PRN(NEQ%maxL(4)), 'dda')
                     end if
                 else
                     call Minus_NEQ( NEQ%Nbb, NEQ%U, NEQ%Aw4(1:N,:), NEQ%Lw4(1:N), &
@@ -253,7 +253,7 @@ implicit none
                     STA%STA(1)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0
                     STA%STA(2)%Pre(NEQ%PRN(NEQ%maxL(4)))%n=1.d0 
                 end if
-                par_PRN(NEQ%PRN(NEQ%maxL(4))+MaxPRN)=1  ! For partial fix in this epoch
+                par_PRN(NEQ%PRN(NEQ%maxL(4))+SatNum)=1  ! For partial fix in this epoch
             elseif  ((maxL)==5) then   ! maxV in EWL
                 call Minus_NEQ( NEQ%Nbb(1:ParaNum,1:ParaNum), NEQ%U(1:ParaNum), NEQ%Aewl(1:N,:), NEQ%Lewl(1:N), &
                        NEQ%P(1:N, 1:N), ParaNum,  N, NEQ%maxL(5), NEQ%SumN)
@@ -264,8 +264,8 @@ implicit none
             Ad_Flag=.true.
             write(unit=LogID,fmt='(A10,3F10.3)') 'dx_out',NEQ%dx(1:3)
             if (ADmethod=='KF') then
-                NEQ%InvN(1:ParaNum+MaxPRN,1:ParaNum+MaxPRN)=NEQ_InvN
-                NEQ%dx(1:ParaNum+MaxPRN)=NEQ_dx   ! temp save Pk and X in in case of outliers
+                NEQ%InvN(1:ParaNum+SatNum,1:ParaNum+SatNum)=NEQ_InvN
+                NEQ%dx(1:ParaNum+SatNum)=NEQ_dx   ! temp save Pk and X in in case of outliers
             end if
         else
             write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
@@ -314,23 +314,23 @@ implicit none
     end if
     
     ! Get the wide line and W4 combination ambigulties
-    NEQ%amb_WL=NEQ%dx(ParaNum+1:ParaNum+MaxPRN)  ! *(a1*f1+a2*f2)/c   ! In cycle
-    NEQ%amb_W4=NEQ%dx(ParaNum+1+MaxPRN:ParaNum+MaxPRN*2) ! *(b1*f1+b2*f2)/c
+    NEQ%amb_WL(1:SatNum)=NEQ%dx(ParaNum+1:ParaNum+SatNum)  ! *(a1*f1+a2*f2)/c   ! In cycle
+    NEQ%amb_W4(1:SatNum)=NEQ%dx(ParaNum+1+SatNum:ParaNum+SatNum*2) ! *(b1*f1+b2*f2)/c
     
 
     ! Step2:
     !     Fix the WL and W4 amiguity using LAMBDA
-    amb2=NEQ%dx(ParaNum+1:ParaNum+MaxPRN*2)
-    do i=1, 2*maxPRN
+    amb2=NEQ%dx(ParaNum+1:ParaNum+SatNum*2)
+    do i=1, 2*SatNum
         iPOS(i:i)=i
-        if (i<=maxPRN) then
+        if (i<=SatNum) then
             if (NEQ%Ele(i)<FixEle) then
-                amb2(i)=0.d0; amb2(i+maxPRN)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+                amb2(i)=0.d0; amb2(i+SatNum)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
             end if
         end if
     end do
-    call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
-                                        MaxPRN*2, Q, amb, npar, iPOS)
+    call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+SatNum*2,ParaNum+1:ParaNum+SatNum*2), amb2, &
+                                        SatNum*2, Q, amb, npar, iPOS)
     write(LogID,'(A10)',advance='no') 'amb_float'
     if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
         do i=1,npar
@@ -346,7 +346,7 @@ implicit none
         end do
     elseif (b1*f1+b2*f2/=0.d0) then ! L2 frequency
         do i=1,npar
-            write(LogID,'(I6,2F8.1)',advance='no') iPOS(i)-maxPRN, amb(i)
+            write(LogID,'(I6,2F8.1)',advance='no') iPOS(i)-SatNum, amb(i)
         end do
     end if
     write(LogID,'(A)') ''
@@ -357,7 +357,14 @@ implicit none
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
 
     100 if (npar>2) then
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        if (parARmode==1) then ! Data driven partial ambigulty fixing
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar),1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        elseif (parARmode==2) then ! Model driven partial ambigulty fixing, similar as standard ParAR
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/2.d0,5,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+            if (nfixed<npar) then
+                flag_partial=1
+            end if
+        end if
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -391,10 +398,10 @@ implicit none
         if ( (a1*f1+a2*f2/=0.d0) .and. (b1*f1+b2*f2/=0.d0) ) then ! Dual frequency
             do i=1,npar
                 if (iPOS(i)==0) then
-                    if (iPOS2(i)<=maxPRN) then
+                    if (iPOS2(i)<=SatNum) then
                         NEQ%amb_WL(iPOS2(i))=0.d0
                     else
-                        NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
+                        NEQ%amb_W4(iPOS2(i)-SatNum)=0.d0
                     end if
                     NEQ%fixed_amb_num(iPOS2(i))=0
                 else
@@ -402,10 +409,10 @@ implicit none
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity  change
                     end if
                     NEQ%fixed_amb(iPOS2(i))=amb(i)   ! Save the fixed ambiguity
-                    if (iPOS2(i)<=maxPRN) then
+                    if (iPOS2(i)<=SatNum) then
                         NEQ%amb_WL(iPOS2(i))=amb(i)
                     else
-                        NEQ%amb_W4(iPOS2(i)-maxPRN)=amb(i)
+                        NEQ%amb_W4(iPOS2(i)-SatNum)=amb(i)
                     end if
                 end if
                 write(LogID,'(I6,F8.1)',advance='no') iPOS2(i), amb(i)
@@ -431,21 +438,21 @@ implicit none
         elseif (b1*f1+b2*f2/=0.d0) then ! L2 frequency
             do i=1,npar
                 if (iPOS(i)==0) then
-                    NEQ%amb_W4(iPOS2(i)-maxPRN)=0.d0
+                    NEQ%amb_W4(iPOS2(i)-SatNum)=0.d0
                     NEQ%fixed_amb_num(iPOS2(i))=0
                 else
                     if (abs(NEQ%fixed_amb(iPOS2(i))-amb(i))>0.001d0) then
                         NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity does not change
                     end if
                     NEQ%fixed_amb(iPOS2(i))=amb(i)   ! Save the fixed ambiguity
-                    NEQ%amb_W4(iPOS2(i)-maxPRN)=amb(i)
+                    NEQ%amb_W4(iPOS2(i)-SatNum)=amb(i)
                 end if
-                write(LogID,'(I6,F8.1)',advance='no') iPOS2(i)-maxPRN, amb(i)
+                write(LogID,'(I6,F8.1)',advance='no') iPOS2(i)-SatNum, amb(i)
             end do
         end if
         write(LogID,'(A)') ''
         amb_success=amb_success+1
-    elseif (partial_AR) then ! partial ambigulty fixing
+    elseif (parARmode==1) then ! Data driven partial ambigulty fixing
         minP=100.d0; maxQ=0.d0
         minL=0; minL2=0
         amb3=amb2
@@ -457,7 +464,7 @@ implicit none
                 minL=i  
                 do j=i+1,npar2  ! Find the same partial AR PRN in L2
                     if (iPOS3(j)==0) cycle
-                    if (PRN+MaxPRN==iPOS3(j) .and. par_PRN(iPOS3(j))==1) then
+                    if (PRN+SatNum==iPOS3(j) .and. par_PRN(iPOS3(j))==1) then
                         minL2=j
                         exit
                     end if
@@ -465,7 +472,7 @@ implicit none
                 exit
             end if
             !!   If not, start from the minmum satellite elevation
-            if (PRN>maxPRN) PRN=PRN-maxPRN
+            if (PRN>SatNum) PRN=PRN-SatNum
             do j=1,NEQ%PRNS
                 if (NEQ%PRN(j)==PRN) then
                     exit
@@ -491,7 +498,7 @@ implicit none
             call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
             flag_partial=1
             if (npar>=3) goto 100
-        elseif ( (parARnum==2) ) then
+        else
          ! Which means ratio not less than minratio for only one satellite partial AR, then we try two.
          ! However, this is only for that last epoch is partial AR
             amb3=amb2
@@ -524,11 +531,11 @@ implicit none
                 do i=1,npar2
                     PRN=iPOS2(i)
                     if (par_PRN(PRN)==1) amb3(i)=0.d0
-                    if (PRN>MaxPRN) then
-                        if (CycleSlip(1)%Slip(PRN-MaxPRN)==1 .or. CycleSlip(2)%Slip(PRN-MaxPRN)==1) then
+                    if (PRN>SatNum) then
+                        if (CycleSlip(1)%Slip(PRN-SatNum)==1 .or. CycleSlip(2)%Slip(PRN-SatNum)==1) then
                             amb3(i)=0.d0
                         end if
-                    elseif (PRN<=MaxPRN .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                    elseif (PRN<=SatNum .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
                         amb3(i)=0.d0
                     end if
                 end do
@@ -580,23 +587,23 @@ implicit none
 !                Epo_NEQ%Awl(i,:)=0.d0
 !                Epo_NEQ%Lwl(i)=0.d0
 !                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)+1.d0/0.05d0**2
-!                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+MaxPRN+PRN)+1.d0/0.05d0**2
-!                EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+MaxPRN+PRN,ParaNum+PRN)-1.d0/0.05d0**2
-!                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+MaxPRN+PRN)-1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+SatNum+PRN,ParaNum+SatNum+PRN)=EPO_NEQ%Nbb(ParaNum+SatNum+PRN,ParaNum+SatNum+PRN)+1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+SatNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+SatNum+PRN,ParaNum+PRN)-1.d0/0.05d0**2
+!                EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+SatNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+SatNum+PRN)-1.d0/0.05d0**2
 !                EPO_NEQ%U(ParaNum+PRN)=EPO_NEQ%U(ParaNum+PRN)+NEQ%amb_WL(PRN)/0.05d0**2  ! In cycle
-!                EPO_NEQ%U(ParaNum+MaxPRN+PRN)=EPO_NEQ%U(ParaNum+MaxPRN+PRN)-NEQ%amb_WL(PRN)/0.05d0**2
+!                EPO_NEQ%U(ParaNum+SatNum+PRN)=EPO_NEQ%U(ParaNum+SatNum+PRN)-NEQ%amb_WL(PRN)/0.05d0**2
                 ! EWL-WL ambiguity   ! No need, because WL already constraint the N1-N2 ambiguity. If triple frequency, then this can be can be applied 
                 if (NEQ%amb_EWL(PRN)/=99.d0 .and. Epo_NEQ%Lw4(i)/=0.d0) then  ! 99 is in case that integer amb_EWL is 0
                     NEQ%amb_W4(PRN)=NEQ%amb_EWL(PRN)+NEQ%amb_WL(PRN)
-                    Epo_NEQ%Lw4(i)= Epo_NEQ%Lw4(i) -  NEQ%amb_W4(PRN)* Epo_NEQ%Aw4(i,ParaNum+MaxPRN+PRN)
-                    Epo_NEQ%Aw4(i,ParaNum+MaxPRN+PRN)= 0.d0
+                    Epo_NEQ%Lw4(i)= Epo_NEQ%Lw4(i) -  NEQ%amb_W4(PRN)* Epo_NEQ%Aw4(i,ParaNum+SatNum+PRN)
+                    Epo_NEQ%Aw4(i,ParaNum+SatNum+PRN)= 0.d0
 !                    ! Add N1-N3 constraints instead of Wide lane observation, but first should set 3 sets of ambiguities, i.e. L1, L2, L3
 !                    EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+PRN)+1.d0
-!                    EPO_NEQ%Nbb(ParaNum+2*MaxPRN+PRN,ParaNum+2*MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+2*MaxPRN+PRN,ParaNum+2*MaxPRN+PRN)+1.d0
-!                    EPO_NEQ%Nbb(ParaNum+2*MaxPRN+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+2*MaxPRN+PRN,ParaNum+PRN)-1.d0
-!                    EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+2*MaxPRN+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+2*MaxPRN+PRN)-1.d0
+!                    EPO_NEQ%Nbb(ParaNum+2*SatNum+PRN,ParaNum+2*SatNum+PRN)=EPO_NEQ%Nbb(ParaNum+2*SatNum+PRN,ParaNum+2*SatNum+PRN)+1.d0
+!                    EPO_NEQ%Nbb(ParaNum+2*SatNum+PRN,ParaNum+PRN)=EPO_NEQ%Nbb(ParaNum+2*SatNum+PRN,ParaNum+PRN)-1.d0
+!                    EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+2*SatNum+PRN)=EPO_NEQ%Nbb(ParaNum+PRN,ParaNum+2*SatNum+PRN)-1.d0
 !                    EPO_NEQ%U(ParaNum+PRN)=EPO_NEQ%U(ParaNum+PRN)+1.d0*NEQ%amb_W4(PRN)  ! In cycle
-!                    EPO_NEQ%U(ParaNum+2*MaxPRN+PRN)=EPO_NEQ%U(ParaNum+2*MaxPRN+PRN)-1.d0*NEQ%amb_W4(PRN)
+!                    EPO_NEQ%U(ParaNum+2*SatNum+PRN)=EPO_NEQ%U(ParaNum+2*SatNum+PRN)-1.d0*NEQ%amb_W4(PRN)
                 else
                     Epo_NEQ%Lw4(i)=0.d0
                     Epo_NEQ%Aw4(i,:)= 0.d0
@@ -756,7 +763,7 @@ implicit none
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
-                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+SatNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)))
                         Epo_NEQ%Al1(Epo_NEQ%maxL(3), :)=0.d0
                         Epo_NEQ%Ll1(Epo_NEQ%maxL(3))=0.d0
                         Epo_NEQ%Al2(Epo_NEQ%maxL(3), :)=0.d0
@@ -766,7 +773,7 @@ implicit none
                         call InvSqrt( Epo_NEQ%R(1:N,1:N),  N, Epo_NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
-                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+SatNum+Epo_NEQ%PRN(Epo_NEQ%maxL(3)), 'dda')
                     end if
                 else
                     call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al1(1:N,:), Epo_NEQ%Ll1(1:N), &
@@ -780,12 +787,12 @@ implicit none
                     STA%STA(2)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))%n=1.d0 
                 end if
                 par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(3)))=1  ! For partial fix in this epoch
-                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(3))+MaxPRN)=1  ! For partial fix in this epoch
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(3))+SatNum)=1  ! For partial fix in this epoch
             elseif  ((maxL)==4) then
                 write(LogID,'(10X,A14,A5,I3, A6, F10.3)') 'outlier in L2', 'PRN=',Epo_NEQ%PRN(Epo_NEQ%maxL(4)),'maxV=',maxV
                 if (ar_mode==3) then ! If fixed and hold mode
-                    Epo_NEQ%fixed_amb(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=0.99d0  ! If outliers, do not hold the amiguity
-                    Epo_NEQ%fixed_amb_num(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=0
+                    Epo_NEQ%fixed_amb(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+SatNum)=0.99d0  ! If outliers, do not hold the amiguity
+                    Epo_NEQ%fixed_amb_num(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+SatNum)=0
                 end if
                 ! Eliminate the ambiguity parameter when continuous 5 epoch outlier, this may due to the undetected small cycle slip
                 Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)=Epo_NEQ%outlier(Epo_NEQ%PRN(Epo_NEQ%maxL(4)),1)+1
@@ -794,7 +801,7 @@ implicit none
                     write(LogID,'(10X,A71)')  'May due to undetected cycle slip, will eliminate the original ambiguity.'
                     if (ADmethod=='LS') then
                         call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
-                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
+                        call Elimi_Para(Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%N, ParaNum+SatNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)))
                         Epo_NEQ%Al1(Epo_NEQ%maxL(4), :)=0.d0
                         Epo_NEQ%Ll1(Epo_NEQ%maxL(4))=0.d0
                         Epo_NEQ%Al2(Epo_NEQ%maxL(4), :)=0.d0
@@ -804,7 +811,7 @@ implicit none
                         call InvSqrt( Epo_NEQ%R(1:N,1:N),  N, Epo_NEQ%P(1:N,1:N))
                     elseif (ADmethod=='KF') then
                         call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
-                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+MaxPRN+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
+                        call KF_Change(Epo_InvN, Epo_dx,Epo_NEQ%N, ParaNum+SatNum+Epo_NEQ%PRN(Epo_NEQ%maxL(4)), 'dda')
                     end if
                 else
                     call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Al2(1:N,:), Epo_NEQ%Ll2(1:N), &
@@ -818,7 +825,7 @@ implicit none
                     STA%STA(2)%Pre(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))%n=1.d0 
                 end if
                 par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(4)))=1  ! For partial fix in this epoch
-                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+MaxPRN)=1  ! For partial fix in this epoch
+                par_PRN_EPO(Epo_NEQ%PRN(Epo_NEQ%maxL(4))+SatNum)=1  ! For partial fix in this epoch
            elseif ((maxL)==5) then   ! maxV in WL
                 call Minus_NEQ( Epo_NEQ%Nbb, Epo_NEQ%U, Epo_NEQ%Awl(1:N,:), Epo_NEQ%Lwl(1:N), &
                        Epo_NEQ%P(1:N, 1:N), Epo_NEQ%N,  N, Epo_NEQ%maxL(5), Epo_NEQ%SumN)
@@ -903,24 +910,24 @@ implicit none
     end if
 
     ! Get  L1 and L2 ambigulties
-    Epo_NEQ%amb_L1=Epo_NEQ%dx(ParaNum+1:ParaNum+MaxPRN)   ! In cycle
-    Epo_NEQ%amb_L2=Epo_NEQ%dx(ParaNum+1+MaxPRN:ParaNum+MaxPRN*2)
+    Epo_NEQ%amb_L1(1:SatNum)=Epo_NEQ%dx(ParaNum+1:ParaNum+SatNum)   ! In cycle
+    Epo_NEQ%amb_L2(1:SatNum)=Epo_NEQ%dx(ParaNum+1+SatNum:ParaNum+SatNum*2)
     
     
     ! Step5:
     !     Fix  L1 and L2 amiguity using LAMBDA
     ! call LAMBDA(NEQ%InvN,dx, fixed_dx)
-    amb2=Epo_NEQ%dx(ParaNum+1:ParaNum+MaxPRN*2)
-    do i=1, 2*maxPRN
+    amb2=Epo_NEQ%dx(ParaNum+1:ParaNum+SatNum*2)
+    do i=1, 2*SatNum
         iPOS(i:i)=i
-        if (i<=maxPRN) then
+        if (i<=SatNum) then
             if (Epo_NEQ%Ele(i)<FixEle) then
-                amb2(i)=0.d0; amb2(i+maxPRN)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
+                amb2(i)=0.d0; amb2(i+SatNum)=0.d0    ! Fix ambiguity only when satellite elevation>FixEle
             end if
         end if
     end do
-    call LAMBDA_Prepare(Epo_NEQ%InvN(ParaNum+1:ParaNum+MaxPRN*2,ParaNum+1:ParaNum+MaxPRN*2), amb2, &
-                                       MaxPRN*2, Q, amb, npar, iPOS)
+    call LAMBDA_Prepare(Epo_NEQ%InvN(ParaNum+1:ParaNum+SatNum*2,ParaNum+1:ParaNum+SatNum*2), amb2, &
+                                       SatNum*2, Q, amb, npar, iPOS)
     write(LogID,'(A10)',advance='no') 'L1_amb_float'
     do i=1,npar  ! Dual frequency
         write(LogID,'(I6,F8.1)',advance='no') iPOS(i), amb(i)
@@ -937,7 +944,14 @@ implicit none
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     
     200 if (npar>2) then
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        if (parARmode==1) then ! Data driven partial ambigulty fixing
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar),1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        elseif (parARmode==2) then ! Model driven partial ambigulty fixing, similar as standard ParAR
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/2.d0,5,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+            if (nfixed<npar) then
+                flag_partial=1
+            end if
+        end if
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -971,10 +985,10 @@ implicit none
 
         do i=1,npar  ! Dual frequency
             if (iPOS(i)==0) then
-!                if (iPOS2(i)<=maxPRN) then
+!                if (iPOS2(i)<=SatNum) then
 !                    Epo_NEQ%amb_L1(iPOS2(i))=0.d0
 !                else
-!                    Epo_NEQ%amb_L2(iPOS2(i)-maxPRN)=0.d0
+!                    Epo_NEQ%amb_L2(iPOS2(i)-SatNum)=0.d0
 !                end if
                 Epo_NEQ%fixed_amb_num(iPOS2(i))=0
             else
@@ -982,10 +996,10 @@ implicit none
                     Epo_NEQ%fixed_amb_num(iPOS2(i))=0  ! If fixed ambiguity change
                 end if
                 Epo_NEQ%fixed_amb(iPOS2(i))=amb(i)   ! Save the fixed ambiguity
-                if (iPOS2(i)<=maxPRN) then
+                if (iPOS2(i)<=SatNum) then
                     Epo_NEQ%amb_L1(iPOS2(i))=amb(i)
                 else
-                    Epo_NEQ%amb_L2(iPOS2(i)-maxPRN)=amb(i)
+                    Epo_NEQ%amb_L2(iPOS2(i)-SatNum)=amb(i)
                 end if
             end if
             write(LogID,'(I6,F8.1)',advance='no') iPOS2(i), amb(i)
@@ -996,7 +1010,7 @@ implicit none
         end do
         write(LogID,'(A)') ''
         amb_success2=amb_success2+1
-    elseif (partial_AR) then ! partial ambigulty fixing
+    elseif (parARmode==1) then ! Data driven partial ambigulty fixing
         minP=100.d0; maxQ=0.d0
         minL=0; minL2=0
         amb3=amb2
@@ -1008,7 +1022,7 @@ implicit none
                 minL=i  
                 do j=i+1,npar2  ! Find the same partial AR PRN in L2
                     if (iPOS3(j)==0) cycle
-                    if (PRN+MaxPRN==iPOS3(j) .and. par_PRN_Epo(iPOS3(j))==1) then
+                    if (PRN+SatNum==iPOS3(j) .and. par_PRN_Epo(iPOS3(j))==1) then
                         minL2=j
                         exit
                     end if
@@ -1016,7 +1030,7 @@ implicit none
                 exit
             end if
             !!   If not, start from the minmum satellite elevation
-            if (PRN>maxPRN) PRN=PRN-maxPRN
+            if (PRN>SatNum) PRN=PRN-SatNum
             do j=1,EPO_NEQ%PRNS
                 if (EPO_NEQ%PRN(j)==PRN) then
                     exit
@@ -1042,7 +1056,7 @@ implicit none
             call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
             flag_partial=1
             if (npar>=3) goto 200
-        elseif ( (parARnum==2) ) then
+        else
          ! Which means ratio not less than minratio for only one satellite partial AR, then we try two.
          ! However, this is only for that last epoch is partial AR
             amb3=amb2
@@ -1075,11 +1089,11 @@ implicit none
                 do i=1,npar2
                     PRN=iPOS2(i)
                     if (par_PRN_Epo(PRN)==1) amb3(i)=0.d0
-                    if (PRN>MaxPRN) then
-                        if (CycleSlip(1)%Slip(PRN-MaxPRN)==1 .or. CycleSlip(2)%Slip(PRN-MaxPRN)==1) then
+                    if (PRN>SatNum) then
+                        if (CycleSlip(1)%Slip(PRN-SatNum)==1 .or. CycleSlip(2)%Slip(PRN-SatNum)==1) then
                             amb3(i)=0.d0
                         end if
-                    elseif (PRN<=MaxPRN .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                    elseif (PRN<=SatNum .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
                         amb3(i)=0.d0
                     end if
                 end do
@@ -1107,20 +1121,20 @@ implicit none
 
     ! Step6:
 !        Update the coordinate by fixing the ambiguity of L1 and L2.
-!    dx(1:MaxPRN)=Epo_NEQ%amb_L1  ! Not best, as amb_L1 includes some unfixed float solution, should abandon them, but maybe absorbed in ionosphere parameter?
-!    dx(MaxPRN+1:2*MaxPRN)=Epo_NEQ%amb_L2
+!    dx(1:SatNum)=Epo_NEQ%amb_L1  ! Not best, as amb_L1 includes some unfixed float solution, should abandon them, but maybe absorbed in ionosphere parameter?
+!    dx(SatNum+1:2*SatNum)=Epo_NEQ%amb_L2
 !    temp_Nbb(1:ParaNum,1:ParaNum)=Epo_NEQ%Nbb(1:ParaNum,1:ParaNum)
-!    temp_Nbb(ParaNum+1:ParaNum+MaxPRN,1:ParaNum)=Epo_NEQ%Nbb(ParaNum+MaxPRN*2+1:ParaNum+MaxPRN*3,1:ParaNum)
-!    temp_Nbb(ParaNum+1:ParaNum+MaxPRN,ParaNum+1:ParaNum+MaxPRN)=Epo_NEQ%Nbb(ParaNum+MaxPRN*2+1:ParaNum+MaxPRN*3,ParaNum+MaxPRN*2+1:ParaNum+MaxPRN*3)
-!    call Invsqrt(temp_Nbb, ParaNum+MaxPRN, temp_InvN)
+!    temp_Nbb(ParaNum+1:ParaNum+SatNum,1:ParaNum)=Epo_NEQ%Nbb(ParaNum+SatNum*2+1:ParaNum+SatNum*3,1:ParaNum)
+!    temp_Nbb(ParaNum+1:ParaNum+SatNum,ParaNum+1:ParaNum+SatNum)=Epo_NEQ%Nbb(ParaNum+SatNum*2+1:ParaNum+SatNum*3,ParaNum+SatNum*2+1:ParaNum+SatNum*3)
+!    call Invsqrt(temp_Nbb, ParaNum+SatNum, temp_InvN)
 !    temp_U(1:ParaNum)=Epo_NEQ%U(1:ParaNum)
-!    temp_U(ParaNum+1:ParaNum+MaxPRN)=Epo_NEQ%U(ParaNum+MaxPRN*2+1:ParaNum+MaxPRN*3)
-!    temp_Nbb2(1:2*MaxPRN,1:ParaNum)=EPO_NEQ%Nbb(ParaNum+1:ParaNum+2*MaxPRN,1:ParaNum)
-!    temp_Nbb2(1:2*MaxPRN,ParaNum+1:ParaNum+MaxPRN)=transpose(EPO_NEQ%Nbb(ParaNum+2*MaxPRN+1:ParaNum+3*MaxPRN,ParaNum+1:ParaNum+2*MaxPRN))
+!    temp_U(ParaNum+1:ParaNum+SatNum)=Epo_NEQ%U(ParaNum+SatNum*2+1:ParaNum+SatNum*3)
+!    temp_Nbb2(1:2*SatNum,1:ParaNum)=EPO_NEQ%Nbb(ParaNum+1:ParaNum+2*SatNum,1:ParaNum)
+!    temp_Nbb2(1:2*SatNum,ParaNum+1:ParaNum+SatNum)=transpose(EPO_NEQ%Nbb(ParaNum+2*SatNum+1:ParaNum+3*SatNum,ParaNum+1:ParaNum+2*SatNum))
 !
 !    temp_dx=MATMUL(temp_InvN, temp_U-MATMUL(transpose(temp_Nbb2),dx))
 !!    Epo_NEQ%dx(1:ParaNum)=temp_dx(1:ParaNum)
-!!    Epo_NEQ%dx(ParaNum+2*MaxPRN+1:ParaNum+3*MaxPRN)=temp_dx(ParaNum+1:ParaNum+MaxPRN)
+!!    Epo_NEQ%dx(ParaNum+2*SatNum+1:ParaNum+3*SatNum)=temp_dx(ParaNum+1:ParaNum+SatNum)
 
     dx(1:npar)=0.d0; temp_InvN2(:,1:npar)=0.d0; j=0
     do i=1,npar

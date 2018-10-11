@@ -3,7 +3,7 @@
 ! =========== Constant variables module =================
 module MOD_constant
 implicit none
-    integer,parameter :: MaxPRN=110  ! max satellite parameter
+    integer,parameter :: MaxPRN=50  ! max satellite parameter in one epoch
     integer :: SatNum=0   ! Satellite Number
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
@@ -264,6 +264,25 @@ implicit none
     real(8) :: OrbCorrSow=-1000.d0
 end module
 
+! ====== Muti-GNSS Code and Phase Bias =====
+module MOD_Bias
+use MOD_constant
+implicit none
+    type type_Bias
+        integer :: week=0
+        real(8) :: sow=0.d0
+        real(8) :: P1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: P2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: P3(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: L1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: L2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: L3(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: WL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: EWL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+    end type
+    type(type_Bias), save :: Bias
+end module
+
 ! =======Navigation data module=======
 module MOD_NavData
 use MOD_constant
@@ -443,7 +462,6 @@ end module
 ! used in double difference
 module MOD_ZD
 use MOD_constant
-! integer, parameter :: MaxPRN=35
     type type_ZD
         integer :: week                 =  0
         real(8)  :: sow                   =  0.d0
@@ -461,15 +479,16 @@ use MOD_constant
         real(8)  :: P2(MaxPRN)     =  0.d0
         real(8)  :: P1CS(MaxPRN)     =  0.d0   ! for cycle slip
         real(8)  :: P2CS(MaxPRN)     =  0.d0
-        real(8)  :: amb0(MaxPRN,3)     =  0.d0
+        real(8)  :: amb0(GNum0+RNum0+CNum0+NumE0,3)     =  0.d0
+        real(8)  :: amb1(GNum0+RNum0+CNum0+NumE0,3)     =  0.d0
         real(8)  :: L1(MaxPRN)     =  0.d0
         real(8)  :: L2(MaxPRN)     =  0.d0
         real(8)  :: WL(MaxPRN)    =  0.d0
         real(8)  :: W4(MaxPRN)    =  0.d0
         real(8)  :: EWL(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb_n(MaxPRN)    =  0.d0
         real(8)  :: EWL_amb(MaxPRN)    =  0.d0
+        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0)    =  0.d0
+        real(8)  :: WL_amb_n(GNum0+RNum0+CNum0+NumE0)    =  0.d0
     end type
 !    type(type_ZD) :: ZD(2)  ! 1: Reference station; 2: User station
 end module
@@ -478,7 +497,6 @@ end module
 ! used in double difference
 module MOD_SD
 use MOD_constant
-! integer, parameter :: MaxPRN=35
     type type_SD
         integer :: week                 =  0
         real(8)  :: sow                   =  0.d0
@@ -500,9 +518,9 @@ use MOD_constant
         real(8)  :: L2(MaxPRN)     =  0.d0
         real(8)  :: WL(MaxPRN)    =  0.d0
         real(8)  :: W4(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb(MaxPRN)    =  0.d0
         real(8)  :: EWL(MaxPRN)    =  0.d0
         real(8)  :: EWL_amb(MaxPRN)    =  0.d0
+        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0)    =  0.d0
     end type
 !    type(type_SD), save :: SD
 end module
@@ -511,7 +529,6 @@ end module
 ! used in double difference
 module MOD_DD
 use MOD_constant
-! integer, parameter :: MaxPRN=35
     type type_DD
         integer :: week                =  0
         real(8)  :: sow                  =  0.d0
@@ -522,7 +539,7 @@ use MOD_constant
         integer :: RefSys   =  0   ! Reference system
         integer :: PRN(MAXPRN) =  0
         integer(1) :: PRN_S(MAXPRN) =  0
-        real(8)  :: Ele(MAXPRN)    =  0.d0
+        real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0)    =  0.d0
         real(8)  :: P(MaXPRN, MaxPRN)       =  0.d0
         real(8)  :: Q(MaxPRN,MaxPRN)       =  0.d0
         real(8), allocatable  :: A(:, :)
@@ -534,9 +551,9 @@ use MOD_constant
         real(8)  :: L2(MaxPRN)     =  0.d0
         real(8)  :: WL(MaxPRN)    =  0.d0
         real(8)  :: W4(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb(MaxPRN)    =  0.d0
-        real(8)  :: EWL(MaxPRN)    =  0.d0
-        real(8)  :: EWL_amb(MaxPRN)    =  0.d0
+        real(8)  :: EWL(GNum0+RNum0+CNum0+NumE0)    =  0.d0
+        real(8)  :: EWL_amb(GNum0+RNum0+CNum0+NumE0)    =  0.d0
+        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0)    =  0.d0
     end type
 !    type(type_DD), save :: DD
 end module
@@ -545,7 +562,6 @@ end module
 ! used in cycle slip detection
 module MOD_PreSD
 use MOD_constant
-! integer, parameter :: MaxPRN=35
     type type_PreSD
         integer :: WeekGF      =   0
         real(8)  :: sowGF         =   0.d0
@@ -565,24 +581,24 @@ use MOD_constant
         real(8) :: LastSow
         real(8) :: L1P1mean, L1P1mean2
     end type
-    type(type_PreSD) :: PreSD(MaxPRN)
+    type(type_PreSD) :: PreSD(GNum0+RNum0+CNum0+NumE0)
 end module
 
 ! ========== Normal equation module =========
 ! used in NEQ solution
 module MOD_NEQ
 use MOD_constant
-! integer, parameter :: MaxPRN=35
     type type_NEQ
+        integer :: week                =  0
+        real(8)  :: sow                  =  0.d0
         integer :: PRNS=0   ! PRNS in this epoch
         integer  :: Npar =  0
         integer :: SumN     ! total error equations
-!        real(8)  :: A((MaxPRN-10)*4,MaxPRN*2+3), L((MaxPRN-10)*4), V((MaxPRN-10)*4)
-        integer :: N=MaxPRN*2+3  ! parameter numbers
+        integer :: N  ! parameter number
         integer  :: PRN(MAXPRN) =  0
         integer(1) :: Sys(MAXPRN)=0
         character(1) :: System(MAXPRN)
-        real(8)  :: Ele(MAXPRN)    =  0.d0
+        real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0)    =  0.d0
         real(8)  :: R(MaxPRN, MaxPRN)=0.d0
         real(8)  :: P(MaxPRN, MaxPRN)=0.d0
         real(8), allocatable :: Ap1(:, :), Ap2(:, :), Awl(:, :), Aw4(:, :), Aewl(:, :)
@@ -597,16 +613,16 @@ use MOD_constant
         real(8), allocatable  :: InvN(:, :)
         real(8), allocatable  :: U(:)
         real(8), allocatable  :: dx(:)
-        real(8) :: amb_WL(MaxPRN)=0.d0
-        real(8) :: amb_W4(MaxPRN)=0.d0
-        real(8)  :: amb_EWL(MaxPRN) = 0.d0
-        real(8) :: fixed_amb(MaxPRN*2)=0.99d0
-        integer :: fixed_amb_num(MaxPRN*2)=0
-        real(8) :: fixed_amb_ele(MaxPRN*2)=0.d0
-        real(8) :: iono(MaxPRN)=0.d0
-        real(8) :: amb_L1(MaxPRN)=0.d0
-        real(8) :: amb_L2(MaxPRN)=0.d0
-        integer(1) :: outlier(MaxPRN,2)=0
+        real(8) :: amb_WL(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: amb_W4(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8)  :: amb_EWL(GNum0+RNum0+CNum0+NumE0) = 0.d0
+        real(8) :: fixed_amb((GNum0+RNum0+CNum0+NumE0)*2)=0.99d0
+        integer :: fixed_amb_num((GNum0+RNum0+CNum0+NumE0)*2)=0
+        real(8) :: fixed_amb_ele((GNum0+RNum0+CNum0+NumE0)*2)=0.d0
+        real(8) :: iono(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: amb_L1(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: amb_L2(GNum0+RNum0+CNum0+NumE0)=0.d0
+        integer(1) :: outlier(GNum0+RNum0+CNum0+NumE0,2)=0
         real(8) :: ratio=0.d0
     end type
 end module
@@ -616,14 +632,15 @@ module MOD_Epo_NEQ
 use MOD_constant
 implicit none
     type type_Epo_NEQ
+        integer :: week                =  0
+        real(8)  :: sow                  =  0.d0
         integer :: PRNS=0
         integer :: SumN
-!        real(8)  :: A((MaxPRN-10)*4,3), L((MaxPRN-10)*4), V((MaxPRN-10)*4)
-        integer :: N=3  ! parameter numbers
+        integer :: N  ! parameter number
         integer  :: PRN(MAXPRN) =  0
         integer(1) :: Sys(MAXPRN)=0
         character(1) :: System(MAXPRN)
-        real(8)  :: Ele(MAXPRN)    =  0.d0
+        real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0)    =  0.d0
         real(8)  :: R(MaxPRN, MaxPRN)=0.d0
         real(8)  :: P(MaxPRN, MaxPRN)=0.d0
         real(8), allocatable :: Ap1(:, :),Ap2(:, :), Al1(:, :), Al2(:, :), Awl(:, :), Aw4(:, :)
@@ -633,20 +650,19 @@ implicit none
         real(8)  :: Ll2(MaxPRN), Vl2(MaxPRN)
         real(8)  :: Lwl(MaxPRN), Vwl(MaxPRN)
         real(8)  :: Lw4(MaxPRN), Vw4(MaxPRN)
-        integer :: ParPRN=0 ! Partial AR PRN
         real(8)  :: maxV(6)=0.d0   ! 记录每种组合误差方程最大的的残差
         integer :: maxL(6)=0.d0    ! 记录每种组合最大的残差所在的位置
         real(8), allocatable  :: Nbb(:,:)   ! for partial ambiguity resolution, only one satellite currently
         real(8), allocatable  :: InvN(:,:)
         real(8), allocatable  :: U(:)
         real(8), allocatable :: dx(:)
-        real(8) :: amb_L1(MaxPRN)=0.d0
-        real(8) :: amb_L2(MaxPRN)=0.d0
-        real(8) :: amb_WL(MaxPRN)=0.d0  ! This is only for wide lane ambiguity rounding. Just for test.
-        real(8) :: amb_W4(MaxPRN)=0.d0
-        real(8) :: fixed_amb(MaxPRN*2)=0.99d0
-        integer :: fixed_amb_num(MaxPRN*2)=0
-        integer(1) :: outlier(MaxPRN,2)=0
+        real(8) :: amb_L1(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: amb_L2(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: amb_WL(GNum0+RNum0+CNum0+NumE0)=0.d0  ! This is only for wide lane ambiguity rounding. Just for test.
+        real(8) :: amb_W4(GNum0+RNum0+CNum0+NumE0)=0.d0
+        real(8) :: fixed_amb((GNum0+RNum0+CNum0+NumE0)*2)=0.99d0
+        integer :: fixed_amb_num((GNum0+RNum0+CNum0+NumE0)*2)=0
+        integer(1) :: outlier(GNum0+RNum0+CNum0+NumE0,2)=0
         real(8) :: ratio=0.d0
     end type
 end module
@@ -685,7 +701,7 @@ implicit none
         real(8) :: dL1=0.d0
         real(8) :: dL2=0.d0
     end type
-    type (type_IonoDDRes) :: IonoDDRes(MAXPRN)
+    type (type_IonoDDRes) :: IonoDDRes(GNum0+RNum0+CNum0+NumE0)
     integer :: Last_RefSat(5) =  0     ! reference satellite
 end module
 
@@ -751,13 +767,13 @@ use MOD_constant
     real(8) :: FixEle=20.d0, HoldEle=30.d0  ! Fix and hold satellite elevation
     real(8) :: minratio=3.d0
     logical(1) :: partial_AR=.true.
-    integer(1) :: parARnum=2, par_PRN(2*MaxPRN)=0, par_PRN_Epo(2*MaxPRN)=0
+    integer(1) :: parARmode=2, par_PRN(2*(GNum0+RNum0+CNum0+NumE0))=0, par_PRN_Epo(2*(GNum0+RNum0+CNum0+NumE0))=0
     logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
     real(8) :: Baseline, Diff_Hgt, Min_Lat   ! This is only for long baseline RTK
     integer :: GloParaNum=0   ! This is for GLONASS float RTK
     real(8) ::   a1= 1.d0 , a2= 0.d0 ! L1
     real(8) ::  b1= 0.d0 , b2= 1.d0  ! L2
-    logical :: If_TC=.false.
+    logical :: If_TC=.false., If_Fix_DISB=.true.
     logical :: If_IonoCompensate=.false.
      integer(1) :: Vel_Used=0  ! 0: no velocity; 1: Doppler; 2: IMU
     logical :: If_posfile=.false.

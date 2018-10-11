@@ -479,6 +479,11 @@ implicit none
                                 call RNXSMT(epoch, PRN, Range, L1*c/f1, L2*c/f2)
                             end if
                         end if
+!                        if (mod(Obssec,900.d0)==0.d0) then  ! Ionosphere delay
+!                            Ion=(P1-P2-c*DCBBSX(1,PRN))/(1-f1**2/f2**2)
+!                            write(CoorID,"(I6,4I4,F5.1, I4, 2F10.4)") ObsData%Year, ObsData%Mon, ObsData%Day,  &
+!                                                      &       ObsData%Hour, ObsData%Min, ObsData%Sec, PRN, Ion, Ion
+!                        end if
 !                    end if
 
                     ! ************STD(Slant Tropsphere Delay)*************

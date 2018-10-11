@@ -30,7 +30,7 @@ implicit none
     real(8) :: dL1, dL2
 
     ! 1. Change DD residuals if reference satelite change
-    do PRN=1, MaxPRN
+    do PRN=1, SatNum
         if (PRN<=GNum) then
             sys=1
         elseif (PRN<=GNum+RNum) then

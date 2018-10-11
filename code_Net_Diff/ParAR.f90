@@ -23,23 +23,30 @@ implicit none
     integer :: n, PRNS
     integer :: PRNPRN(PRNS)
     integer(1) :: flag_partial
-    integer(1) :: Last_PAR(2*MaxPRN)
+    integer(1) :: Last_PAR(2*SatNum)
     ! Intents out:
     ! Local variables
     integer :: i, j, k, m, l, PRN
     integer :: npar, npar2, nfixed
-    real(8) :: Ps, Qzhat(2*MaxPRN, 2*maxPRN), Z(2*MaxPRN, 2*maxPRN), mu
-    real(8) :: Q(2*MaxPRN, 2*maxPRN), Q2(2*MaxPRN, 2*maxPRN), P(MaxPRN, maxPRN)
-    real(8) :: disall(2), ratio, ratio2, amb(2*MaxPRN), amb2(2*MaxPRN), amb3(2*MaxPRN), dz(2*MaxPRN)
-    integer :: iPOS(2*MaxPRN), iPOS2(2*MaxPRN), iPOS3(2*MaxPRN), minL, minL2, minLL(MaxPRN),minLL2(MaxPRN)
+    real(8) :: Ps, Qzhat(2*SatNum, 2*SatNum), Z(2*SatNum, 2*SatNum), mu
+    real(8) :: Q(2*SatNum, 2*SatNum), Q2(2*SatNum, 2*SatNum), P(MaxPRN, maxPRN)
+    real(8) :: disall(2), ratio, ratio2, amb(2*SatNum), amb2(2*SatNum), amb3(2*SatNum), dz(2*SatNum)
+    integer :: iPOS(2*SatNum), iPOS2(2*SatNum), iPOS3(2*SatNum), minL, minL2, minLL(SatNum),minLL2(SatNum)
     real(8) :: minP, maxQ
 
 
     Q2=Q; amb2=amb; npar2=npar; iPOS2=iPOS; amb3=amb; iPOS3=iPOS  !; P=NEQ%P
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
 
-    100 if (npar>1) then
-        call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/9.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+    100 if (npar>2) then
+        if (parARmode==1) then ! Data driven partial ambigulty fixing
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar),1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+        elseif (parARmode==2) then ! Model driven partial ambigulty fixing, similar as standard ParAR
+            call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/2.d0,1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
+            if (nfixed<npar) then
+                flag_partial=1
+            end if
+        end if
         if (nfixed==0) then
             ratio=0.d0
         else
@@ -48,7 +55,7 @@ implicit none
     end if
     if (ratio>minratio) then  ! ambiguity fix success
         return
-    elseif (partial_AR) then ! partial ambigulty fixing
+    elseif (parARmode==1) then ! Data driven partial ambigulty fixing
         minP=100.d0; maxQ=0.d0
         minL=0; minL2=0
         amb3=amb2
@@ -59,7 +66,7 @@ implicit none
             if (Last_PAR(PRN)==1) then ! First find the previous PRN of partial AR
                 minL=i  
                 do j=i+1,npar2  ! Find the same partial AR PRN in L2
-                    if (PRN+MaxPRN==iPOS3(j) .and. Last_PAR(iPOS3(j))==1) then
+                    if (PRN+SatNum==iPOS3(j) .and. Last_PAR(iPOS3(j))==1) then
                         minL2=j
                         exit
                     end if
@@ -67,7 +74,7 @@ implicit none
                 exit
             end if
             !!   If not, start from the minmum satellite elevation
-            if (PRN>maxPRN) PRN=PRN-maxPRN
+            if (PRN>SatNum) PRN=PRN-SatNum
             do j=1,PRNS
                 if (PRNPRN(j)==PRN) then
                     exit
@@ -93,7 +100,7 @@ implicit none
             call LAMBDA_Prepare(Q2(1:npar2, 1:npar2), amb3(1:npar2), npar2, Q(1:npar2, 1:npar2), amb(1:npar2), npar, iPOS(1:npar2))
             flag_partial=1
             if (npar>=3) goto 100
-        elseif ( (parARnum==2) ) then
+        else
          ! Which means ratio not less than minratio for only one satellite partial AR, then we try two.
          ! However, this is only for that last epoch is partial AR
             amb3=amb2
@@ -126,11 +133,11 @@ implicit none
                 do i=1,npar2
                     PRN=iPOS2(i)
                     if (par_PRN(PRN)==1) amb3(i)=0.d0
-                    if (PRN>MaxPRN) then
-                        if (CycleSlip(1)%Slip(PRN-MaxPRN)==1 .or. CycleSlip(2)%Slip(PRN-MaxPRN)==1) then
+                    if (PRN>SatNum) then
+                        if (CycleSlip(1)%Slip(PRN-SatNum)==1 .or. CycleSlip(2)%Slip(PRN-SatNum)==1) then
                             amb3(i)=0.d0
                         end if
-                    elseif (PRN<=MaxPRN .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                    elseif (PRN<=SatNum .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
                         amb3(i)=0.d0
                     end if
                 end do
