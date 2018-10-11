@@ -51,7 +51,7 @@ subroutine parsearch(n, zhat,Qzhat,Z,L,D,P0,ncands, zpar,sqnorm,Qzpar,Zfixedpar,
 !%   *************************************************************
 !
 !%============================START PROGRAM==========================%
-
+use MOD_VAR  ! Added by Yize Zhang
 implicit none
 ! Intents in:
 integer :: n, ncands
@@ -61,38 +61,73 @@ real(8) :: zpar(n),sqnorm(ncands),Qzpar(n,n),Zfixedpar(n,n),Ps,zfixed(n)
 integer :: nfixed
 ! Local variables:
 integer :: k, i
-real(8) :: QP(n,n), QP2(n,n), temp
+real(8) :: QP(n,n), QP2(n,n), temp, ratio
 
-!if(nargin <4 )
-!    P0=0.995;
-!    warning(['user-defined success rate is necessary for PAR method',...
-!        'the default value 0.995 is used']);
-!end
-!if nargin<6
-!    ncands = 2;
-!end
+!!if(nargin <4 )
+!!    P0=0.995;
+!!    warning(['user-defined success rate is necessary for PAR method',...
+!!        'the default value 0.995 is used']);
+!!end
+!!if nargin<6
+!!    ncands = 2;
+!!end
+!
+!!n      = size (Qzhat,1);
+!
+!!% bootstrapped success rate if all ambiguities would be fixed
+!!Ps = prod ( 2.d0 * normcdf(1./(2.d0*sqrt(D))) -1.d0 )
+!! In fortran, normcdf(x)=0.5d0*erf(x/sqrt(2.d0))+0.5d0
+!Ps=1.d0
+!do i=1,n
+!    Ps=Ps*(erf(1.d0/(2.d0*sqrt(D(i)))/sqrt(2.d0)))
+!end do
+!k = 1
+!do while (Ps < P0 .and. k < n)   
+!    k = k + 1
+!!    % bootstrapped success rate if the last n-k+1 ambiguities would be fixed
+!!    Ps = prod ( 2 * normcdf(1./(2*sqrt(D(k:n)))) -1 )  
+!    Ps=1.d0
+!    do i=k,n
+!        Ps=Ps*(erf(1.d0/(2.d0*sqrt(D(i)))/sqrt(2.d0)))
+!    end do
+!end do
+!
+!if (Ps > P0) then
+!    
+!    !% last n-k+1 ambiguities are fixed to integers with ILS
+!    call ssearch(n-k+1, zhat(k:n),L(k:n,k:n),D(k:n),ncands, zpar(k:n),sqnorm)
+!
+!    Qzpar(1:n-k+1,1:n-k+1) = Qzhat(k:n,k:n)
+!    Zfixedpar(:, 1:n-k+1)  = Z(:,k:n)
+!
+!!    if (nargout > 6) then
+!
+!       !% first k-1 ambiguities are adjusted based on correlation with the fixed
+!       !% ambiguities
+!!       QP = Qzhat(1:k-1,k:n) / Qzhat(k:n,k:n)
+!       call inv(Qzhat(k:n,k:n), QP2(k:n,k:n), n-k+1)
+!       QP(1:k-1,1:n-k+1) =MATMUL(Qzhat(1:k-1,k:n),QP2(k:n,k:n))
+!       if (k==1) then
+!            zfixed = zpar
+!       else
+!            ! In fortran, we assume that ncands=2, and only choose the best fixed ambiguity
+!            zfixed(1:k-1) = zhat(1:k-1) - MATMUL(QP(1:k-1,1:n-k+1), (zhat(k:n)-zpar(k:n)))
+!            zfixed(k:n)=zpar(k:n)
+!       end if
+!!    end if
+!    
+!    nfixed = n-k+1
+!else
+!    zfixed = zhat
+!    nfixed = 0
+!end if
 
-!n      = size (Qzhat,1);
 
-!% bootstrapped success rate if all ambiguities would be fixed
-!Ps = prod ( 2.d0 * normcdf(1./(2.d0*sqrt(D))) -1.d0 )
-! In fortran, normcdf(x)=0.5d0*erf(x/sqrt(2.d0))+0.5d0
-Ps=1.d0
-do i=1,n
-    Ps=Ps*(erf(1.d0/(2.d0*sqrt(D(i)))/sqrt(2.d0)))
-end do
-k = 1
-do while (Ps < P0 .and. k < n)   
-    k = k + 1
-!    % bootstrapped success rate if the last n-k+1 ambiguities would be fixed
-!    Ps = prod ( 2 * normcdf(1./(2*sqrt(D(k:n)))) -1 )  
-    Ps=1.d0
-    do i=k,n
-        Ps=Ps*(erf(1.d0/(2.d0*sqrt(D(i)))/sqrt(2.d0)))
-    end do
-end do
 
-if (Ps > P0) then
+! Don't based on success rate, based on ratio
+ratio=1.d0
+k=1
+do while (ratio<minratio)
     
     !% last n-k+1 ambiguities are fixed to integers with ILS
     call ssearch(n-k+1, zhat(k:n),L(k:n,k:n),D(k:n),ncands, zpar(k:n),sqnorm)
@@ -117,11 +152,15 @@ if (Ps > P0) then
 !    end if
     
     nfixed = n-k+1
-else
-    zfixed = zhat
-    nfixed = 0
-end if
 
+    ratio=sqnorm(2)/sqnorm(1)
+    k=k+1
+    if (k*2>n) then   ! If more than half can't fix, exit
+        zfixed = zhat
+        nfixed = 0
+        exit
+    end if
+end do
 return
 
 end subroutine
