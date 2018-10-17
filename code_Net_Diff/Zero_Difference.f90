@@ -193,7 +193,7 @@ implicit none
         elseif (System=="E") then   ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5
+                f2=f_E5a
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -428,9 +428,9 @@ implicit none
         ZD%P(N)        =    P
         ZD%A(N,1:3)  =    (/(AppCoor-Sat_Coor)/s /)
         if (TropLen/=0.d0 .and. If_Est_Iono) ZD%A(N, 4) = STA%STA(k)%Trop%map_wet ! Only when estimate ionosphere, usually for long baseline
-        if (System=='R' .and. GloParaNum>0) then
-            ZD%A(N, ParaNum-GloParaNum+Kk+8)=1.d0
-        end if
+!        if (System=='R') then
+!            ZD%A(N, ParaNum-GloFreqNum*4+(Kk+8)*4-3:ParaNum-GloFreqNum*4+(Kk+8)*4)=1.d0
+!        end if
         corr                =    s+STD-Sat_Clk*c+Rec_Clk*c-Rela 
         ZD%Corr(N)   =        STD-Sat_Clk*c+Rec_Clk*c-Rela
         ZD%s(N)        =     s

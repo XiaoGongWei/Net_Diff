@@ -269,6 +269,20 @@ implicit none
             end if
         else
             write(unit=LogID,fmt='(A10,3F7.2)') 'dx_float',NEQ%dx(1:3)
+            if (If_TC) then
+                write(unit=LogID,fmt='(A10)', advance='no') 'DISB_WL'
+                do i=1,INT_SystemUsed(1)+INT_SystemUsed(3)+INT_SystemUsed(4)+INT_SystemUsed(6)
+                    write(unit=LogID,fmt='(4F7.2)', advance='no') NEQ%dx(4+i*4-3:4+i*4)
+                end do
+                write(unit=LogID,fmt='(A)') ''
+            end if
+            if (INT_SystemUsed(2)==1) then
+                write(unit=LogID,fmt='(A10)', advance='no') 'RDISB_WL'
+                do i=1,GloFreqNum
+                    write(unit=LogID,fmt='(4F7.2)', advance='no') NEQ%dx(ParaNum-GloFreqNum*4+i*4-3:ParaNum-GloFreqNum*4+i*4)
+                end do
+                write(unit=LogID,fmt='(A)') ''
+            end if
         end if 
         
         ! =================== End of Outliers Detect =====================
@@ -329,6 +343,9 @@ implicit none
             end if
         end if
     end do
+    if (.not.(If_Glo_AR)) then ! If don't fix GLONASS ambiguity
+        amb2(GNum+1:GNum+RNum)=0.d0; amb2(GNum+1+SatNum:GNum+RNum+SatNum)=0.d0
+    end if
     call LAMBDA_Prepare(NEQ%InvN(ParaNum+1:ParaNum+SatNum*2,ParaNum+1:ParaNum+SatNum*2), amb2, &
                                         SatNum*2, Q, amb, npar, iPOS)
     write(LogID,'(A10)',advance='no') 'amb_float'
@@ -357,7 +374,7 @@ implicit none
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
 
     100 if (npar>2) then
-        if (parARmode==1) then ! Data driven partial ambigulty fixing
+        if (parARmode<=1) then ! Data driven partial ambigulty fixing or full AR
             call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar),1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         elseif (parARmode==2) then ! Model driven partial ambigulty fixing, similar as standard ParAR
             call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/2.d0,5,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
@@ -846,9 +863,15 @@ implicit none
             write(unit=LogID,fmt='(A10,4F7.2)') 'dx_L1_float',Epo_NEQ%dx(1:4)
             if (If_TC) then
                 write(unit=LogID,fmt='(A10)', advance='no') 'DISB'
-                do i=1,5
-                    if (INT_SystemUsed(i)==0) cycle
+                do i=1,INT_SystemUsed(1)+INT_SystemUsed(3)+INT_SystemUsed(4)+INT_SystemUsed(6)
                     write(unit=LogID,fmt='(4F7.2)', advance='no') Epo_NEQ%dx(4+i*4-3:4+i*4)
+                end do
+                write(unit=LogID,fmt='(A)') ''
+            end if
+            if (INT_SystemUsed(2)==1) then
+                write(unit=LogID,fmt='(A10)', advance='no') 'RDISB'
+                do i=1,GloFreqNum
+                    write(unit=LogID,fmt='(4F7.2)', advance='no') NEQ%dx(ParaNum-GloFreqNum*4+i*4-3:ParaNum-GloFreqNum*4+i*4)
                 end do
                 write(unit=LogID,fmt='(A)') ''
             end if
@@ -926,6 +949,9 @@ implicit none
             end if
         end if
     end do
+    if (.not.(If_Glo_AR)) then ! If don't fix GLONASS ambiguity
+        amb2(GNum+1:GNum+RNum)=0.d0; amb2(GNum+1+SatNum:GNum+RNum+SatNum)=0.d0
+    end if
     call LAMBDA_Prepare(Epo_NEQ%InvN(ParaNum+1:ParaNum+SatNum*2,ParaNum+1:ParaNum+SatNum*2), amb2, &
                                        SatNum*2, Q, amb, npar, iPOS)
     write(LogID,'(A10)',advance='no') 'L1_amb_float'
@@ -944,7 +970,7 @@ implicit none
     flag_partial=0; ratio2=0.d0; k=0; m=1; l=1; minLL=0; minLL2=0
     
     200 if (npar>2) then
-        if (parARmode==1) then ! Data driven partial ambigulty fixing
+        if (parARmode<=1) then ! Data driven partial ambigulty fixing or full AR
             call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar),1,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
         elseif (parARmode==2) then ! Model driven partial ambigulty fixing, similar as standard ParAR
             call LAMBDA(lambdaID, npar, amb(1:npar),Q(1:npar, 1:npar)/2.d0,5,amb(1:npar),disall,Ps,Qzhat(1:npar, 1:npar),Z(1:npar, 1:npar),nfixed,mu,dz(1:npar))
@@ -1147,7 +1173,7 @@ implicit none
     call InvSqrt(Q(1:npar, 1:npar), npar, temp_InvN(1:npar,1:npar)) !  Qaa-1 ! See lambda Eq-2.27, only the fixed InvN
     temp_dx=Epo_NEQ%dx(1:ParaNum)-MATMUL(MATMUL(temp_InvN2(:,1:npar), temp_InvN(1:npar,1:npar)), dx(1:npar))
 
-    Coor(1:ParaNum-GloParaNum)=temp_dx(1:ParaNum-GloParaNum)
+    Coor(1:ParaNum-GloFreqNum)=temp_dx(1:ParaNum-GloFreqNum)
     write(unit=LogID,fmt='(A10,3F7.2)') 'fixcoor',temp_dx(1:3)
     return
     

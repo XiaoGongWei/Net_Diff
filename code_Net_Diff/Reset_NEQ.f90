@@ -28,7 +28,7 @@ implicit none
     integer :: RefSat(5)
     integer(1) :: RefSys
     ! Local variables
-    integer :: i, j, sys, maxsys, PRN, freq
+    integer :: i, j, sys, maxsys, PRN, freq, NDIFB, Ref_NDIFB
     real(8) :: ref_f1, ref_f2, ref_f3
     
     if (If_TC) then
@@ -128,14 +128,18 @@ implicit none
     do sys=1,maxsys
         if ( (RefSat(sys) /= DD%RefSat(sys))  .and. (DD%RefSat(sys)/=0) .and. (RefSat(sys)/=0) ) then
 !            write(LogID,'(I6,1X,I3,A4,I3,A15)') sys, DD%RefSat(sys),' -->',RefSat(sys),'ref sat change' 
-            if (sys==1) then
-                write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'G', DD%RefSat(sys),' -->','G',RefSat(sys),'ref sat change'
-            elseif (sys==2) then
-                write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'R', DD%RefSat(sys)-GNum,' -->','R',RefSat(sys)-GNum,'ref sat change'
-            elseif (sys==3) then
-                write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'C', DD%RefSat(sys)-GNum-RNum,' -->','C',RefSat(sys)-GNum-RNum,'ref sat change'
-            elseif (sys==4) then
-                write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'E', DD%RefSat(sys)-GNum-RNum-CNum,' -->','E',RefSat(sys)-GNum-RNum-CNum,'ref sat change'
+            if (If_TC) then
+                write(LogID,'(7X,I3,A4,I3,A16)') DD%RefSat(sys),' -->',RefSat(sys),'ref sat change'
+            else
+                if (sys==1) then
+                    write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'G', DD%RefSat(sys),' -->','G',RefSat(sys),'ref sat change'
+                elseif (sys==2) then
+                    write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'R', DD%RefSat(sys)-GNum,' -->','R',RefSat(sys)-GNum,'ref sat change'
+                elseif (sys==3) then
+                    write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'C', DD%RefSat(sys)-GNum-RNum,' -->','C',RefSat(sys)-GNum-RNum,'ref sat change'
+                elseif (sys==4) then
+                    write(LogID,'(7X,A1,I2,A4,A1,I2,A16)') 'E', DD%RefSat(sys)-GNum-RNum-CNum,' -->','E',RefSat(sys)-GNum-RNum-CNum,'ref sat change'
+                end if
             end if
             NEQ%dx(DD%RefSat(sys)+ParaNum)=0.d0-NEQ%dx(RefSat(sys)+ParaNum)  ! old reference satellite
             NEQ%dx(DD%RefSat(sys)+SatNum+ParaNum)=0.d0-NEQ%dx(RefSat(sys)+SatNum+ParaNum)
@@ -210,8 +214,9 @@ implicit none
             ref_f1=f_L1
             ref_f2=f_L2
             ref_f3=f_L5
+            Ref_NDIFB=4+INT_SystemUsed(1)*4  ! There is bug if no GPS but use QZSS, should seperate GPS and QZSS
         elseif (RefSys==2) then  ! GLONASS
-            freq=Fre_Chann(PRN-GNum)
+            freq=Fre_Chann(PRN-GNum)  ! Actually, GLONASS will not choose as reference satellite in tightly combined RTK
             ref_f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
             ref_f2=(1246.0d0+freq*0.4375d0)*1.0D6
         elseif (RefSys==3) then  ! BeiDou
@@ -226,6 +231,7 @@ implicit none
                 ref_f1=f_B2
                 ref_f2=f_B3
             end if
+            Ref_NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4 ! End index of DISB
         elseif (RefSys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 ref_f1=f_E1
@@ -238,29 +244,25 @@ implicit none
                 ref_f1=f_E5a
                 ref_f2=f_E5b
             end if
+            Ref_NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
         elseif (RefSys==5) then   ! IRNSS
             ref_f1=f_L1
             ref_f2=f_S
+            Ref_NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
         end if
         do sys=1,5
             if (sys==RefSys) cycle
-            if (sys==1) then
-                if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
-            elseif (sys==5) then
-                if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
-            else
-                if (.not.(SystemUsed(sys))) cycle
-            end if
-
             if (sys==1) then  ! GPS/QZSS
+                if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+                NDIFB=4+INT_SystemUsed(1)*4  ! There is bug if no GPS but use QZSS, should seperate GPS and QZSS
                 f1=f_L1
                 f2=f_L2
                 f3=f_L5
             elseif (sys==2) then  ! GLONASS
-                freq=Fre_Chann(PRN-GNum)
-                f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
-                f2=(1246.0d0+freq*0.4375d0)*1.0D6
+                if (.not.(SystemUsed(2))) cycle   ! If no GLONASS
             elseif (sys==3) then  ! BeiDou
+                if (.not.(SystemUsed(sys))) cycle   ! If no BeiDou
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4 ! End index of DISB
                 if (freq_comb=='L1L2') then
                     f1=f_B1
                     f2=f_B2
@@ -273,6 +275,8 @@ implicit none
                     f2=f_B3
                 end if
             elseif (sys==4) then ! GALILEO
+                if (.not.(SystemUsed(sys))) cycle   ! If no Galileo
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
                 if (freq_comb=='L1L2') then   ! E1 E5a
                     f1=f_E1
                     f2=f_E5
@@ -285,80 +289,88 @@ implicit none
                     f2=f_E5b
                 end if
             elseif (sys==5) then   ! IRNSS
+                if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
                 f1=f_L1
                 f2=f_S
             end if
-            
-            NEQ%dx(4+sys*4-3:4+sys*4)=NEQ%dx(4+sys*4-3:4+sys*4) - NEQ%dx(4+RefSys*4-3:4+RefSys*4) ! old reference system
-            NEQ%InvN(:,4+sys*4-3:4+sys*4)= NEQ%InvN(:,4+sys*4-3:4+sys*4) - NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)
-            NEQ%InvN(4+sys*4-3:4+sys*4,:)= NEQ%InvN(4+sys*4-3:4+sys*4,:) - NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)
-            if (NEQ%InvN(4+sys*4,4+sys*4)>0.d0) then   ! Add random walk due to frequency difference
-                NEQ%InvN(4+sys*4-1,4+sys*4-1)=NEQ%InvN(4+sys*4-1,4+sys*4-1)+(20.d0*(c/ref_f1-c/f1))**2
-                NEQ%InvN(4+sys*4,4+sys*4)=NEQ%InvN(4+sys*4,4+sys*4)+(20.d0*(c/ref_f2-c/f2))**2
+            if (sys/=2) then  ! If not GLONASS
+                j=1
+            elseif (sys==2) then
+                j=GloFreqNum  ! If GLONASS
             end if
-            if (If_Est_Iono .and. IonoNum>0) then
-                Epo_NEQ%dx(4+sys*4-3:4+sys*4)=Epo_NEQ%dx(4+sys*4-3:4+sys*4) - Epo_NEQ%dx(4+RefSys*4-3:4+RefSys*4)  ! old reference system
-                Epo_NEQ%InvN(:,4+sys*4-3:4+sys*4)= 0.d0 -Epo_NEQ%InvN(:,4+sys*4-3:4+sys*4) - Epo_NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)
-                Epo_NEQ%InvN(4+sys*4-3:4+sys*4,:)= 0.d0 -Epo_NEQ%InvN(4+sys*4-3:4+sys*4,:) - Epo_NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)
-                if (Epo_NEQ%InvN(4+sys*4,4+sys*4)>0.d0) then   ! Add random walk due to frequency difference
-                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)+(20.d0*(c/ref_f1-c/f1))**2
-                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=Epo_NEQ%InvN(4+sys*4,4+sys*4)+(20.d0*(c/ref_f2-c/f2))**2
+            do i=1, j
+                if (sys/=2) then
+                    NDIFB=NDIFB
+                elseif (sys==2) then
+                    NDIFB=ParaNum-GloFreqNum*4+i*4  ! End index of GLONASS DISB
                 end if
-            end if
+                NEQ%dx(NDIFB-3:NDIFB)=NEQ%dx(NDIFB-3:NDIFB) - NEQ%dx(Ref_NDIFB-3:Ref_NDIFB) ! old reference system
+                NEQ%InvN(:,NDIFB-3:NDIFB)= NEQ%InvN(:,NDIFB-3:NDIFB) - NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
+                NEQ%InvN(NDIFB-3:NDIFB,:)= NEQ%InvN(NDIFB-3:NDIFB,:) - NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
+                if (NEQ%InvN(NDIFB,NDIFB)>0.d0) then   ! Add random walk due to frequency difference, 
+                    NEQ%InvN(NDIFB-1,NDIFB-1)=NEQ%InvN(NDIFB-1,NDIFB-1)+(50.d0*(c/ref_f1-c/f1))**2  ! 
+                    NEQ%InvN(NDIFB,NDIFB)=NEQ%InvN(NDIFB,NDIFB)+(50.d0*(c/ref_f2-c/f2))**2  ! Max ref. sat.  amb. change is set as 50 cycle
+                end if
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%dx(NDIFB-3:NDIFB)=Epo_NEQ%dx(NDIFB-3:NDIFB) - Epo_NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)  ! old reference system
+                    Epo_NEQ%InvN(:,NDIFB-3:NDIFB)= Epo_NEQ%InvN(:,NDIFB-3:NDIFB) - Epo_NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
+                    Epo_NEQ%InvN(NDIFB-3:NDIFB,:)= Epo_NEQ%InvN(NDIFB-3:NDIFB,:) - Epo_NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
+                    if (Epo_NEQ%InvN(NDIFB,NDIFB)>0.d0) then   ! Add random walk due to frequency difference
+                        Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=Epo_NEQ%InvN(NDIFB-1,NDIFB-1)+(50.d0*(c/ref_f1-c/f1))**2
+                        Epo_NEQ%InvN(NDIFB,NDIFB)=Epo_NEQ%InvN(NDIFB,NDIFB)+(50.d0*(c/ref_f2-c/f2))**2
+                    end if
+                end if
+            end do
         end do
-        NEQ%dx(4+RefSys*4-3:4+RefSys*4)=0.d0   ! New reference system
-        NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)=0.d0
-        NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)=0.d0
+        NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)=0.d0   ! New reference system
+        NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)=0.d0
+        NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)=0.d0
         if (If_Est_Iono .and. IonoNum>0) then
-            Epo_NEQ%dx(4+RefSys*4-3:4+RefSys*4)=0.d0
-            Epo_NEQ%InvN(:,4+RefSys*4-3:4+RefSys*4)= 0.d0
-            Epo_NEQ%InvN(4+RefSys*4-3:4+RefSys*4,:)= 0.d0
+            Epo_NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)=0.d0
+            Epo_NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)= 0.d0
+            Epo_NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)= 0.d0
         end if
         DD%RefSys=RefSys
     end if
 
-    ! ******************** For GLONASS IFB change ************************
-    if (GloParaNum>0) then  ! If GLONASS
+    
+    ! ******************** For loosely combined GLONASS DISB change ************************
+    if (.not.(If_TC) .and. GloFreqNum>0) then
         sys=2
-        do i=1,GloParaNum
-            if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then 
-                if (Fre_Chann(RefSat(sys)-GNum) == Fre_Chann(DD%RefSat(sys)-GNum)) exit ! If GLONASS reference satellite frequency changes
-                if ((i/=Fre_Chann(RefSat(sys)-GNum)+8) .and. (NEQ%dx(ParaNum-GloParaNum+i)/=0.d0)) then
-                    NEQ%dx(ParaNum-GloParaNum+i)=NEQ%dx(ParaNum-GloParaNum+i)-NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! other satellite
-                    NEQ%InvN(:,ParaNum-GloParaNum+i)=NEQ%InvN(:,ParaNum-GloParaNum+i)-NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
-                    NEQ%InvN(ParaNum-GloParaNum+i,:)=NEQ%InvN(ParaNum-GloParaNum+i,:)-NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+        if ( Fre_Chann(RefSat(sys)-GNum) /= Fre_Chann(DD%RefSat(sys)-GNum)) then ! If  reference satellite change
+            Ref_NDIFB=ParaNum-GloFreqNum*4+Fre_Chann(RefSat(sys)-GNum)*4+8*4
+            do i=1,GloFreqNum
+                NDIFB=ParaNum-GloFreqNum*4+i*4  ! End index of GLONASS DISB
+                if (NEQ%dx(NDIFB)==0.d0) cycle  ! If the new reference satellite frequency or no satellite in this frequency
+                if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then 
+                    NEQ%dx(NDIFB-3:NDIFB)=NEQ%dx(NDIFB-3:NDIFB)-NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)  ! other satellite
+                    NEQ%InvN(:,NDIFB-3:NDIFB)=NEQ%InvN(:,NDIFB-3:NDIFB)-NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
+                    NEQ%InvN(NDIFB-3:NDIFB,:)=NEQ%InvN(NDIFB-3:NDIFB,:)-NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
                     if (If_Est_Iono .and. IonoNum>0) then
-                        Epo_NEQ%dx(ParaNum-GloParaNum+i)=Epo_NEQ%dx(ParaNum-GloParaNum+i)-Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! other satellite
-                        Epo_NEQ%InvN(:,ParaNum-GloParaNum+i)=Epo_NEQ%InvN(:,ParaNum-GloParaNum+i)-Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
-                        Epo_NEQ%InvN(ParaNum-GloParaNum+i,:)=Epo_NEQ%InvN(ParaNum-GloParaNum+i,:)-Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
+                        Epo_NEQ%dx(NDIFB-3:NDIFB)=Epo_NEQ%dx(NDIFB-3:NDIFB)-Epo_NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)  ! other satellite
+                        Epo_NEQ%InvN(:,NDIFB-3:NDIFB)=Epo_NEQ%InvN(:,NDIFB-3:NDIFB)-Epo_NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
+                        Epo_NEQ%InvN(NDIFB-3:NDIFB,:)=Epo_NEQ%InvN(NDIFB-3:NDIFB,:)-Epo_NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
                     end if
                 end if
-            end if
-        end do
-        if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then
-            if (Fre_Chann(RefSat(sys)-GNum) /= Fre_Chann(DD%RefSat(sys)-GNum)) then  ! If GLONASS reference satellite frequency changes
-                NEQ%dx(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)=0.d0-NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! old reference satellite
-                NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)= 0.d0 -NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
-                NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8,:)= 0.d0 -NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
-                NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0   ! new reference satellite
-                NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0
-                NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)=0.d0
+            end do
+            if ( DD%RefSat(sys)/=0 .and. RefSat(sys)/=0 ) then
+                NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)=0.d0   ! new reference satellite
+                NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)=0.d0
+                NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)=0.d0
                 if (If_Est_Iono .and. IonoNum>0) then
-                    Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)=0.d0-Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)  ! old reference satellite
-                    Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8)= 0.d0 -Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)
-                    Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(DD%RefSat(sys)-GNum)+8,:)= 0.d0 -Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)
-                    Epo_NEQ%dx(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0   ! new reference satellite
-                    Epo_NEQ%InvN(:,ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8)=0.d0
-                    Epo_NEQ%InvN(ParaNum-GloParaNum+Fre_Chann(RefSat(sys)-GNum)+8,:)=0.d0
+                    Epo_NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)=0.d0   ! new reference satellite
+                    Epo_NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)=0.d0
+                    Epo_NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)=0.d0
                 end if
             end if
         end if
     end if
 
-        if (ADmethod=='LS') then
-            call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
-            NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
-        end if
+    if (ADmethod=='LS') then
+        call InvSqrt(NEQ%InvN, NEQ%N, NEQ%Nbb)
+        NEQ%U=MATMUL(NEQ%Nbb, NEQ%dx)   ! New Nbb and U is needed
+    end if
 
 !        if (If_Est_Iono .and. IonoNum>0 .and. ADmethod=='LS') then  ! This is only for Least Square method, but we change to transformed Kalman Filter
 !            call InvSqrt(Epo_NEQ%InvN, Epo_NEQ%N, Epo_NEQ%Nbb)

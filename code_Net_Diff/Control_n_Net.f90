@@ -121,7 +121,7 @@ implicit none
         elseif (index(line,"partial_ar") /= 0)   then
             read(line,*) temp, str_partial_ar
             if ( (index(str_partial_ar,"N") /=0) .or.  (index(str_partial_ar,"n") /=0) )then
-                partial_ar=.false.
+                parARmode=0
             else
                 read(line,*) temp, str_partial_ar, parARmode
             end if
@@ -131,6 +131,13 @@ implicit none
             read(line,*) temp, ar_mode
         elseif (index(line,"fixholdele") /= 0)   then
             read(line,*) temp, FixEle, HoldEle
+        elseif (index(line,"glonass_ar") /= 0)   then
+            read(line,*) temp, temp
+            if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
+                If_Glo_AR=.true.
+            else
+                If_Glo_AR=.false.
+            end if
         elseif (index(line,"tightcombine") /= 0)   then
             read(line,*) temp, temp
             if ( (index(temp,"Y") /=0) .or. (index(temp,"y") /=0)  )then
@@ -274,7 +281,7 @@ implicit none
         ParaNum=ParaNum+1
         INT_SystemUsed(2)=1
         if (If_IFB) then
-            GloParaNum=14
+            GloFreqNum=14
             if ( (index(IFB_Mode,"FD") /=0) .or. (index(IFB_Mode,"fd") /=0) ) then
                 IFB_Mode='FD'
                 ParaNum=ParaNum+14  ! Frequency depend

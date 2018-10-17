@@ -33,7 +33,7 @@ implicit none
     type(type_NEQ) ::  NEQ
     type(type_Epo_NEQ) :: Epo_NEQ
     ! Local variables
-    integer :: N, i, j, k, PRN, sys, freq, Sys_PRN
+    integer :: N, i, j, k, PRN, sys, freq, Sys_PRN, NDIFB
     real(8)  :: Awl(MaxPRN, ParaNum+2*SatNum+IonoNum),Aw4(MaxPRN, ParaNum+2*SatNum+IonoNum)
     real(8) :: Aewl(MaxPRN,ParaNum)
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
@@ -189,10 +189,12 @@ implicit none
             f1=f_L1
             f2=f_L2
             f3=f_L5
+            NDIFB=4+INT_SystemUsed(1)*4  ! End index of DISB   ! There is bug if no GPS but use QZSS, should seperate GPS and QZSS
         elseif (sys==2) then   ! GLONASS
             freq=Fre_Chann(PRN-GNum)
             f1=(1602.0d0+freq*0.5625d0)*1.0D6   ! f1=(1602.0d0+K*0.5625d0)*1.0d6
             f2=(1246.0d0+freq*0.4375d0)*1.0D6
+            NDIFB=ParaNum-GloFreqNum*4+(freq+8)*4  ! End index of DISB
         elseif  (sys==3) then   ! COMPASS
             if (freq_comb=='L1L2') then
                 f1=f_B1
@@ -205,10 +207,11 @@ implicit none
                 f1=f_B2
                 f2=f_B3
             end if
+            NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4  ! End index of DISB
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5
+                f2=f_E5a
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -217,9 +220,11 @@ implicit none
                 f1=f_E5a
                 f2=f_E5b
             end if
+            NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4  ! End index of DISB
         elseif (sys==5) then   ! IRNSS
             f1=f_L1
             f2=f_S
+            NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
         else
             cycle
         end if
@@ -264,8 +269,8 @@ implicit none
          ! For P1
          if ( DD%P1(i)/=0.d0 ) then
              Ap1(i,1:ParaNum)=DD%A(i,1:ParaNum)
-             if (If_TC .and. sys/=DD%RefSys) then
-                Ap1(i, 4+sys*4-3)=1.d0
+             if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                Ap1(i, NDIFB-3)=1.d0
              end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap1(i,ParaNum+IonoNum*2+PRN)=1.d0  ! Ionosphere parameter
@@ -284,8 +289,8 @@ implicit none
          ! For P2
          if ( DD%P2(i)/=0.d0 ) then
              Ap2(i,1:ParaNum)=DD%A(i,1:ParaNum)
-             if (If_TC .and. sys/=DD%RefSys) then
-                Ap2(i, 4+sys*4-2)=1.d0
+             if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                Ap2(i, NDIFB-2)=1.d0
              end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Ap2(i,ParaNum+IonoNum*2+PRN)=f1**2/f2**2  ! Ionosphere parameter
@@ -306,8 +311,8 @@ implicit none
              if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+PRN, ParaNum+PRN)/=0.d0) then
                  Awl(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Awl(i,ParaNum+PRN)=c/(a1*f1+a2*f2)  ! 1.d0
-                 if (If_TC .and. sys/=DD%RefSys) then
-                    Awl(i, 4+sys*4-1)=1.d0
+                 if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                    Awl(i, NDIFB-1)=1.d0
                  end if
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
@@ -331,8 +336,8 @@ implicit none
              if (DD%P1(i)/=0.d0 .or. DD%P2(i)/=0.d0 .or. NEQ%InvN(ParaNum+SatNum+PRN, ParaNum+SatNum+PRN)/=0.d0) then
                  Aw4(i,1:ParaNum)=DD%A(i,1:ParaNum)   ! For first epoch, if no psedo-range, NEQ can't be solved
                  Aw4(i,ParaNum+SatNum+PRN)=c/(b1*f1+b2*f2)  !1.d0
-                 if (If_TC .and. sys/=DD%RefSys) then
-                    Aw4(i, 4+sys*4)=1.d0
+                 if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                    Aw4(i, NDIFB)=1.d0
                  end if
                  NEQ%SumN=NEQ%SumN+1
                  if (If_Est_Iono .and. IonoNum>0) then
@@ -355,8 +360,8 @@ implicit none
          ! For L1
          if ( DD%L1(i)/=0.d0 ) then
              Al1(i,1:ParaNum)=DD%A(i,1:ParaNum)
-             if (If_TC .and. sys/=DD%RefSys) then
-                Al1(i, 4+sys*4-1)=1.d0
+             if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                Al1(i, NDIFB-1)=1.d0
              end if
              if (If_Est_Iono .and. IonoNum>0) then     ! Danger: For first epoch, if no psedo-range or WL help, NEQ can't be solved
                 Al1(i,ParaNum+PRN)= c/f1   ! ambiguity parameter 
@@ -368,8 +373,8 @@ implicit none
          ! For L2
          if ( DD%L2(i)/=0.d0 ) then
              Al2(i,1:ParaNum)=DD%A(i,1:ParaNum)
-             if (If_TC .and. sys/=DD%RefSys) then
-                Al2(i, 4+sys*4)=1.d0
+             if ((If_TC .and. sys/=DD%RefSys) .or. sys==2) then
+                Al2(i, NDIFB)=1.d0
              end if
              if (If_Est_Iono .and. IonoNum>0) then 
                 Al2(i,ParaNum+SatNum+PRN)= c/f2 ! ambiguity parameter
@@ -409,41 +414,124 @@ implicit none
         NEQ%Aw4(1:N,4)=0.d0
     end if
     
-    if (GloParaNum>0) then  ! If GLONASS
-        do i=1,GloParaNum
-            if (NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)==0.d0) then
-                NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)=0.5d0**2  ! 1m
+    
+    ! *********** If GLONASS loosely or tightly combined RTK, set initial precision and random walk of DISB parameter **************
+    do i=1,GloFreqNum
+        NDIFB=ParaNum-GloFreqNum*4+i*4  ! End index of GLONASS DISB
+        if (NEQ%InvN(NDIFB-3,NDIFB-3)==0.d0) then  ! Code DISB, doesn't affected by different frequency
+            NEQ%InvN(NDIFB-3,NDIFB-3)=10.d0**2    ! 10m  ! P1
+            NEQ%InvN(NDIFB-2,NDIFB-2)=10.d0**2          ! 10m  ! P2
+        else   ! Random walk of code DISB
+            NEQ%InvN(NDIFB-3,NDIFB-3)=NEQ%InvN(NDIFB-3,NDIFB-3)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)    ! P1
+            NEQ%InvN(NDIFB-2,NDIFB-2)=NEQ%InvN(NDIFB-2,NDIFB-2)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)     ! P2
+        end if
+        if (If_Est_Iono .and. IonoNum>0) then
+            if (NEQ%InvN(NDIFB-3,NDIFB-3)==0.d0) then
+                Epo_NEQ%InvN(NDIFB-3,NDIFB-3)=10.d0**2    ! 10m  ! P1
+                Epo_NEQ%InvN(NDIFB-2,NDIFB-2)=10.d0**2          ! 10m  ! P2
+            else   ! Random walk of code DISB
+                Epo_NEQ%InvN(NDIFB-3,NDIFB-3)=Epo_NEQ%InvN(NDIFB-3,NDIFB-3)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)    ! P1
+                Epo_NEQ%InvN(NDIFB-2,NDIFB-2)=Epo_NEQ%InvN(NDIFB-2,NDIFB-2)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)     ! P2
+            end if
+        end if
+
+        ! Check if cycle slip for all satellites in this frequency. If yes, reinitialize phase DISB 
+        ! !!!!!!!!!This is very helpful in urban environment
+        Sys_PRN=0
+        do j=1,DD%PRNS
+            PRN=DD%PRN(j)
+            if (DD%Sys(j)==2) then
+                freq=Fre_Chann(PRN-GNum)
+                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(2)%Slip(PRN)==0) .and. freq+8==i) then
+                    Sys_PRN=DD%PRN(j)
+                end if
             end if
         end do
-    end if
+        if (Sys_PRN==0) then
+            NEQ%InvN(NDIFB-1,:)=0.d0
+            NEQ%InvN(:, NDIFB-1)=0.d0
+            NEQ%InvN(NDIFB,:)=0.d0
+            NEQ%InvN(:, NDIFB)=0.d0
+            if (If_Est_Iono .and. IonoNum>0) then
+                Epo_NEQ%InvN(NDIFB-1,:)=0.d0
+                Epo_NEQ%InvN(:, NDIFB-1)=0.d0
+                Epo_NEQ%InvN(NDIFB,:)=0.d0
+                Epo_NEQ%InvN(:, NDIFB)=0.d0                    
+            end if
+        end if
+
+        if (NEQ%InvN(NDIFB,NDIFB)==0.d0) then ! GLONASS Phase DISB is determined by maximum elevation satellite and includes its ambiguity
+            maxEle=0.d0
+            Sys_PRN=0
+            do j=1,DD%PRNS  ! Find the maximum elevation satellite
+                PRN=DD%PRN(j)
+                if (DD%Sys(j)==2) then
+                    freq=Fre_Chann(PRN-GNum)
+                    if (DD%Ele(PRN)>maxEle .and. freq+8==i) then
+                        maxEle=DD%Ele(PRN)
+                        Sys_PRN=DD%PRN(j)
+                    end if
+                end if
+            end do
+            if (Sys_PRN>0) then ! If satellite of this frequency found
+                NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
+                NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
+                NEQ%InvN(NDIFB-1,NDIFB-1)=100.0d0**2   ! L1
+                NEQ%InvN(NDIFB,NDIFB)=100.0d0**2          ! L2
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
+                    Epo_NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
+                    Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=100.0d0**2   ! L1
+                    Epo_NEQ%InvN(NDIFB,NDIFB)=100.0d0**2          ! L2
+                end if
+            else   ! Random walk of DISB
+                NEQ%InvN(NDIFB-1,NDIFB-1)=NEQ%InvN(NDIFB-1,NDIFB-1)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)   ! L1
+                NEQ%InvN(NDIFB,NDIFB)=NEQ%InvN(NDIFB,NDIFB)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)                ! L2
+                if (If_Est_Iono .and. IonoNum>0) then
+                    Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=Epo_NEQ%InvN(NDIFB-1,NDIFB-1)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)   ! L1
+                    Epo_NEQ%InvN(NDIFB,NDIFB)=Epo_NEQ%InvN(NDIFB,NDIFB)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)                ! L2
+                end if
+            end if
+        end if
+    end do
     
-    ! If tight combined RTK, set initial precision and random walk of DISB parameter
+    ! *********** If tight combined RTK, set initial precision and random walk of DISB parameter **************
     if (If_TC) then
         do sys=1,5
             if (sys==DD%RefSys) cycle
             if (sys==1) then
                 if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
+                NDIFB=4+INT_SystemUsed(1)*4  ! There is bug if no GPS but use QZSS, should seperate GPS and QZSS
+            elseif (sys==2) then
+                cycle  ! has already done in GLONASS  DISB
+!                if (.not.(SystemUsed(2))) cycle   ! If no GLONASS
+!                NDIFB=ParaNum-GloFreqNum*4+GloFreqNum*4  ! End index of DISB
+            elseif (sys==3) then
+                if (.not.(SystemUsed(3))) cycle   ! If no BeiDou
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4 ! End index of DISB
+            elseif (sys==4) then
+                if (.not.(SystemUsed(3))) cycle   ! If no Galileo
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
             elseif (sys==5) then
                 if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
-            else
-                if (.not.(SystemUsed(sys))) cycle
+                NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
             end if
 
             ! Code DISB, doesn't affected by different frequency
-            if (NEQ%InvN(4+sys*4-3,4+sys*4-3)==0.d0) then
-                NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
-                NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P2
+            if (NEQ%InvN(NDIFB-3,NDIFB-3)==0.d0) then
+                NEQ%InvN(NDIFB-3,NDIFB-3)=10.d0**2       ! P1
+                NEQ%InvN(NDIFB-2,NDIFB-2)=10.d0**2       ! P2
             else   ! Random walk of code DISB
-                NEQ%InvN(4+sys*4-3,4+sys*4-3)=NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)    ! P1
-                NEQ%InvN(4+sys*4-2,4+sys*4-2)=NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)     ! P2
+                NEQ%InvN(NDIFB-3,NDIFB-3)=NEQ%InvN(NDIFB-3,NDIFB-3)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)    ! P1
+                NEQ%InvN(NDIFB-2,NDIFB-2)=NEQ%InvN(NDIFB-2,NDIFB-2)+0.1d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)     ! P2
             end if
             if (If_Est_Iono .and. IonoNum>0) then 
-                if (Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)==0.d0) then
-                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
-                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P2
+                if (Epo_NEQ%InvN(NDIFB-3,NDIFB-3)==0.d0) then
+                    Epo_NEQ%InvN(NDIFB-3,NDIFB-3)=10.d0**2       ! P1
+                    Epo_NEQ%InvN(NDIFB-2,NDIFB-2)=10.d0**2       ! P2
                 else   ! Random walk of code DISB
-                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)    ! P1
-                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)     ! P2
+                    Epo_NEQ%InvN(NDIFB-3,NDIFB-3)=Epo_NEQ%InvN(NDIFB-3,NDIFB-3)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)    ! P1
+                    Epo_NEQ%InvN(NDIFB-2,NDIFB-2)=Epo_NEQ%InvN(NDIFB-2,NDIFB-2)+0.1d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)     ! P2
                 end if
             end if
 
@@ -457,21 +545,19 @@ implicit none
                 end if
             end do
             if (Sys_PRN==0) then
-                NEQ%InvN(4+sys*4-1,:)=0.d0
-                NEQ%InvN(:, 4+sys*4-1)=0.d0
-                NEQ%InvN(4+sys*4,:)=0.d0
-                NEQ%InvN(:, 4+sys*4)=0.d0
+                NEQ%InvN(NDIFB-1,:)=0.d0
+                NEQ%InvN(:, NDIFB-1)=0.d0
+                NEQ%InvN(NDIFB,:)=0.d0
+                NEQ%InvN(:, NDIFB)=0.d0
                 if (If_Est_Iono .and. IonoNum>0) then
-                    Epo_NEQ%InvN(4+sys*4-1,:)=0.d0
-                    Epo_NEQ%InvN(:, 4+sys*4-1)=0.d0
-                    Epo_NEQ%InvN(4+sys*4,:)=0.d0
-                    Epo_NEQ%InvN(:, 4+sys*4)=0.d0                    
+                    Epo_NEQ%InvN(NDIFB-1,:)=0.d0
+                    Epo_NEQ%InvN(:, NDIFB-1)=0.d0
+                    Epo_NEQ%InvN(NDIFB,:)=0.d0
+                    Epo_NEQ%InvN(:, NDIFB)=0.d0                    
                 end if
                 if (sys==1) then
                     CycleSlip(2)%Slip(1:GNum)=1
                     CycleSlip(2)%Slip(GNum+RNum+CNum+NumE+1:GNum+RNum+CNum+NumE+JNum)=1
-                elseif (sys==2) then
-                    CycleSlip(2)%Slip(GNum+1:GNum+RNum)=1
                 elseif (sys==3) then
                     CycleSlip(2)%Slip(GNum+RNum+1:GNum+RNum+CNum)=1
                 elseif (sys==4) then
@@ -481,7 +567,7 @@ implicit none
                 end if
             end if
 
-            if (NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then ! Phase DISB is determined by maximum elevation satellite and includes its ambiguity
+            if (NEQ%InvN(NDIFB,NDIFB)==0.d0) then ! Phase DISB is determined by maximum elevation satellite and includes its ambiguity
                 maxEle=0.d0
                 Sys_PRN=0
                 do j=1,DD%PRNS  ! Find the maximum elevation satellite
@@ -491,32 +577,33 @@ implicit none
                         Sys_PRN=DD%PRN(j)
                     end if
                 end do
-                if (Sys_PRN>0) then
+                if (Sys_PRN>0) then  ! If satellite of this system found
                     NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
                     NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
-                    NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
-                    NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+                    NEQ%InvN(NDIFB-1,NDIFB-1)=100.00d0**2   ! L1, maximum phase DISB + ambiguity is set as 100m
+                    NEQ%InvN(NDIFB,NDIFB)=100.00d0**2          ! L2
                     if (If_Est_Iono .and. IonoNum>0) then
                         Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.01d0**2   ! L1
                         Epo_NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.01d0**2   ! L2
-                        Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
-                        Epo_NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
+                        Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=100.0d0**2   ! L1
+                        Epo_NEQ%InvN(NDIFB,NDIFB)=100.0d0**2          ! L2
                     end if
                 end if
             else   ! Random walk of DISB
-                NEQ%InvN(4+sys*4-1,4+sys*4-1)=NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)   ! L1
-                NEQ%InvN(4+sys*4,4+sys*4)=NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)                ! L2
+                NEQ%InvN(NDIFB-1,NDIFB-1)=NEQ%InvN(NDIFB-1,NDIFB-1)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)   ! L1
+                NEQ%InvN(NDIFB,NDIFB)=NEQ%InvN(NDIFB,NDIFB)+0.01d0**2/3600.d0*((DD%week-NEQ%week)*604800.d0+DD%sow-NEQ%sow)                ! L2
                 if (If_Est_Iono .and. IonoNum>0) then
-                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)   ! L1
-                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=Epo_NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)                ! L2
+                    Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=Epo_NEQ%InvN(NDIFB-1,NDIFB-1)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)   ! L1
+                    Epo_NEQ%InvN(NDIFB,NDIFB)=Epo_NEQ%InvN(NDIFB,NDIFB)+0.01d0**2/3600.d0*((DD%week-Epo_NEQ%week)*604800.d0+DD%sow-Epo_NEQ%sow)                ! L2
                 end if
             end if
         end do
-        NEQ%week=DD%week
-        NEQ%sow=DD%sow
-        Epo_NEQ%week=DD%week
-        Epo_NEQ%sow=DD%sow
     end if
+    NEQ%week=DD%week
+    NEQ%sow=DD%sow
+    Epo_NEQ%week=DD%week
+    Epo_NEQ%sow=DD%sow
+
     ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
     if (ar_mode==3) then !
         do PRN=1, 2*SatNum
@@ -602,13 +689,7 @@ implicit none
     Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)/sigLC
     Epo_NEQ%Ll2(1:N)=DD%L2(1:N)/sigLC
     Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer due to code multipath
-    if (GloParaNum>0) then  ! If GLONASS
-        do i=1,GloParaNum
-            if (Epo_NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)==0.d0) then
-                Epo_NEQ%InvN(ParaNum-GloParaNum+i,ParaNum-GloParaNum+i)=0.5d0**2  ! 1m
-            end if
-        end do
-    end if
+
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then
             Epo_NEQ%Awl(1:N,:)=Awl(1:N,:)/sigLC/5.d0 ! sqrt(a1**2+a2**2)   ! The observation noise of WL may be greater 
@@ -686,45 +767,6 @@ implicit none
             end if
         end if
         
-        ! If tight combined RTK, set initial precision and random walk of DISB parameter
-        if (If_TC) then
-            do sys=1,5
-                if (sys==DD%RefSys) cycle
-                if (sys==1) then
-                    if ((.not.(SystemUsed(sys))) .and. (.not.(SystemUsed(5))) ) cycle  ! If no GPS and QZSS
-                elseif (sys==5) then
-                    if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
-                else
-                    if (.not.(SystemUsed(sys))) cycle
-                end if
-                if (Epo_NEQ%InvN(4+sys*4,4+sys*4)==0.d0) then
-                    maxEle=0.d0
-                    Sys_PRN=0
-                    do j=1,DD%PRNS  ! Find the maximum elevation satellite
-                        PRN=DD%PRN(j)
-                        if (DD%Sys(j)==sys .and. DD%Ele(PRN)>maxEle) then
-                            maxEle=DD%Ele(PRN)
-                            Sys_PRN=DD%PRN(j)
-                        end if
-                    end do
-                    if (Sys_PRN==0) exit  ! If no satellite in this epoch
-                    Epo_NEQ%InvN(ParaNum+Sys_PRN,ParaNum+Sys_PRN)=0.001d0**2   ! L1
-                    Epo_NEQ%InvN(ParaNum+Sys_PRN+SatNum, ParaNum+Sys_PRN+SatNum)=0.001d0**2   ! L2
-                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=10.d0**2       ! P1
-                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=10.d0**2       ! P1
-                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=10.001d0**2   ! L1
-    !                Epo_NEQ%dx(4+sys*4-1)=12.55d0*c/f_E1
-                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=10.001d0**2          ! L2
-    !                Epo_NEQ%dx(4+sys*4)=23.75d0*c/f_E5a
-                else   ! Random walk of DISB
-                    Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)=Epo_NEQ%InvN(4+sys*4-3,4+sys*4-3)+0.1d0**2/3600.d0*Interval     ! P1
-                    Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)=Epo_NEQ%InvN(4+sys*4-2,4+sys*4-2)+0.1d0**2/3600.d0*Interval     ! P1
-                    Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)=Epo_NEQ%InvN(4+sys*4-1,4+sys*4-1)+0.01d0**2/3600.d0*Interval   ! L1
-                    Epo_NEQ%InvN(4+sys*4,4+sys*4)=Epo_NEQ%InvN(4+sys*4,4+sys*4)+0.01d0**2/3600.d0*Interval                ! L2
-                end if
-            end do
-        end if
-
         ! Fix and Hold mode, add constraints to fixed ambiguity, See RTKLIB rtkpos.c  holdamb()
         if (ar_mode==3) then !
             do PRN=1, 2*SatNum

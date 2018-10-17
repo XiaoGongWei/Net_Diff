@@ -57,6 +57,7 @@ implicit none
             do i=1, SD%PRNS
                 ! PC
                 if (SD%Sys(i)/=Sys .and. .not.(If_TC)) cycle  ! If loosely combinted, cycle
+                if (SD%PRN(i)>GNum .and. SD%PRN(i)<=GNum+RNum .and. If_TC) cycle    ! If tightly combinted, don't use GLONASS as reference satellite
                 if ((SD%PRN(i)>GNum+RNum+CNum+NumE+2) .and. (sys==1)) cycle  ! Not choose QZSS3, due to half cycle slip??
                 if ( (Combination(2)==.false.) .and. (SD%Ele(i)>maxEle) .and. (SD%P1(i)/=0.d0)  )  then
                     maxele=SD%Ele(i)
@@ -84,6 +85,7 @@ implicit none
             maxEle=LimEle ! 30.d0
             do i=1, SD%PRNS
                 if (SD%Sys(i)/=Sys .and. .not.(If_TC)) cycle  ! If loosely combinted, cycle
+                if (SD%PRN(i)>GNum .and. SD%PRN(i)<=GNum+RNum .and. If_TC) cycle    ! If tightly combinted, don't use GLONASS as reference satellite
                 if ((SD%PRN(i)>GNum+RNum+CNum+NumE+2) .and. (sys==1)) cycle  ! Not choose QZSS3, due to half cycle slip??
                 if ( (Combination(2)==.false.) .and. (SD%Ele(i)>maxEle) .and. (SD%P1(i)/=0.d0)  )  then
                     maxele=SD%Ele(i)
@@ -142,6 +144,7 @@ implicit none
             do i=1, SD%PRNS
                 ! PC
                 if (SD%Sys(i)/=Sys .and. .not.(If_TC)) cycle  ! If loosely combinted, cycle
+                if (SD%PRN(i)>GNum .and. SD%PRN(i)<=GNum+RNum .and. If_TC) cycle    ! If tightly combinted, don't use GLONASS as reference satellite
                 if ((SD%PRN(i)>GNum+RNum+CNum+NumE+2) .and. (sys==1)) cycle  ! Not choose QZSS3, due to half cycle slip??
                 if ( (Combination(2)==.false.) .and. (SD%Ele(i)>maxEle) .and. (SD%P1(i)/=0.d0)  )  then
                     maxele=SD%Ele(i)

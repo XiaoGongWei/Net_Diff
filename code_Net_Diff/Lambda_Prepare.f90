@@ -36,7 +36,7 @@ implicit none
     N=N0
     do i=N0,  1, -1
         PRN_S=PRN(i)
-        if ((amb(i)==0.d0) .or. (GloParaNum>0 .and. PRN_S>GNum .and. PRN_S<=GNum+RNum)) then  ! exclude GLONASS satellite in Lambda
+        if (amb(i)==0.d0) then
             PRN(i)=0           
             Q(1:N0, i:N0-1)=Q(1:N0, i+1:N0)
             Q(1:N0, N0) = 0.d0

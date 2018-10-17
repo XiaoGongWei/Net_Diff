@@ -7,6 +7,7 @@ implicit none
     integer :: SatNum=0   ! Satellite Number
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
+    integer :: GloFreqNum=0   ! GLONASS frequency number, for GLONASS RTK
     integer,parameter :: GNum0=32   ! max GPS satellite number, used for variables defination in MOD
     integer,parameter :: RNum0=27   ! max GLONASS satellite number
     integer,parameter :: CNum0=35   ! max BeiDou satellite number
@@ -752,7 +753,7 @@ use MOD_constant
      character(3) :: Orbit
      character(5) :: Clk
      logical(1) :: IsCNAV=.false.
-     integer(1) :: SatSelected(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=1
+     integer(2) :: SatSelected(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=1
      real(8) :: Leap_sec=0.d0
      character(3) :: TimeSys=""
      real(8) :: ObsTime=0.d0,SP3Time=0.d0
@@ -766,14 +767,12 @@ use MOD_constant
     integer(1) :: ar_mode=1
     real(8) :: FixEle=20.d0, HoldEle=30.d0  ! Fix and hold satellite elevation
     real(8) :: minratio=3.d0
-    logical(1) :: partial_AR=.true.
     integer(1) :: parARmode=2, par_PRN(2*(GNum0+RNum0+CNum0+NumE0))=0, par_PRN_Epo(2*(GNum0+RNum0+CNum0+NumE0))=0
     logical :: If_Est_WL=.false.   ! This is only for long baseline RTK
     real(8) :: Baseline, Diff_Hgt, Min_Lat   ! This is only for long baseline RTK
-    integer :: GloParaNum=0   ! This is for GLONASS float RTK
     real(8) ::   a1= 1.d0 , a2= 0.d0 ! L1
     real(8) ::  b1= 0.d0 , b2= 1.d0  ! L2
-    logical :: If_TC=.false., If_Fix_DISB=.true.
+    logical :: If_TC=.false., If_Fix_DISB=.true., If_Glo_AR=.true.
     logical :: If_IonoCompensate=.false.
      integer(1) :: Vel_Used=0  ! 0: no velocity; 1: Doppler; 2: IMU
     logical :: If_posfile=.false.

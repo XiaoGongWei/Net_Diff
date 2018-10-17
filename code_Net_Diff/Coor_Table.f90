@@ -21,7 +21,7 @@ implicit none
     character(300) :: line
     character(100) :: temp
     character(1) :: SKD
-    integer(1) :: selectd, PRN
+    integer :: selectd, PRN
     integer :: N1,N2, Num, i,j, k
     real(8) :: Lat, Lon, Hgt,Coor(3)
     real(8) :: press ,tempre, rhumity, undu, MJD

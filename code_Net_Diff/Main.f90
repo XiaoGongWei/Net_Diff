@@ -303,8 +303,9 @@ implicit none
             write(CoorID,"(A12,5X,A15)") 'ar_mode:  ', 'Fix and hold'
             write(CoorID,"(A12,5X,2I4)") 'fixholdele:  ', int(FixEle), int(HoldEle)
         end if
-        write(CoorID,"(A12,5X,L5,I3)") 'partial_ar:  ', partial_AR, parARmode
+        write(CoorID,"(A12,5X,I3)") 'partial_ar:  ', parARmode
         write(CoorID,"(A12,5X,F5.1)") 'minratio:  ', minratio
+        write(CoorID,"(A12,5X,L5)") 'glonass_ar:  ', If_Glo_AR
         write(CoorID,"(A12,5X,L5)") 'tightcombine:  ', If_TC
         write(CoorID,"(A12,5X,L5)") 'est_wl_amb:  ', If_Est_WL
     end if
@@ -419,8 +420,9 @@ implicit none
                 write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Fix and hold'
                 write(PosID,"(A1,A12,5X,2I4)") "%", 'fixholdele:  ', int(FixEle), int(HoldEle)
             end if
-            write(PosID,"(A1,A12,5X,L5,I3)") "%", 'partial_ar:  ', partial_AR, parARmode
+            write(PosID,"(A1,A12,5X,I3)") "%", 'partial_ar:  ', parARmode
             write(PosID,"(A1,A12,5X,F5.1)") "%", 'minratio:  ', minratio
+            write(PosID,"(A12,5X,L5)") 'glonass_ar:  ', If_Glo_AR
             write(PosID,"(A1,A12,5X,L5)") "%", 'tightcombine:  ', If_TC
             write(PosID,"(A1,A12,5X,L5)") "%", 'est_wl_amb:  ', If_Est_WL
         end if

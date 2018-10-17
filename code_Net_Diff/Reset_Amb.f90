@@ -41,9 +41,8 @@ implicit none
 
         damb=damb_rov-damb_ref   ! In cycle
 
-!                if (any(damb(1:2)/=0.d0)) then  ! If DD intial ambiguity change, then change it
-        NEQ%dx(ParaNum+PRN)=NEQ%dx(ParaNum+PRN)-damb(1)
-        NEQ%dx(ParaNum+PRN+SatNum)=NEQ%dx(ParaNum+PRN+SatNum)-damb(2)
+        NEQ%dx(ParaNum+PRN)=NEQ%dx(ParaNum+PRN)-(a1*damb(1)+a2*damb(2))   ! In cycle
+        NEQ%dx(ParaNum+PRN+SatNum)=NEQ%dx(ParaNum+PRN+SatNum)-(b1*damb(1)+b2*damb(2)) 
         if (If_Est_Iono .and. IonoNum>0) then
             Epo_NEQ%dx(ParaNum+PRN)=Epo_NEQ%dx(ParaNum+PRN)-damb(1)
             Epo_NEQ%dx(ParaNum+PRN+SatNum)=Epo_NEQ%dx(ParaNum+PRN+SatNum)-damb(2)
@@ -129,14 +128,8 @@ implicit none
         end if
         DD%L1(i)=DD%L1(i)-damb_rov(1)*c/f1 + damb_ref(1)*c/ref_f1   ! Reset DD ambiguity, in meter
         DD%L2(i)=DD%L2(i)-damb_rov(2)*c/f2 + damb_ref(2)*c/ref_f2
-        DD%WL(i)=DD%WL(i)-damb_rov(1)*c/f1 + damb_ref(1)*c/ref_f1
-        DD%W4(i)=DD%W4(i)-damb_rov(2)*c/f2 + damb_ref(2)*c/ref_f2
-
-!        if (PRN==DD%RefSat(1)) then  ! reset DISB due to frequency difference
-!            NEQ%dx(4+sys*4-1)=NEQ%dx(4+sys*4-1) + damb_rov(1)*(c/f_L1-c/f_B1)  ! old reference ambiguity cycle change
-!            NEQ%dx(4+sys*4)=NEQ%dx(4+sys*4) + damb_rov(2)*(c/f_L2-c/f_B2)
-!        end if
-!                end if
+        DD%WL(i)=DD%WL(i)-(a1*damb_rov(1)*c/f1+a2*damb_rov(2)*c/f2) + (a1*damb_ref(1)*c/ref_f1+a2*damb_ref(2)*c/ref_f2)
+        DD%W4(i)=DD%W4(i)-(b1*damb_rov(1)*c/f1+b2*damb_rov(2)*c/f2) + (b1*damb_ref(1)*c/ref_f1+b2*damb_ref(2)*c/ref_f2)
     end do
     ZD(1)%amb0(RefSat,1:3)=ZD(1)%amb1(RefSat,1:3)     ! Reset intial ambiguity of reference satellite
     ZD(2)%amb0(RefSat,1:3)=ZD(2)%amb1(RefSat,1:3)

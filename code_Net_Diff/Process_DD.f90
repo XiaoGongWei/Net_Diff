@@ -39,7 +39,7 @@ implicit none
     real(8) :: Obssec
     integer :: error, data_flag
     integer(1) :: Flag_Sln, RefSys
-    integer :: i, j, RefSat(5), sys
+    integer :: i, j, RefSat(5), sys, PRN
     integer :: EpochUsed
     real(8) :: dx_Coor(4), Coor(3), BLH(3), Mean_Coor(3), NEU(3), RMS(3), Mean_NEU(3)
     real(8) :: PDOP, Nbb(3,3), InvN(3,3)
@@ -50,11 +50,15 @@ implicit none
     if (If_Est_Iono) then       ! If estimate ionosphere
         IonoNum=SatNum
     end if
-    if (If_TC) then  ! It tightly combined
-        ParaNum=ParaNum+ 5*4  ! 5 system
+    if (If_TC) then  ! If tightly combined
+        ParaNum=ParaNum+ (INT_SystemUsed(1)+INT_SystemUsed(3)+INT_SystemUsed(4)+INT_SystemUsed(6))*4
+        ! There is bug if no GPS but use QZSS, should seperate GPS and QZSS
     end if
-    if (GloParaNum>0) then
-        ParaNum=ParaNum+GloParaNum
+    if (SystemUsed(2)) then
+        GloFreqNum=14
+        ParaNum=ParaNum+GloFreqNum*4
+    else
+        GloFreqNum=0
     end if
     allocate(ZD(1)%A(MaxPRN,ParaNum), ZD(2)%A(MaxPRN,ParaNum), SD%A(MaxPRN,ParaNum), DD%A(MaxPRN,ParaNum) )
     allocate(NEQ%Ap1(MaxPRN,ParaNum),NEQ%Ap2(MaxPRN,ParaNum),NEQ%Awl(MaxPRN,SatNum*2+ParaNum),NEQ%Aw4(MaxPRN,SatNum*2+ParaNum))
@@ -241,7 +245,7 @@ implicit none
             call IonoCompensate(Obsweek,Obssec, RefSat, DD,Epo_NEQ) ! Compensate DD ionosphere residuals
         end if
         
-        ! ============Change DD intial ambiguity value, for a better AR due to different frequency =================
+!        ! ============Change DD intial ambiguity value of reference satellite, for a better AR due to different frequency =================
 !        if (If_TC .and. RefSat(1)/=DD%RefSat(1)) then  ! Seems not good
 !            call Reset_Amb(ZD, DD, RefSat(1), NEQ, Epo_NEQ)
 !        end if
@@ -289,6 +293,18 @@ implicit none
             CycleSlip(2)%Slip(DD%PRN(i))=0
         end do
 
+        
+        ! ============Change DD intial ambiguity value of reference satellite, for a better AR due to different frequency =================
+        if (If_TC) then  ! Seems not good
+!            call Reset_Amb(ZD, DD, RefSat(1), NEQ, Epo_NEQ)
+            do i=1, DD%PRNS
+                PRN=DD%PRN(i)
+                ZD(2)%amb0(PRN,1)=ZD(2)%amb0(PRN,1)+int(NEQ%dx(ParaNum+PRN))
+                ZD(2)%amb0(PRN,2)=ZD(2)%amb0(PRN,2)+int(NEQ%dx(ParaNum+SatNum+PRN))
+                NEQ%dx(ParaNum+PRN)=mod(NEQ%dx(ParaNum+PRN),1.d0)
+                NEQ%dx(ParaNum+SatNum+PRN)=mod(NEQ%dx(ParaNum+SatNum+PRN),1.d0)
+            end do
+        end if
 
         ! ================= Write the result ===============
         Coor=STA%STA(2)%Coor+dx_Coor(1:3)
