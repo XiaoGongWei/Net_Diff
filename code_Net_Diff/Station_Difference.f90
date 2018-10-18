@@ -78,7 +78,7 @@ implicit none
                     SD%EWL_amb(N)=ZD(2)%EWL_amb(j)-ZD(1)%EWL_amb(i)
                 end if
                 write(LogID,'(A6,1X,A1,I2,2F8.3,4F13.3)') '##SD', SD%System(N), SD%PRN_S(N),SD%P1(N),SD%P2(N), &
-                                SD%L1(N)/c*f1,SD%L2(N)/c*f2,SD%WL(N)/c*(a1*f1+a2*f2),SD%W4(N)/c*(b1*f1+b2*f2)
+                                SD%L1(N),SD%L2(N),SD%WL(N),SD%W4(N)
                 exit
             end if  ! if (ZD(1)%PRN(i)==ZD(2)%PRN(j)) then
         end do 
