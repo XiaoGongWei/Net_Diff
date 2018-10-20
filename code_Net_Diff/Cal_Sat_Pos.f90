@@ -32,7 +32,7 @@
 ! ================End of Header==============
 
 subroutine Cal_Sat_Pos(GPSweek, GPSsec, PRN, Rec_Coor,t1, Rela_Flag,Sat_Coor2, Sat_Vel, R, Rela, Sat_Clk)
-use MOD_constant
+use MOD_VAR
 use MOD_SP3Data
 implicit none
     ! Intent in
@@ -44,11 +44,13 @@ implicit none
     ! Intent out
     real(8) ::  Sat_Coor(3), R, Sat_Coor2(3)
     real(8) ::  Rela, Sat_Clk
+    ! tgd
+    real(8) :: TGD(2)
     
     real(8) :: TT(10), t2
     real(8) :: Rotation(3,3)
     real(8) :: TT2(10), VCoor(3,9), Sat_Vel(3)
-    real(8) :: Clk(2), TTT(2)
+    real(8) :: SP3Clk(2), TTT(2)
     integer(1) :: i, j
     integer::k
     real(8) :: r_sta, r_sat, r_sta2sat, dbending
@@ -110,9 +112,9 @@ implicit none
     i=1
     do while (i<=2)
         j=minloc(dabs(TT),dim=1)
-       Clk(i)=SP3Data%Eph(PRN)%Clk(j)
+       SP3Clk(i)=SP3Data%Eph(PRN)%Clk(j)
         TTT(i)=TT(j)
-          if (dabs(Clk(i)-999999.999999)>1.d0 )then
+          if (dabs(SP3Clk(i)-999999.999999)>1.d0 )then
               i=i+1
               TT(j)=999999.d0
           else
@@ -120,6 +122,73 @@ implicit none
               return
           end if
     end do
-    Sat_Clk=Clk(1)+(-t1-TTT(1))/(TTT(2)-TTT(1))*(Clk(2)-Clk(1))
+    Sat_Clk=SP3Clk(1)+(-t1-TTT(1))/(TTT(2)-TTT(1))*(SP3Clk(2)-SP3Clk(1))
     Sat_Clk=Sat_Clk*1.d-6
+
+    
+    if ( ((PRN<=GNum+RNum) .or. (PRN>GNum+RNum+CNum)) .and. (Sat_Clk /=9999.d0)) then  ! For GPS/GLONASS/Galileo/QZSS
+        if (index(ObsCombine,"PC")/=0) then
+                if ((PRN<=GNum) .or. (PRN>GNum+RNum+CNum+NumE)) then ! GPS/QZSS
+                    if (freq_comb=='L1L3') then
+                        Sat_Clk=Sat_Clk + 1.5457*DCBBSX(1,PRN)- 1.2606*DCBBSX(2,PRN)  ! P1P2==>B1B3 f2^2/(f1^2-f2^2)*T12-f3^2/(f1^2-f3^2)*T13
+                    else  if (freq_comb=='L2L3') then
+                        Sat_Clk=Sat_Clk +13.8010*DCBBSX(1,PRN)- 11.2553*DCBBSX(2,PRN)  ! P1P2==>B2B3 f2^2/(f1^2-f2^2)*T12+f2^2/(f2^2-f3^2)*T12-f3^2/(f2^2-f3^2)*T13
+                    end if
+                elseif (PRN>GNum+RNum+CNum) then ! Galileo
+                    if (freq_comb=='L1L3') then
+                        Sat_Clk=Sat_Clk + 1.2606*DCBBSX(1,PRN)- 1.4220*DCBBSX(2,PRN)  ! P1P2==>B1B3 f2^2/(f1^2-f2^2)*T12-f3^2/(f1^2-f3^2)*T13
+                    else  if (freq_comb=='L2L3') then
+                        Sat_Clk=Sat_Clk -17.6593*DCBBSX(1,PRN)+19.9199*DCBBSX(2,PRN)  ! P1P2==>B2B3 f2^2/(f1^2-f2^2)*T12+f2^2/(f2^2-f3^2)*T12-f3^2/(f2^2-f3^2)*T13
+                    end if                    
+                end if
+        elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0))then   
+            Sat_Clk=Sat_Clk + f2**2/(f1+f2)/(f1-f2)*DCBBSX(1,PRN)          ! P1P2==>P1
+        elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0))then   
+            Sat_Clk=Sat_Clk + f1**2/(f1+f2)/(f1-f2)*DCBBSX(1,PRN)          ! P1P2==>P2
+        elseif ((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0))then   
+            Sat_Clk=Sat_Clk + 1.4872*DCBBSX(1,PRN) + DCBBSX(2,PRN)   ! P1P2==>P3
+        end if
+    elseif ((PRN>GNum+RNum) .and. (PRN<=GNum+RNum+CNum) .and. (Sat_Clk /=9999.d0)) then  ! 如果是BeiDou
+        if (IorQ==0) then  ! I支路数据，需要加上IQ的差异
+            if (SP3Time== -14.d0) then   ! 钟需要加上IQ的差异
+                Sat_Clk=Sat_Clk+DCBIQ(5,PRN-GNum-RNum)
+            end if
+            TGD=DCBIQ(3:4,PRN-GNum-RNum)
+        else
+            TGD=DCBIQ(1:2,PRN-GNum-RNum)  ! Q支路
+        end if
+        if (clktype==1) then
+            ! 多星定轨卫星钟TGD改正，IGS/一期是以B1B2的Q支路为基准
+            if (index(ObsCombine,"PC")/=0) then
+                if (freq_comb=='L1L3') then
+                    Sat_Clk=Sat_Clk - 0.4565*TGD(1)-1.4872*TGD(2)  ! B1B2==>B1B3 f2^2/(f1^2-f2^2)*T12-f3^2/(f1^2-f3^2)*T13
+                else  if (freq_comb=='L2L3') then
+                    Sat_Clk=Sat_Clk + 2.4872*TGD(1)+8.1018*TGD(2)  ! B1B2==>B2B3 f2^2/(f1^2-f2^2)*T12+f2^2/(f2^2-f3^2)*T12-f3^2/(f2^2-f3^2)*T13
+                end if
+            elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0))then   
+                Sat_Clk=Sat_Clk + 1.4872*(TGD(1) - TGD(2))         ! B1B2==>B1
+            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) then
+                Sat_Clk=Sat_Clk + 2.4872*(TGD(1) -TGD(2))                      ! B1B2==>B2
+            elseif((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0)) then
+                Sat_Clk=Sat_Clk + 2.4872*TGD(1) - 1.4872*TGD(2)             ! B1B2==>B3
+            end if
+        elseif (clktype==2) then
+            ! 多星定轨卫星钟，分米级是以B3的Q支路为基准
+            if (index(ObsCombine,"PC")/=0) then
+                if (freq_comb=='L1L2') then
+                    Sat_Clk=Sat_Clk - 2.4872*TGD(1) + 1.4872*TGD(2)    ! B3==>B1B2  f1^2/(f1^2-f2^2)*T13+f2^2/(f1^2-f2^2)*[T23]
+                elseif (freq_comb=='L1L3') then
+                    Sat_Clk=Sat_Clk - 2.94368*TGD(1)               ! B3==>B1B3 f1^2/(f1^2-f3^2)*T13
+                else  if (freq_comb=='L2L3') then
+                    Sat_Clk=Sat_Clk + 9.589*TGD(2)        ! B3==>B2B3 f2^2/(f2^2-f3^2)*T23
+                end if
+            elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0))then   
+                Sat_Clk=Sat_Clk - TGD(1)                       ! B3==>B1
+            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) then
+                Sat_Clk=Sat_Clk - TGD(2)                      ! B3==>B2
+            end if
+        end if
+    end if
+        
+
 end subroutine

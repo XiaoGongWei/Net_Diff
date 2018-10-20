@@ -259,7 +259,7 @@ implicit none
                 f2=f_L2
                 f3=f_L5
             elseif (sys==2) then  ! GLONASS
-                if (.not.(SystemUsed(2))) cycle   ! If no GLONASS
+                if (.not.(SystemUsed(sys))) cycle   ! If no GLONASS
             elseif (sys==3) then  ! BeiDou
                 if (.not.(SystemUsed(sys))) cycle   ! If no BeiDou
                 NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4 ! End index of DISB
@@ -308,7 +308,7 @@ implicit none
                 NEQ%dx(NDIFB-3:NDIFB)=NEQ%dx(NDIFB-3:NDIFB) - NEQ%dx(Ref_NDIFB-3:Ref_NDIFB) ! old reference system
                 NEQ%InvN(:,NDIFB-3:NDIFB)= NEQ%InvN(:,NDIFB-3:NDIFB) - NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
                 NEQ%InvN(NDIFB-3:NDIFB,:)= NEQ%InvN(NDIFB-3:NDIFB,:) - NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
-                if (NEQ%InvN(NDIFB,NDIFB)>0.d0) then   ! Add random walk due to frequency difference, 
+                if (NEQ%InvN(NDIFB-1,NDIFB-1)>0.d0) then   ! Add random walk due to frequency difference, 
                     NEQ%InvN(NDIFB-1,NDIFB-1)=NEQ%InvN(NDIFB-1,NDIFB-1)+(50.d0*(c/ref_f1-c/f1))**2  ! 
                     NEQ%InvN(NDIFB,NDIFB)=NEQ%InvN(NDIFB,NDIFB)+(50.d0*(c/ref_f2-c/f2))**2  ! Max ref. sat.  amb. change is set as 50 cycle
                 end if
@@ -316,7 +316,7 @@ implicit none
                     Epo_NEQ%dx(NDIFB-3:NDIFB)=Epo_NEQ%dx(NDIFB-3:NDIFB) - Epo_NEQ%dx(Ref_NDIFB-3:Ref_NDIFB)  ! old reference system
                     Epo_NEQ%InvN(:,NDIFB-3:NDIFB)= Epo_NEQ%InvN(:,NDIFB-3:NDIFB) - Epo_NEQ%InvN(:,Ref_NDIFB-3:Ref_NDIFB)
                     Epo_NEQ%InvN(NDIFB-3:NDIFB,:)= Epo_NEQ%InvN(NDIFB-3:NDIFB,:) - Epo_NEQ%InvN(Ref_NDIFB-3:Ref_NDIFB,:)
-                    if (Epo_NEQ%InvN(NDIFB,NDIFB)>0.d0) then   ! Add random walk due to frequency difference
+                    if (Epo_NEQ%InvN(NDIFB-1,NDIFB-1)>0.d0) then   ! Add random walk due to frequency difference
                         Epo_NEQ%InvN(NDIFB-1,NDIFB-1)=Epo_NEQ%InvN(NDIFB-1,NDIFB-1)+(50.d0*(c/ref_f1-c/f1))**2
                         Epo_NEQ%InvN(NDIFB,NDIFB)=Epo_NEQ%InvN(NDIFB,NDIFB)+(50.d0*(c/ref_f2-c/f2))**2
                     end if

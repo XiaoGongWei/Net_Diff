@@ -51,16 +51,16 @@ implicit none
     NEQ%Lwl=0.d0; NEQ%Lw4=0.d0
 
 !    if (mod(DD%sow,1800.d0)==0.d0) then  ! For reinitialize test
-!        NEQ%Nbb=0.d0
-!        NEQ%InvN=0.d0
-!        NEQ%U=0.d0
-!        NEQ%dx=0.d0
-!        if (If_Est_Iono .and. IonoNum>0) then
-!            Epo_NEQ%Nbb=0.d0
-!            Epo_NEQ%InvN=0.d0
-!            Epo_NEQ%U=0.d0
-!            Epo_NEQ%dx=0.d0
-!        end if
+!!        NEQ%Nbb=0.d0
+!!        NEQ%InvN=0.d0
+!!        NEQ%U=0.d0
+!!        NEQ%dx=0.d0
+!!        if (If_Est_Iono .and. IonoNum>0) then
+!!            Epo_NEQ%Nbb=0.d0
+!!            Epo_NEQ%InvN=0.d0
+!!            Epo_NEQ%U=0.d0
+!!            Epo_NEQ%dx=0.d0
+!!        end if
 !        do PRN=1,SatNum
 !            CycleSlip(1)%Slip(PRN)=1
 !        end do
@@ -460,7 +460,7 @@ implicit none
             end if
         end if
 
-        if (NEQ%InvN(NDIFB,NDIFB)==0.d0) then ! GLONASS Phase DISB is determined by maximum elevation satellite and includes its ambiguity
+        if (NEQ%InvN(NDIFB-1,NDIFB-1)==0.d0) then ! GLONASS Phase DISB is determined by maximum elevation satellite and includes its ambiguity
             maxEle=0.d0
             Sys_PRN=0
             do j=1,DD%PRNS  ! Find the maximum elevation satellite
@@ -510,7 +510,7 @@ implicit none
                 if (.not.(SystemUsed(3))) cycle   ! If no BeiDou
                 NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4 ! End index of DISB
             elseif (sys==4) then
-                if (.not.(SystemUsed(3))) cycle   ! If no Galileo
+                if (.not.(SystemUsed(4))) cycle   ! If no Galileo
                 NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
             elseif (sys==5) then
                 if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
@@ -567,7 +567,7 @@ implicit none
                 end if
             end if
 
-            if (NEQ%InvN(NDIFB,NDIFB)==0.d0) then ! Phase DISB is determined by maximum elevation satellite and includes its ambiguity
+            if (NEQ%InvN(NDIFB-1,NDIFB-1)==0.d0) then ! Phase DISB is determined by maximum elevation satellite and includes its ambiguity
                 maxEle=0.d0
                 Sys_PRN=0
                 do j=1,DD%PRNS  ! Find the maximum elevation satellite

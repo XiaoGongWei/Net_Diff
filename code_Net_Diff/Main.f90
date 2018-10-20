@@ -210,7 +210,7 @@ implicit none
     ! Get GLONASS frequency and leap second
     call Get_GLO_Fre 
     
-    ! Get Ocean load coefficient. If coordinate is 0.000, it will be 0.000. But this is usually in kinematic mode, it is OK we ignore ocean load correction.
+    ! Get Ocean load coefficient. If coordinate is 0.000, it will be 0.000. But generally in kinematic mode, it is OK we ignore ocean load correction.
     ! Or we can give a initial coordinate
     do i=1,STA%Num
         call Get_OceanLoad_Coe(STA%STA(i)%BLH(1), STA%STA(i)%BLH(2), STA%STA(i)%Name, STA%STA(i)%OLC%CMC, STA%STA(i)%OLC%OLC,STA%STA(i)%OLC%found)
@@ -338,7 +338,7 @@ implicit none
         write(temp,"(I1)") Sta%FixNum
         write(temp2,'(I1)') int(delay/60)
         open(unit=PosID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".pos",action="write",err=100)
-        write(PosID,"(A40)") "%============NET Diff V1.2==============="
+        write(PosID,"(A40)") "%============NET Diff V1.3==============="
         write(PosID,"(A40)") "%Developed by Yize Zhang, zhyize@163.com"
         write(PosID,"(A1,A15,A7)") "%", "day: ",str_day
         write(PosID,"(A1,A20)") "%", "Station Fixed: "
