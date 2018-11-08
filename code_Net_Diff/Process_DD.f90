@@ -136,8 +136,8 @@ implicit none
             read(unit=ObsID(i),fmt="(2X)",iostat=error)
             backspace(ObsID(i))
             if (error /=0) flag=.false.  ! Check that if reach the end of observation file.
-            if (i==1 .and. dabs((Obsweek-ObsData(i)%Week)*604800.d0+Obssec-ObsData(i)%Sow)<1.d0) then
-                ObsData(i).Flag=0 ! If reference staiton and time difference less than 1s
+            if (i==1 .and. dabs((Obsweek-ObsData(i)%Week)*604800.d0+Obssec-ObsData(i)%Sow)<30.d0) then
+                ObsData(i).Flag=0 ! If reference staiton and time difference less than 30s
             end if
             if (ObsData(i).Flag /=0) then
                 Data_flag=1
@@ -163,7 +163,7 @@ implicit none
             if (.not. Combination(3)) then ! If no doppler
                 ! if (any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K')) then
                 ! if (any(STA%STA(i)%TrueCoor==0.d0) .or. ((Pos_State=='K') .and. .not.(STA%STA(i)%flag_InitialCoor)) ) then
-                if ( any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(i)%TrueCoor-STA%STA(i)%XYZ)>30.d0))  ) then
+                if ( any(STA%STA(i)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(i)%TrueCoor-STA%STA(i)%XYZ)>100.d0))  ) then
                     ! The relationship of TrueCoor, Coor, and XYZ:
                     !  TrueCoor is to get true coordinate for comparison NEU, if it is zero, the Bancroft of first epoch will set as TrueCoor. It will only set one time.
                     ! Coor is for approximate coordinate of each epoch, if it is not real kinematic, we expect it keep the same.

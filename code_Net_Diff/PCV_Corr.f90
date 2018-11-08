@@ -28,7 +28,7 @@ implicit none
     integer :: PRN
     real(8) :: Ele, Azi
     ! Intent out
-    real(8) :: PCV(2)
+    real(8) :: PCV(3)
     ! Local variables
     integer :: i
     real(8) :: PCV11, PCV12, PCV21, PCV22, PCV1, PCV2, dazi
@@ -44,7 +44,7 @@ implicit none
             if ( (dazi>=0.d0) .and. (dazi<Ant(PRN)%dazi) ) then
                 call Get_PCV_Ele(PRN, Ele, i+1, 1, PCV11) ! Ferq 1
                 call Get_PCV_Ele(PRN, Ele, i+1, 2, PCV21) ! Freq 2
-            else if ( (dazi<=0.d0) .and. (dazi>-Ant(PRN)%dazi) )  then
+            else if ( (dazi<0.d0) .and. (dazi>=-Ant(PRN)%dazi) )  then
                 call Get_PCV_Ele(PRN, Ele, i+1, 1, PCV12) ! Ferq 1
                 call Get_PCV_Ele(PRN, Ele, i+1, 2, PCV22) ! Freq 2
                 exit

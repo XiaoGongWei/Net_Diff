@@ -196,10 +196,9 @@ implicit none
      ! Get antenna corrections information
     call Get_Ant(MJD)
     if (JNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0) then
-!        Ant(2+GNum+RNum+CNum+NumE)%PCO(1:3,1)=4.16d0+3.2d0 !??? absolute value is wrong
-!        Ant(2+GNum+RNum+CNum+NumE)%PCO(1:3,2)=4.16d0+3.2d0 !???
-!        Ant(3+GNum+RNum+CNum+NumE)%PCO(1:3,1)=4.7d0+3.2d0
-!        Ant(3+GNum+RNum+CNum+NumE)%PCO(1:3,2)=4.7d0+3.2d0
+        Ant(2+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0 ! QZSS PCO of gbm product, maybe not true
+        Ant(3+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0
+        Ant(7+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0
     end if
     if (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0 .and. int_year*1000+int_doy>2014197) then
         call Get_BDS_PCO_gbmwum(int_year,int_doy, 1)
@@ -221,7 +220,7 @@ implicit none
     write(temp,"(I1)") Sta%FixNum
     write(temp2,'(I1)') int(delay/60)
     open(unit=CoorID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".txt",action="write",err=100)
-    write(CoorID,"(A40)") "===============NET Diff V1.2================="
+    write(CoorID,"(A40)") "===============NET Diff V1.3================="
     write(CoorID,"(A40)") "Developed by Yize Zhang, zhyize@163.com"
     write(CoorID,"(A15,A7)") "day: ",str_day
     write(CoorID,"(A20)") "Station Fixed: "

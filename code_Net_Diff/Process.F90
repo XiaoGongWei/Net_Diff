@@ -53,7 +53,7 @@ implicit none
     real(8) ::  U(ParaNum+SatNum), invN(ParaNum+SatNum,ParaNum+SatNum), invN2(4,4), dx(ParaNum+SatNum)
     character(2) :: Code(MaxPRN*2)
     real(8) :: maxV, outlier
-    integer(1) :: out(SatNum)
+    integer(1) :: out(GNum+RNum+CNum+NumE+JNum+INum)
     integer :: maxL
     real(8) :: V(MaxPRN*2), sigma0, PDOP=0.d0, HDOP, VDOP, ISB(2)
     real(8) :: NEU(3),  Mean_Coor(3), RMS(3), Mean_NEU(3)
@@ -938,8 +938,8 @@ implicit none
                 if (Pos_State=='K') STA%STA(k)%XYZ=Coor    ! If kinematic, update the approximate coordinate
                 call XYZ2BLH(Coor(1), Coor(2), Coor(3), BLH(1), BLH(2), BLH(3))
                 Rec_Clk=Rec_Clk+dx(5)/c
-                if ((If_ISB))  ISB(1)=dx(6)/c*1.d9
-                if ((If_ISB))  ISB(2)=dx(7)/c*1.d9
+                if (If_ISB .and. ParaNum>5)  ISB(1)=dx(6)/c*1.d9
+                if (If_ISB .and. ParaNum>6)  ISB(2)=dx(7)/c*1.d9
             
             EpochUsed=EpochUsed+1
             Mean_Coor=Mean_Coor+1.d0/EpochUsed*(Coor-Mean_Coor)  ! Mean coordinate of the station

@@ -336,7 +336,7 @@ implicit none
 
     
     ! ******************** For loosely combined GLONASS DISB change ************************
-    if (.not.(If_TC) .and. GloFreqNum>0) then
+    if (.not.(If_TC) .and. GloFreqNum>0 .and. DD%RefSat(2)>0 .and. RefSat(2)>0) then
         sys=2
         if ( Fre_Chann(RefSat(sys)-GNum) /= Fre_Chann(DD%RefSat(sys)-GNum)) then ! If  reference satellite change
             Ref_NDIFB=ParaNum-GloFreqNum*4+Fre_Chann(RefSat(sys)-GNum)*4+8*4
