@@ -36,7 +36,7 @@ implicit none
     real(8) :: Rec_Clk
     real(8) :: FHR, dx_SolTide(3), dx_Ocean(3), dx_CMC(3), dx_pole(3)
     real(8) :: xpm, ypm, coLat
-    real(8) :: StaPCO(2)=0.d0,SatPCO(2)=0.d0,SatPCV(2)=0.d0, StaPCV(2)=0.d0, Ele_Sat
+    real(8) :: StaPCO(2)=0.d0,SatPCO(2)=0.d0,SatPCV(3)=0.d0, StaPCV(3)=0.d0, Ele_Sat
 
     integer :: i, j, N, PRN, PRN_S, Kk, PRNOUT(10), PRNOUTn=0, freq, N_DP
     integer(1) :: Sys, LLI1, LLI2, Slip
