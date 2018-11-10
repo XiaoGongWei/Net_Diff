@@ -94,8 +94,10 @@ implicit none
 
         do while(.true.)
             read(unit=DCBID,fmt="(A)") line
-            if ((index(line,"-BIAS/SOLUTION") /= 0) .or. (index(line(16:19),"    ")==0) .or. (index(line,"OSB") /= 0)) then
+            if ((index(line,"-BIAS/SOLUTION") /= 0) .or. (index(line(16:19),"    ")==0) ) then
                 exit
+            elseif (index(line,"OSB") /= 0) then
+                return
             elseif ((index(line(1:4),"DSB") /= 0) .or. (index(line(1:4),"DCB") /= 0)) then
                 if (index(line(1:4),"DSB") /= 0) then
                     read(line(38:39), fmt="(I2)") year_st

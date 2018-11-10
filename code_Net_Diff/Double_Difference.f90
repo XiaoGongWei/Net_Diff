@@ -29,7 +29,7 @@ implicit none
     DD%P1=0.d0;    DD%P2=0.d0
     DD%L1=0.d0;    DD%L2=0.d0
     DD%WL=0.d0;  DD%W4=0.d0
-    DD%EWL=0.d0;DD%EWL_amb=99.d0; DD%WL_amb=99.d0
+    DD%EWL=0.d0;DD%EWL_amb=99.d0
 
     if (If_TC) then
         maxsys=1
@@ -75,8 +75,6 @@ implicit none
 !                SD%A(L_ref(sys),ParaNum-GloFreqNum*4+1:ParaNum)=0.d0  ! Set the reference GLONASS satellite IFB as zero
 !            end if
             DD%A(N, :)    =    SD%A(j,:) - SD%A(L_ref(sys),:)
-            DD%corr(N)       =    SD%corr(j)-SD%corr(L_ref(sys))
-            DD%s(N)           =    SD%s(j)-SD%s(L_ref(sys))
             if ((SD%P1(L_ref(sys))/=0.d0) .and. (SD%P1(j)/=0.d0)) then
                 DD%P1(N)=SD%P1(j)-SD%P1(L_ref(sys))
             end if
@@ -133,13 +131,6 @@ implicit none
             end if
             if ((SD%WL(L_ref(sys))/=0.d0) .and. (SD%WL(j)/=0.d0)) then
                 DD%WL(N)=SD%WL(j)-SD%WL(L_ref(sys))
-            end if
-            if ((SD%WL_amb(RefSat(sys))/=99.d0) .and. (SD%WL_amb(DD%PRN(N))/=99.d0)) then  ! Just for test, not good due to the code multipath
-                ! Wide lane ambiguity can be used to constraint L1&L2 observation
-                DD%WL_amb(DD%PRN(N))=SD%WL_amb(DD%PRN(N))-SD%WL_amb(RefSat(sys))  ! Wide Lane ambiguity, in cycle
-                if (abs(DD%WL_amb(DD%PRN(N))-real(nint(DD%WL_amb(DD%PRN(N)))))<0.3d0) then  ! Only when the fraction part is less than 0.3cycle
-                    DD%WL_amb(DD%PRN(N))=real(nint(DD%WL_amb(DD%PRN(N)))) ! After double differece, DCB is eliminated theoretically, round to integer value
-                end if
             end if
             if ((SD%W4(L_ref(sys))/=0.d0) .and. (SD%W4(j)/=0.d0)) then
                 DD%W4(N)=SD%W4(j)-SD%W4(L_ref(sys))

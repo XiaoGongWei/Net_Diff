@@ -1,6 +1,6 @@
-! ============= Zero Difference ===============
+! ============= Zero Difference PPPAR ===============
 ! PURPOSE:
-!         Form zero difference equation for each station
+!         Form zero difference equation of PPPAR
 ! INPUTS:
 !      ObsData          obsdata
 !          k                    the kth   station
@@ -10,7 +10,7 @@
 ! WRITTEN BY: Yize Zhang
 ! ==========================================
 
-subroutine Zero_Difference(Obsdata, k, ZD)
+subroutine Zero_Difference_AR(Obsdata, k, ZD)
 use MOD_ZD
 use MOD_NavHead
 use MOD_ObsData
@@ -73,7 +73,7 @@ implicit none
                     -dsind(Lat)*dsind(Lon), dcosd(Lon) ,dcosd(Lat)*dsind(Lon),  dcosd(Lat) ,0D0, dsind(Lat)/), (/3,3/))
     end if
 
-    if (If_Est_Iono) then  ! For long baseline RTK, should consider solid tide and ocean load correction
+    if (If_Est_Iono) then  ! For long baseline RTK and PPPAR, should consider solid tide and ocean load correction
         ! 1. Calculate the solid tide correction
     !  Reference :  http://www.navipedia.net/index.php/Solid_Tides
         FHR=(ObsData%hour+ObsData%min/60.d0+ObsData%sec/3600.d0)
@@ -112,7 +112,6 @@ implicit none
     end if
 
     ! ********* Calculate the initial value of reciver clock corrrection *********
-!    call Cal_Rec_Clk(Obsweek, Obssec, ObsData, AppCoor, Rotation, Rec_Clk)
     call Cal_Rec_Clk2(k, Obsweek, Obssec, ObsData,AppCoor, Rotation, ZHD,ZWD,Lat, Hgt, int_doy, PRNOUT, PRNOUTn, Rec_Clk)
     if (ObsData%PRNS - PRNOUTn <=3) then
         write(unit=LogID,fmt='(A5,I3,A30)') '%STA', k, 'too few satellites, skip.'

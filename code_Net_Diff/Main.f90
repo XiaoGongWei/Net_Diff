@@ -485,7 +485,7 @@ implicit none
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         call Process_Corr    ! 加分区改正数或等效钟差
     elseif (proc_mod==4) then
-        call Process_AR      ! PPP ambiguity resolution
+!        call Process_AR      ! PPP ambiguity resolution
     elseif (proc_mod==5) then
         call Process_DD    ! RTK
     else

@@ -27,6 +27,7 @@ use MOD_CycleSlip
 use MOD_GLO_Fre
 use MOD_FileID
 use MOD_NEQ_DP
+use MOD_STA
 implicit none
     type(type_SD)   ::  SD
     type(type_DD)   ::  DD
@@ -39,7 +40,7 @@ implicit none
     real(8)  :: Ap1(MaxPRN, ParaNum+3*IonoNum), Ap2(MaxPRN, ParaNum+3*IonoNum)
     real(8)  :: Al1(MaxPRN, ParaNum+3*IonoNum), Al2(MaxPRN, ParaNum+3*IonoNum)
     logical :: flag_del_PRN
-    real(8) :: dT(2), factor, maxEle
+    real(8) :: dT(STA%Num), factor, maxEle
     real(8) :: Kk(ParaNum+3*IonoNum,1)  ! Kalman gain
 
     
@@ -76,8 +77,9 @@ implicit none
                 exit
             end if
         end do
-        dT(1)=(CycleSlip(1)%CS(PRN)%LastWeek-DD%Week)*604800.0d0+CycleSlip(1)%CS(PRN)%LastSow-DD%Sow
-        dT(2)=(CycleSlip(2)%CS(PRN)%LastWeek-DD%Week)*604800.0d0+CycleSlip(2)%CS(PRN)%LastSow-DD%Sow
+        do i=1, STA%Num
+            dT(i)=(CycleSlip(i)%CS(PRN)%LastWeek-DD%Week)*604800.0d0+CycleSlip(i)%CS(PRN)%LastSow-DD%Sow
+        end do
         ! First is the ionosphere parameter
         if (flag_del_PRN .and. If_Est_Iono .and. IonoNum>0) then
             if (Epo_NEQ%InvN(ParaNum+2*IonoNum+PRN,ParaNum+2*IonoNum+PRN)/=0.d0 .and. any(dT<-600.d0)) then ! If not observed more than 10 minutes
@@ -688,7 +690,6 @@ implicit none
     Epo_NEQ%Ll1(1:N)=DD%L1(1:N)/sigLC
     Epo_NEQ%Al2(1:N,:)=Al2(1:N,:)/sigLC
     Epo_NEQ%Ll2(1:N)=DD%L2(1:N)/sigLC
-    Epo_NEQ%amb_WL=DD%WL_amb  ! Just for test, not very good, because of the wrong rounding integer due to code multipath
 
     if (If_Est_Iono .and. IonoNum>0) then 
         if ( (a1/=0.d0) .or. (a2/=0.d0) ) then

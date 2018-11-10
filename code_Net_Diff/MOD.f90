@@ -472,14 +472,12 @@ use MOD_constant
         integer :: PRN(MAXPRN)  =  0
         integer(1) :: PRN_S(MAXPRN) =  0
         real(8)  :: Ele(MAXPRN)    =  0.d0
-        real(8)  :: P(MAXPRN)       =  0.d0
+        real(8)  :: Q(MAXPRN)      =  0.d0
         real(8), allocatable  :: A(:, :)
         real(8)  :: Corr(MAXPRN)  =  0.d0
         real(8)  :: s(MAXPRN)       =  0.d0
         real(8)  :: P1(MaxPRN)     =  0.d0
         real(8)  :: P2(MaxPRN)     =  0.d0
-        real(8)  :: P1CS(MaxPRN)     =  0.d0   ! for cycle slip
-        real(8)  :: P2CS(MaxPRN)     =  0.d0
         real(8)  :: amb0(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)     =  0.d0
         real(8)  :: amb1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)     =  0.d0
         real(8)  :: L1(MaxPRN)     =  0.d0
@@ -488,8 +486,6 @@ use MOD_constant
         real(8)  :: W4(MaxPRN)    =  0.d0
         real(8)  :: EWL(MaxPRN)    =  0.d0
         real(8)  :: EWL_amb(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
-        real(8)  :: WL_amb_n(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
     end type
 !    type(type_ZD) :: ZD(2)  ! 1: Reference station; 2: User station
 end module
@@ -509,19 +505,14 @@ use MOD_constant
         real(8)  :: Ele(MAXPRN)    =  0.d0
         real(8)  :: Q(MAXPRN)      =  0.d0
         real(8), allocatable  :: A(:, :)
-        real(8)  :: Corr(MAXPRN)  =  0.d0
-        real(8)  :: s(MAXPRN)       =  0.d0
         real(8)  :: P1(MaxPRN)     =  0.d0
         real(8)  :: P2(MaxPRN)     =  0.d0
-        real(8)  :: P1CS(MaxPRN)     =  0.d0   ! for cycle slip
-        real(8)  :: P2CS(MaxPRN)     =  0.d0
         real(8)  :: L1(MaxPRN)     =  0.d0
         real(8)  :: L2(MaxPRN)     =  0.d0
         real(8)  :: WL(MaxPRN)    =  0.d0
         real(8)  :: W4(MaxPRN)    =  0.d0
         real(8)  :: EWL(MaxPRN)    =  0.d0
         real(8)  :: EWL_amb(MaxPRN)    =  0.d0
-        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
     end type
 !    type(type_SD), save :: SD
 end module
@@ -544,8 +535,6 @@ use MOD_constant
         real(8)  :: P(MaXPRN, MaxPRN)       =  0.d0
         real(8)  :: Q(MaxPRN,MaxPRN)       =  0.d0
         real(8), allocatable  :: A(:, :)
-        real(8)  :: Corr(MAXPRN)  =  0.d0
-        real(8)  :: s(MAXPRN)       =  0.d0
         real(8)  :: P1(MaxPRN)     =  0.d0
         real(8)  :: P2(MaxPRN)     =  0.d0
         real(8)  :: L1(MaxPRN)     =  0.d0
@@ -554,7 +543,6 @@ use MOD_constant
         real(8)  :: W4(MaxPRN)    =  0.d0
         real(8)  :: EWL(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
         real(8)  :: EWL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
-        real(8)  :: WL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
     end type
 !    type(type_DD), save :: DD
 end module

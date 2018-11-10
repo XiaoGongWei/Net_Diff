@@ -159,7 +159,7 @@ implicit none
             ! Calculate the appropriate position if unknown
 !            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K') ) then
 !            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. ((Pos_State=='K') .and. .not.(STA%STA(k)%flag_InitialCoor))  ) then
-            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(k)%TrueCoor-STA%STA(k)%XYZ)>30.d0))  ) then
+            if ( any(STA%STA(k)%TrueCoor==0.d0) .or. (Pos_State=='K' .and. any(dabs(STA%STA(k)%TrueCoor-STA%STA(k)%XYZ)>100.d0))  ) then
                 call Bancroft(ObsData, k, STA%STA(k)%Coor)
                 AppCoor=STA%STA(k)%Coor
                 if (any(AppCoor==0.d0)) cycle

@@ -597,8 +597,6 @@ implicit none
             end do
             if (flag_par_PRN) then  ! If fixed
                 Epo_NEQ%Lwl(i)= Epo_NEQ%Lwl(i) -  NEQ%amb_WL(PRN)*Epo_NEQ%Awl(i,ParaNum+PRN)
-!            if (Epo_NEQ%amb_WL(PRN)/=99.d0) then  ! Just for test, not very good, because of the wrong rounding integer
-!                Epo_NEQ%Lwl(i)= Epo_NEQ%Lwl(i) -  Epo_NEQ%amb_WL(PRN)*Epo_NEQ%Awl(i,ParaNum+PRN)
                 Epo_NEQ%Awl(i,ParaNum+PRN)= 0.d0
 !                ! Add N1-N2 constraints instead of Wide lane observation
 !                Epo_NEQ%Awl(i,:)=0.d0
