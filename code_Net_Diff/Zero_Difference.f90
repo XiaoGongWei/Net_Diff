@@ -42,7 +42,7 @@ implicit none
     integer(1) :: Sys, LLI1, LLI2, Slip
     character(1) :: System
     real(8) :: P1, P2, P3, C1, C2, DP1, DP2, DP3, L1, L2, L3, Range, t1,PC, LC, ZD_L1, ZD_L2, ZD_L3, EWL_amb
-    real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s
+    real(8) :: Sat_Coor0(3),Sat_Coor(3), Sat_Vel(3), Sat_Clk, Sat_Clk_Vel, Rela, s, dx_windup
     real(8) :: Sat_XYZ(3), Ele, Azi, P, MJD, STD, Ion1, Ion2, Ion3, corr, dist
     real(8) :: dztd, ZTDsec
     character(100) :: line
@@ -398,17 +398,11 @@ implicit none
         end if
         if (Slip==1) CycleSlip(k)%Slip(PRN)=1  ! Record the slip flag, this will include cycle slip information of previous information
         
-!        if (k==2 .and.  sys==3) then ! BeiDou
-!            P1=P1+0.68d0
-!            P2=P2+0.86d0
-!            L1=L1-2.44d0/c*f1
-!            L2=L2-2.66d0/c*f2
-!        elseif (k==2 .and.  sys==4) then ! Galileo
-!            P1=P1-0.88d0
-!            P2=P2+1.19d0
-!            L1=L1-3.04d0/c*f1
-!            L2=L2-3.26d0/c*f2
-!        end if
+        ! ***********Phase wind up correction***********
+        call Phase_windup(AppCoor, Sat_Coor, CycleSlip(k)%Slip(PRN), dx_windup, ZD%windup_previous(PRN))
+        if (isnan(dx_windup)) then ! if  (index(Orbit,"BRD")/=0) then
+            dx_windup=0.d0  ! Phase windup for ON satellite is nan when use broadcast ephemeris
+        end if
 
         ! ****** Form zero difference ********
         N                    =    N+1
@@ -463,9 +457,9 @@ implicit none
             ZD%amb1(PRN,1)=real(nint(L1-Range/c*f1))  ! For tightly combined multi-system RTK
             ZD%amb1(PRN,2)=real(nint(L2-Range/c*f2))
             ZD%amb1(PRN,3)=real(nint(L3-Range/c*f3))
-        if (L1/=0.d0)      ZD_L1=(L1-ZD%amb0(PRN,1))*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
-        if (L2/=0.d0)      ZD_L2=(L2-ZD%amb0(PRN,2))*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
-        if (L3/=0.d0)      ZD_L3=(L3-ZD%amb0(PRN,3))*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
+        if (L1/=0.d0)      ZD_L1=(L1-dx_windup-ZD%amb0(PRN,1))*c/f1-corr+Ion1 + StaPCO(1) - StaPCV(1)+ SatPCO(1) - SatPCV(1)    ! in distance
+        if (L2/=0.d0)      ZD_L2=(L2-dx_windup-ZD%amb0(PRN,2))*c/f2-corr+Ion2 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
+        if (L3/=0.d0)      ZD_L3=(L3-dx_windup-ZD%amb0(PRN,3))*c/f3-corr+Ion3 + StaPCO(2) - StaPCV(2)+ SatPCO(2) - SatPCV(2)    ! in distance
         if ( (a1/=0.d0) .and. (a2/=0.d0) ) then  ! If two frequency combination
             if ( (L1/=0.d0) .and. (L2/=0.d0) ) then
                 ZD%WL(N)=(a1*f1*ZD_L1+a2*f2*ZD_L2)/(a1*f1+a2*f2)

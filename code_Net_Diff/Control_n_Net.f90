@@ -272,6 +272,7 @@ implicit none
     if (SystemUsed(1)) then
         if (Combination(2)) SatNum=SatNum+GNum
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+GNum/2
         INT_SystemUsed(1)=1
     else
         GNum=0
@@ -279,6 +280,7 @@ implicit none
     if (SystemUsed(2)) then
         if (Combination(2)) SatNum=SatNum+RNum
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+RNum/2
         INT_SystemUsed(2)=1
         if (If_IFB) then
             GloFreqNum=14
@@ -296,12 +298,14 @@ implicit none
     if (SystemUsed(3)) then
         if (Combination(2)) SatNum=SatNum+CNum
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+CNum/2
         INT_SystemUsed(3)=1
     else
         CNum=0
     end if
     if (SystemUsed(4)) then       ! GALILEO
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+NumE/3
         INT_SystemUsed(4)=1
         if (Combination(2)) SatNum=SatNum+NumE
     else
@@ -309,6 +313,7 @@ implicit none
     end if
     if (SystemUsed(5)) then       ! QZSS
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+JNum/2
         INT_SystemUsed(5)=1
         if (Combination(2)) SatNum=SatNum+JNum
     else
@@ -316,6 +321,7 @@ implicit none
     end if
     if (SystemUsed(6)) then       ! IRNSS
         ParaNum=ParaNum+1
+        MaxPRN=MaxPRN+INum
         INT_SystemUsed(6)=1
         if (Combination(2)) SatNum=SatNum+INum
     else
@@ -323,6 +329,7 @@ implicit none
     end if
     if (If_Est_Iono .and. (index(ObsCombine,"P1") /=0 .or. index(ObsCombine,"P2") /=0 .or. index(ObsCombine,"P3") /=0)) then       ! If estimate ionosphere
         ParaNum=ParaNum+SatNum
+        IonoNum=SatNum
     end if
 
     if (GPSweek_st/=0) then

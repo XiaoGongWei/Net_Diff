@@ -97,6 +97,7 @@ implicit none
             if ((index(line,"-BIAS/SOLUTION") /= 0) .or. (index(line(16:19),"    ")==0) ) then
                 exit
             elseif (index(line,"OSB") /= 0) then
+                backspace(DCBID)
                 return
             elseif ((index(line(1:4),"DSB") /= 0) .or. (index(line(1:4),"DCB") /= 0)) then
                 if (index(line(1:4),"DSB") /= 0) then
@@ -167,9 +168,11 @@ implicit none
                         if (.not. SystemUsed(3)) cycle
                         if (index(line,"C2I  C7I") /= 0) then  ! B1B2
                             DCBIQ(5,PRN)=val*1e-9
+                            DCBBSX(1,PRN+GNum+RNum)=val*1e-9
                         elseif (index(line,"C2I  C6I") /= 0) then   ! B1B3
                             DCBIQ(1,PRN)=val*1e-9
                             DCBIQ(3,PRN)=val*1e-9
+                            DCBBSX(2,PRN+GNum+RNum)=val*1e-9
                         elseif (index(line,"C7I  C6I") /= 0) then  ! B2B3
                             DCBIQ(2,PRN)=val*1e-9
                             DCBIQ(4,PRN)=val*1e-9

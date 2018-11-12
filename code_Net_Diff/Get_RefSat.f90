@@ -25,6 +25,7 @@ subroutine Get_RefSat(SD,RefSat0, RefSat, RefSys)
 use MOD_SD
 use MOD_VAR
 use MOD_CycleSlip
+use MOD_STA
 implicit none
     ! Arguments:
     type(type_SD)  ::   SD
@@ -93,7 +94,7 @@ implicit none
                     RefSys=SD%Sys(i)
                 ! L1L2, in DD
                 elseif ( (Combination(2)==.true.) .and.(SD%Ele(i)>maxEle) .and. &   ! If not cycle slip for at least 5 epoches
-                (CycleSlip(1)%CS(SD%PRN(i))%arcLengthSlip>5) .and. (CycleSlip(2)%CS(SD%PRN(i))%arcLengthSlip>5) ) then
+                (CycleSlip(1)%CS(SD%PRN(i))%arcLengthSlip>5) .and. (CycleSlip(STA%Num)%CS(SD%PRN(i))%arcLengthSlip>5) ) then
                     if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
                         if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) ) then
 !                            if (ar_mode==0) then  ! If float solution
@@ -114,7 +115,7 @@ implicit none
 !                            maxele=SD%Ele(i)
 !                            RefSat(sys)=SD%PRN(i)
 !                        end if
-!                    elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
+!                    elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(STA%Num)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
 !                        maxele=SD%Ele(i)
 !                        RefSat(sys)=SD%PRN(i)
                     end if
@@ -126,10 +127,10 @@ implicit none
 !                        exit
 !                    else if ( (Combination(2)==.true.) ) then  ! L1L2, in DD
 !                        if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
-!                            if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then
+!                            if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(STA%Num)%Slip(RefSat0(sys))==0) ) then
 !                                RefSat(sys)=RefSat0(sys)
 !                            end if
-!                        elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
+!                        elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(STA%Num)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
 !                            RefSat(sys)=RefSat0(sys)
 !!                        elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(RefSat0(sys))==0) .and. (CycleSlip(2)%Slip(RefSat0(sys))==0) ) then  ! L1 or L2 only
 !!                            RefSat(sys)=RefSat0(sys)
@@ -153,7 +154,7 @@ implicit none
                 ! L1L2, in DD
                 elseif ( (Combination(2)==.true.) .and.(SD%Ele(i)>maxEle) ) then
                     if ( ((a1/=0.d0) .and. (b2/=0.d0)) .or. ((a2/=0.d0) .and. (b1/=0.d0)) ) then   ! Dual frequency
-                        if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then
+                        if ( (SD%L1(i)/=0.d0) .and. (SD%L2(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(STA%Num)%Slip(SD%PRN(i))==0) ) then
 !                            if (ar_mode==0) then  ! If float solution
                                 maxele=SD%Ele(i)
                                 RefSat(sys)=SD%PRN(i)
@@ -163,7 +164,7 @@ implicit none
 !                                RefSat(sys)=SD%PRN(i)
 !                            end if
                         end if
-                    elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
+                    elseif ( (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(STA%Num)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
 !                        if (ar_mode==0) then  ! If float solution
                             maxele=SD%Ele(i)
                             RefSat(sys)=SD%PRN(i)
@@ -172,7 +173,7 @@ implicit none
 !                            maxele=SD%Ele(i)
 !                            RefSat(sys)=SD%PRN(i)
 !                        end if
-!                    elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(2)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
+!                    elseif ( If_Est_Iono .and. (SD%WL(i)/=0.d0 .or. SD%W4(i)/=0.d0) .and. (CycleSlip(1)%Slip(SD%PRN(i))==0) .and. (CycleSlip(STA%Num)%Slip(SD%PRN(i))==0) ) then  ! L1 or L2 only
 !                        maxele=SD%Ele(i)
 !                        RefSat(sys)=SD%PRN(i)
                     end if

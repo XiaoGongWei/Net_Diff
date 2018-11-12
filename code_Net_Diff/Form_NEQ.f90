@@ -232,7 +232,7 @@ implicit none
         end if
 
         if (ar_mode/=2) then ! If not instantaneous AR
-            if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(2)%Slip(PRN)==1) ) then ! Cycle Slip in 
+            if ( (CycleSlip(1)%Slip(PRN)==1) .or. (CycleSlip(STA%Num)%Slip(PRN)==1) ) then ! Cycle Slip in 
                  write(LogID,'(A8,I2,A12)') DD%System(i), DD%PRN_S(i),'cycle slip'  
                  NEQ%outlier(PRN,:)=0  ! Re-initialize the outlier flag
                  if (ADmethod=='LS') then

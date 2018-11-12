@@ -195,6 +195,20 @@ implicit none
     
      ! Get antenna corrections information
     call Get_Ant(MJD)
+    if (NumE>0 .and. GPSweek>=1972 .and. &
+        ( index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)-1),'gr') /=0 .or. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'grm') /=0) ) then
+        ! CNES products use ESA PCOs/PCVs for Galileo Satellite (from GPS week 1972)
+        ! https://igsac-cnes.cls.fr/
+        ! http://www.ppp-wizard.net/links.html
+        ! https://www.gsc-europa.eu/support-to-developers/galileo-satellite-metadata#5.2
+        ! https://www.gsc-europa.eu/system-status/Constellation-Information
+        i=index(AntFile,'\')
+        if (i==0) then
+            i=index(AntFile,'/')
+        end if
+        AntFile=AntFile(1:i)//'ANTEX_GAL_FOC_IOV.atx'
+        call Get_Ant(MJD)
+    end if
     if (JNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0) then
         Ant(2+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0 ! QZSS PCO of gbm product, maybe not true
         Ant(3+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0
@@ -220,7 +234,7 @@ implicit none
     write(temp,"(I1)") Sta%FixNum
     write(temp2,'(I1)') int(delay/60)
     open(unit=CoorID, file=trim(OutDir)//"Coor_"//str_day//"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name//".txt",action="write",err=100)
-    write(CoorID,"(A40)") "===============NET Diff V1.3================="
+    write(CoorID,"(A40)") "===============NET Diff V1.4================="
     write(CoorID,"(A40)") "Developed by Yize Zhang, zhyize@163.com"
     write(CoorID,"(A15,A7)") "day: ",str_day
     write(CoorID,"(A20)") "Station Fixed: "
@@ -288,7 +302,7 @@ implicit none
     if (proc_mod==3) then
         write(CoorID,"(A12,5X,A)") 'zonecorrfile:  ', trim(zonecorrfile)
     end if
-    if (proc_mod==5) then
+    if (proc_mod==4 .or. proc_mod==5) then
         write(CoorID,"(A12,5X,4F5.1)") 'dd_coe:  ', a1, a2, b1, b2
         if (ar_mode==0) then
             write(CoorID,"(A12,5X,A15)") 'ar_mode:  ', 'Float'
@@ -405,7 +419,7 @@ implicit none
         if (proc_mod==3) then
             write(PosID,"(A1,A12,5X,A)") "%", 'zonecorrfile:  ', trim(zonecorrfile)
         end if
-        if (proc_mod==5) then
+        if (proc_mod==4 .or. proc_mod==5) then
             write(PosID,"(A1,A12,5X,4F5.1)") "%", 'dd_coe:  ', a1, a2, b1, b2
             if (ar_mode==0) then
                 write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Float'

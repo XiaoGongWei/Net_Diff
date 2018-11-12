@@ -37,12 +37,13 @@ implicit none
     character(30) :: keyword
     character(20) :: Ant_Type 
     character :: System
-    integer :: PRN, i=0, j, k, l,Flag=0
+    integer :: PRN, i=0, j, k, l,Flag
     real(8) :: dazi, zen1, zen2, dzen
     integer :: nazi, nzen
     integer :: year, mon, day, hour, min
     real(8) :: sec, temp
     
+    Flag=0
     inquire(file=AntFile,exist=alive)
     if (.not. alive) then
         write(*,*) "Antenna file: """//trim(AntFile)//""" doesn't exist!"
@@ -124,7 +125,8 @@ implicit none
                     
                 else if (index(keyword,"# OF FREQUENCIES") /= 0) then
                     read(line,'(I6)') j    ! Get number of frequency
-                    if (j<2) j=2   ! If noly one frequency, then set another as zero
+                    if (j<2) j=2   ! If only one frequency, then set another as zero
+                    if (System=='E' .and. j<5) j=5 ! For Galileo
                     k=0
                 else if (index(keyword,"VALID FROM") /= 0) then
                     read(line,'(5I6,F13.7)') year,mon, day, hour, min, sec
@@ -157,7 +159,21 @@ implicit none
                             Ant(PRN)%Azimuth(i)=0.d0+dazi*(i-1)
                         end do
                     end if
-                    k=k+1     ! 当# OF FREQUENCIES==4时，这样做并不科学
+                    if (System=='E') then
+                        if (index(line(1:7),"E01") /= 0) then
+                            k=1  ! E1
+                        elseif (index(line(1:7),"E05") /= 0) then
+                            k=2  ! E5a
+                        elseif (index(line(1:7),"E07") /= 0) then
+                            k=3  ! E5b
+                        elseif (index(line(1:7),"E08") /= 0) then
+                            k=4  ! E5
+                        elseif (index(line(1:7),"E06") /= 0) then
+                            k=5  ! E6
+                        end if
+                    else
+                        k=k+1
+                    end if
                     read(line,'(A6)') Ant(PRN)%Freq(k)
                     do while(.true.)
                         read(unit=AntID,fmt='(A)',end=200) line

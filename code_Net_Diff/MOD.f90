@@ -3,7 +3,8 @@
 ! =========== Constant variables module =================
 module MOD_constant
 implicit none
-    integer,parameter :: MaxPRN=50  ! max satellite parameter in one epoch
+    integer,parameter :: MaxSat=50  ! max satellite to allocate satellite number related variable
+    integer :: MaxPRN=0  ! max satellite number observed in one epoch
     integer :: SatNum=0   ! Satellite Number
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
@@ -451,10 +452,10 @@ use MOD_constant
     type type_Res
         integer :: N=0
         real(8) :: sow=-1000.d0
-        integer :: PRN(MaxPRN*2)=0
-        character(2) :: Code(MaxPRN*2)=""
-        real(8) :: L(MaxPRN*2)=0.d0
-        integer :: CS(MaxPRN*2)=0
+        integer :: PRN(MaxSat*2)=0
+        character(2) :: Code(MaxSat*2)=""
+        real(8) :: L(MaxSat*2)=0.d0
+        integer :: CS(MaxSat*2)=0
     end type
      type(type_Res),  allocatable, save :: Res(:)
 end module
@@ -467,25 +468,26 @@ use MOD_constant
         integer :: week                 =  0
         real(8)  :: sow                   =  0.d0
         integer :: PRNS                 =  0
-        integer(1) :: Sys(MAXPRN)=0
-        character(1) :: System(MAXPRN)
-        integer :: PRN(MAXPRN)  =  0
-        integer(1) :: PRN_S(MAXPRN) =  0
-        real(8)  :: Ele(MAXPRN)    =  0.d0
-        real(8)  :: Q(MAXPRN)      =  0.d0
+        integer(1) :: Sys(MaxSat)=0
+        character(1) :: System(MaxSat)
+        integer :: PRN(MaxSat)  =  0
+        integer(1) :: PRN_S(MaxSat) =  0
+        real(8)  :: Ele(MaxSat)    =  0.d0
+        real(8)  :: Q(MaxSat)      =  0.d0
         real(8), allocatable  :: A(:, :)
-        real(8)  :: Corr(MAXPRN)  =  0.d0
-        real(8)  :: s(MAXPRN)       =  0.d0
-        real(8)  :: P1(MaxPRN)     =  0.d0
-        real(8)  :: P2(MaxPRN)     =  0.d0
+        real(8)  :: windup_previous(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)     =  0.d0
+        real(8)  :: Corr(MaxSat)  =  0.d0
+        real(8)  :: s(MaxSat)       =  0.d0
+        real(8)  :: P1(MaxSat)     =  0.d0
+        real(8)  :: P2(MaxSat)     =  0.d0
         real(8)  :: amb0(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)     =  0.d0
         real(8)  :: amb1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)     =  0.d0
-        real(8)  :: L1(MaxPRN)     =  0.d0
-        real(8)  :: L2(MaxPRN)     =  0.d0
-        real(8)  :: WL(MaxPRN)    =  0.d0
-        real(8)  :: W4(MaxPRN)    =  0.d0
-        real(8)  :: EWL(MaxPRN)    =  0.d0
-        real(8)  :: EWL_amb(MaxPRN)    =  0.d0
+        real(8)  :: L1(MaxSat)     =  0.d0
+        real(8)  :: L2(MaxSat)     =  0.d0
+        real(8)  :: WL(MaxSat)    =  0.d0
+        real(8)  :: W4(MaxSat)    =  0.d0
+        real(8)  :: EWL(MaxSat)    =  0.d0
+        real(8)  :: EWL_amb(MaxSat)    =  0.d0
     end type
 !    type(type_ZD) :: ZD(2)  ! 1: Reference station; 2: User station
 end module
@@ -498,21 +500,21 @@ use MOD_constant
         integer :: week                 =  0
         real(8)  :: sow                   =  0.d0
         integer :: PRNS                 =  0
-        integer(1) :: Sys(MAXPRN)=0
-        character(1) :: System(MAXPRN)
-        integer :: PRN(MAXPRN)  =  0
-        integer(1) :: PRN_S(MAXPRN) =  0
-        real(8)  :: Ele(MAXPRN)    =  0.d0
-        real(8)  :: Q(MAXPRN)      =  0.d0
+        integer(1) :: Sys(MaxSat)=0
+        character(1) :: System(MaxSat)
+        integer :: PRN(MaxSat)  =  0
+        integer(1) :: PRN_S(MaxSat) =  0
+        real(8)  :: Ele(MaxSat)    =  0.d0
+        real(8)  :: Q(MaxSat)      =  0.d0
         real(8), allocatable  :: A(:, :)
-        real(8)  :: P1(MaxPRN)     =  0.d0
-        real(8)  :: P2(MaxPRN)     =  0.d0
-        real(8)  :: L1(MaxPRN)     =  0.d0
-        real(8)  :: L2(MaxPRN)     =  0.d0
-        real(8)  :: WL(MaxPRN)    =  0.d0
-        real(8)  :: W4(MaxPRN)    =  0.d0
-        real(8)  :: EWL(MaxPRN)    =  0.d0
-        real(8)  :: EWL_amb(MaxPRN)    =  0.d0
+        real(8)  :: P1(MaxSat)     =  0.d0
+        real(8)  :: P2(MaxSat)     =  0.d0
+        real(8)  :: L1(MaxSat)     =  0.d0
+        real(8)  :: L2(MaxSat)     =  0.d0
+        real(8)  :: WL(MaxSat)    =  0.d0
+        real(8)  :: W4(MaxSat)    =  0.d0
+        real(8)  :: EWL(MaxSat)    =  0.d0
+        real(8)  :: EWL_amb(MaxSat)    =  0.d0
     end type
 !    type(type_SD), save :: SD
 end module
@@ -525,22 +527,22 @@ use MOD_constant
         integer :: week                =  0
         real(8)  :: sow                  =  0.d0
         integer :: PRNS                =  0     ! not include the reference satellite
-        integer(1) :: Sys(MAXPRN)=0
-        character(1) :: System(MAXPRN)
+        integer(1) :: Sys(MaxSat)=0
+        character(1) :: System(MaxSat)
         integer :: RefSat(5)          =  0     ! reference satellite
         integer :: RefSys   =  0   ! Reference system
-        integer :: PRN(MAXPRN) =  0
-        integer(1) :: PRN_S(MAXPRN) =  0
+        integer :: PRN(MaxSat) =  0
+        integer(1) :: PRN_S(MaxSat) =  0
         real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
-        real(8)  :: P(MaXPRN, MaxPRN)       =  0.d0
-        real(8)  :: Q(MaxPRN,MaxPRN)       =  0.d0
+        real(8)  :: P(MaxSat, MaxSat)       =  0.d0
+        real(8)  :: Q(MaxSat,MaxSat)       =  0.d0
         real(8), allocatable  :: A(:, :)
-        real(8)  :: P1(MaxPRN)     =  0.d0
-        real(8)  :: P2(MaxPRN)     =  0.d0
-        real(8)  :: L1(MaxPRN)     =  0.d0
-        real(8)  :: L2(MaxPRN)     =  0.d0
-        real(8)  :: WL(MaxPRN)    =  0.d0
-        real(8)  :: W4(MaxPRN)    =  0.d0
+        real(8)  :: P1(MaxSat)     =  0.d0
+        real(8)  :: P2(MaxSat)     =  0.d0
+        real(8)  :: L1(MaxSat)     =  0.d0
+        real(8)  :: L2(MaxSat)     =  0.d0
+        real(8)  :: WL(MaxSat)    =  0.d0
+        real(8)  :: W4(MaxSat)    =  0.d0
         real(8)  :: EWL(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
         real(8)  :: EWL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
     end type
@@ -584,18 +586,18 @@ use MOD_constant
         integer  :: Npar =  0
         integer :: SumN     ! total error equations
         integer :: N  ! parameter number
-        integer  :: PRN(MAXPRN) =  0
-        integer(1) :: Sys(MAXPRN)=0
-        character(1) :: System(MAXPRN)
+        integer  :: PRN(MaxSat) =  0
+        integer(1) :: Sys(MaxSat)=0
+        character(1) :: System(MaxSat)
         real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
-        real(8)  :: R(MaxPRN, MaxPRN)=0.d0
-        real(8)  :: P(MaxPRN, MaxPRN)=0.d0
+        real(8)  :: R(MaxSat, MaxSat)=0.d0
+        real(8)  :: P(MaxSat, MaxSat)=0.d0
         real(8), allocatable :: Ap1(:, :), Ap2(:, :), Awl(:, :), Aw4(:, :), Aewl(:, :)
-        real(8)  :: Lp1(MaxPRN), Vp1(MaxPRN)
-        real(8)  :: Lp2(MaxPRN), Vp2(MaxPRN)
-        real(8)  :: Lwl(MaxPRN), Vwl(MaxPRN)
-        real(8)  :: Lw4(MaxPRN), Vw4(MaxPRN)
-        real(8)  :: Lewl(MaxPRN), Vewl(MaxPRN)
+        real(8)  :: Lp1(MaxSat), Vp1(MaxSat)
+        real(8)  :: Lp2(MaxSat), Vp2(MaxSat)
+        real(8)  :: Lwl(MaxSat), Vwl(MaxSat)
+        real(8)  :: Lw4(MaxSat), Vw4(MaxSat)
+        real(8)  :: Lewl(MaxSat), Vewl(MaxSat)
         real(8)  :: maxV(5)   ! 记录每种组合误差方程最大的的残差
         integer :: maxL(5)    ! 记录每种组合最大的残差所在的位置
         real(8), allocatable  :: Nbb(:, :)
@@ -626,19 +628,19 @@ implicit none
         integer :: PRNS=0
         integer :: SumN
         integer :: N  ! parameter number
-        integer  :: PRN(MAXPRN) =  0
-        integer(1) :: Sys(MAXPRN)=0
-        character(1) :: System(MAXPRN)
+        integer  :: PRN(MaxSat) =  0
+        integer(1) :: Sys(MaxSat)=0
+        character(1) :: System(MaxSat)
         real(8)  :: Ele(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)    =  0.d0
-        real(8)  :: R(MaxPRN, MaxPRN)=0.d0
-        real(8)  :: P(MaxPRN, MaxPRN)=0.d0
+        real(8)  :: R(MaxSat, MaxSat)=0.d0
+        real(8)  :: P(MaxSat, MaxSat)=0.d0
         real(8), allocatable :: Ap1(:, :),Ap2(:, :), Al1(:, :), Al2(:, :), Awl(:, :), Aw4(:, :)
-        real(8)  :: Lp1(MaxPRN), Vp1(MaxPRN)
-        real(8)  :: Lp2(MaxPRN), Vp2(MaxPRN)
-        real(8)  :: Ll1(MaxPRN), Vl1(MaxPRN)
-        real(8)  :: Ll2(MaxPRN), Vl2(MaxPRN)
-        real(8)  :: Lwl(MaxPRN), Vwl(MaxPRN)
-        real(8)  :: Lw4(MaxPRN), Vw4(MaxPRN)
+        real(8)  :: Lp1(MaxSat), Vp1(MaxSat)
+        real(8)  :: Lp2(MaxSat), Vp2(MaxSat)
+        real(8)  :: Ll1(MaxSat), Vl1(MaxSat)
+        real(8)  :: Ll2(MaxSat), Vl2(MaxSat)
+        real(8)  :: Lwl(MaxSat), Vwl(MaxSat)
+        real(8)  :: Lw4(MaxSat), Vw4(MaxSat)
         real(8)  :: maxV(6)=0.d0   ! 记录每种组合误差方程最大的的残差
         integer :: maxL(6)=0.d0    ! 记录每种组合最大的残差所在的位置
         real(8), allocatable  :: Nbb(:,:)   ! for partial ambiguity resolution, only one satellite currently
