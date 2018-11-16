@@ -24,7 +24,7 @@ implicit none
     DCB=0.d0
     inquire(file=P1C1File,exist=aliveP1C1)
     if (.not. aliveP1C1) then
-        write(*,*) "P1C1 file: """//trim(P1C1File)//""" doesn't exist. It will set as zero or use Multi-GNSS DCB(*.bsx)."
+        write(*,*) "P1C1 file doesn't exist. It will set as zero or use Multi-GNSS DCB(*.bsx)."
         !pause
         goto 100
     end if

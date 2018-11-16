@@ -444,7 +444,7 @@ implicit none
             PRN=DD%PRN(j)
             if (DD%Sys(j)==2) then
                 freq=Fre_Chann(PRN-GNum)
-                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(2)%Slip(PRN)==0) .and. freq+8==i) then
+                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(STA%Num)%Slip(PRN)==0) .and. freq+8==i) then
                     Sys_PRN=DD%PRN(j)
                 end if
             end if
@@ -542,7 +542,7 @@ implicit none
             Sys_PRN=0
             do j=1,DD%PRNS
                 PRN=DD%PRN(j)
-                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(2)%Slip(PRN)==0) .and. DD%Sys(j)==sys) then
+                if ((CycleSlip(1)%Slip(PRN)==0) .and. (CycleSlip(STA%Num)%Slip(PRN)==0) .and. DD%Sys(j)==sys) then
                     Sys_PRN=DD%PRN(j)
                 end if
             end do
@@ -558,14 +558,14 @@ implicit none
                     Epo_NEQ%InvN(:, NDIFB)=0.d0                    
                 end if
                 if (sys==1) then
-                    CycleSlip(2)%Slip(1:GNum)=1
-                    CycleSlip(2)%Slip(GNum+RNum+CNum+NumE+1:GNum+RNum+CNum+NumE+JNum)=1
+                    CycleSlip(STA%Num)%Slip(1:GNum)=1
+                    CycleSlip(STA%Num)%Slip(GNum+RNum+CNum+NumE+1:GNum+RNum+CNum+NumE+JNum)=1
                 elseif (sys==3) then
-                    CycleSlip(2)%Slip(GNum+RNum+1:GNum+RNum+CNum)=1
+                    CycleSlip(STA%Num)%Slip(GNum+RNum+1:GNum+RNum+CNum)=1
                 elseif (sys==4) then
-                    CycleSlip(2)%Slip(GNum+RNum+CNum+1:GNum+RNum+CNum+NumE)=1
+                    CycleSlip(STA%Num)%Slip(GNum+RNum+CNum+1:GNum+RNum+CNum+NumE)=1
                 elseif (sys==5) then
-                    CycleSlip(2)%Slip(GNum+RNum+CNum+NumE+JNum+1:GNum+RNum+CNum+NumE+JNum+INum)=1
+                    CycleSlip(STA%Num)%Slip(GNum+RNum+CNum+NumE+JNum+1:GNum+RNum+CNum+NumE+JNum+INum)=1
                 end if
             end if
 

@@ -530,10 +530,10 @@ implicit none
                     PRN=iPOS2(i)
                     if (par_PRN(PRN)==1) amb3(i)=0.d0
                     if (PRN>SatNum) then
-                        if (CycleSlip(1)%Slip(PRN-SatNum)==1 .or. CycleSlip(2)%Slip(PRN-SatNum)==1) then
+                        if (CycleSlip(1)%Slip(PRN-SatNum)==1 .or. CycleSlip(STA%Num)%Slip(PRN-SatNum)==1) then
                             amb3(i)=0.d0
                         end if
-                    elseif (PRN<=SatNum .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(2)%Slip(PRN)==1)) then
+                    elseif (PRN<=SatNum .and. (CycleSlip(1)%Slip(PRN)==1 .or. CycleSlip(STA%Num)%Slip(PRN)==1)) then
                         amb3(i)=0.d0
                     end if
                 end do

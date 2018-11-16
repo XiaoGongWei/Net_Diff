@@ -105,7 +105,7 @@ implicit none
                 DOT_PRODUCT(TT(1:3)-meanTT,TT(1:3)-meanTT)
             GFEst=meanGFPrev-meanTT*coe  ! a0
             sigma=sqrt(DOT_PRODUCT(CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3),CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3)))
-            GFThreshold=csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt)
+            GFThreshold=(csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt))*sigLC/0.01d0  ! Default sigLC is 0.01m
             if (abs(GF-GFEst)*c/f1>GFThreshold*0.8d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
         end if
     end if
@@ -125,6 +125,7 @@ implicit none
             dMW=MW-CycleSlip(sta)%CS(PRN)%nMWmean
             sigma2=CycleSlip(sta)%CS(PRN)%nMWmean2 - CycleSlip(sta)%CS(PRN)%nMWmean**2
             MWThreshold=min(csMWmax, max(csMWslope*sqrt(sigma2),csMWmin))
+            MWThreshold=MWThreshold*sigLC/0.01d0  ! Default sigLC is 0.01m
             if ( (abs(dMW)>=MWThreshold)  .and. (CycleSlip(sta)%CScount==99) ) Slip=1
         end if 
     end if

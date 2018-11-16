@@ -607,13 +607,12 @@ implicit none
                 if (TropLen==0.d0) then  ! If Trpsphere parameter is not estimated
                     Factor=0.d0
                 end if
-                    
+                
+                Ion=0.d0
                 if (index(ObsCombine,"PC")==0) then   ! If single frequency 
                     if (iontype==1) then
                         if (any(NavHead%Alpha/=0.d0)) then
                             call Klobuchar(Lat, Lon, Ele, Azi, Obssec, NavHead%Alpha,NavHead%Beta,Ion)
-                        else
-                            Ion=0.d0
                         end if
                     elseif (iontype==2) then
                         call GIM(Lat, Lon, Ele, Azi, ObsWeek, ObsSec,Ion)  ! »ùÓÚB1Æµµã
@@ -701,7 +700,7 @@ implicit none
                     N=N+1
                     NN=NN+1
                     PRNPRN(N)=PRN
-                    Code(N)="PC"
+                    Code(N)="P"//ObsCombine(2:2)
                     EleEle(N)=Ele
                     PP(N)=P/sigPC
                     A(N,:)=0.d0
@@ -782,7 +781,7 @@ implicit none
                 if (Phase/=0.d0) then
                     N=N+1
                     PRNPRN(N)=PRN
-                    Code(N)="LC"
+                    Code(N)="L"//ObsCombine(2:2)
                     EleEle(N)=Ele
                     PP(N)=P/sigLC
                     A(N,:)=0.d0
@@ -920,7 +919,7 @@ implicit none
                     do i=1, SatNum
                         if (InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)>0.d0 .and. any(A(1:N, ParaNum-SatNum+i)/=0.d0) ) then
                             if (iontype==2 .and. Ion>0.d0) then
-                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+4.d-2/3600.d0*Interval
+                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+1.d-1/3600.d0*Interval
                             elseif (Ion==0.d0) then
                                 InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)+4.d0/3600.d0*Interval
                             else  ! Broascast

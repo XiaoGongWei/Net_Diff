@@ -62,12 +62,24 @@ implicit none
                             Sat_Clk=Sat_Clk -17.6593*DCBBSX(1,PRN)+19.9199*DCBBSX(2,PRN)  ! P1P2==>B2B3 f2^2/(f1^2-f2^2)*T12+f2^2/(f2^2-f3^2)*T12-f3^2/(f2^2-f3^2)*T13
                         end if                    
                     end if
-            elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0))then   
-                Sat_Clk=Sat_Clk + f2**2/(f1+f2)/(f1-f2)*DCBBSX(1,PRN)          ! P1P2==>P1
-            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0))then   
-                Sat_Clk=Sat_Clk + f1**2/(f1+f2)/(f1-f2)*DCBBSX(1,PRN)          ! P1P2==>P2
-            elseif ((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0))then   
-                Sat_Clk=Sat_Clk + 1.4872*DCBBSX(1,PRN) + DCBBSX(2,PRN)   ! P1P2==>P3
+            elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0))then
+                if ((PRN<=GNum) .or. (PRN>GNum+RNum+CNum+NumE)) then ! GPS/QZSS
+                    Sat_Clk=Sat_Clk + 1.5457*DCBBSX(1,PRN)          ! P1P2==>P1  ! f1**2/(f1+f2)/(f1-f2)
+                elseif (PRN>GNum+RNum+CNum) then ! Galileo
+                    Sat_Clk=Sat_Clk + 1.2606*DCBBSX(1,PRN)          ! P1P2==>P1
+                end if
+            elseif ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0))then
+                if ((PRN<=GNum) .or. (PRN>GNum+RNum+CNum+NumE)) then ! GPS/QZSS
+                    Sat_Clk=Sat_Clk + 2.5457*DCBBSX(1,PRN)           ! P1P2==>P2  ! f1**2/(f1+f2)/(f1-f2)*DCBBSX(1,PRN)
+                elseif (PRN>GNum+RNum+CNum) then ! Galileo
+                    Sat_Clk=Sat_Clk + 2.2606*DCBBSX(1,PRN)          ! P1P2==>P2
+                end if
+            elseif ((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0))then
+                if ((PRN<=GNum) .or. (PRN>GNum+RNum+CNum+NumE)) then ! GPS/QZSS
+                    Sat_Clk=Sat_Clk + 1.5457*DCBBSX(1,PRN) + DCBBSX(2,PRN)   ! P1P2==>P3
+                elseif (PRN>GNum+RNum+CNum) then ! Galileo
+                    Sat_Clk=Sat_Clk + 1.2606*DCBBSX(1,PRN) + DCBBSX(2,PRN)          ! P1P2==>P3
+                end if
             end if
         elseif ((PRN>GNum+RNum) .and. (PRN<=GNum+RNum+CNum) .and. (Sat_Clk /=9999.d0)) then  ! 如果是BeiDou
             if (IorQ==0) then  ! I支路数据，需要加上IQ的差异

@@ -35,9 +35,8 @@ implicit none
 
     PCV11=0.d0; PCV12=0.d0; PCV21=0.d0; PCV22=0.d0
     if (Ant(PRN)%nazi==0) then  ! if non-azimuth-dependent
-        call Get_PCV_Ele(PRN, Ele, 1 ,1, PCV1) ! Ferq 1
-        call Get_PCV_Ele(PRN, Ele, 1 , 2, PCV2) ! Freq 2
-        PCV=(f1*f1*PCV1-f2*f2*PCV2)/(f1+f2)/(f1-f2)
+        call Get_PCV_Ele(PRN, Ele, 1 ,1, PCV(1)) ! Ferq 1
+        call Get_PCV_Ele(PRN, Ele, 1 , 2, PCV(2)) ! Freq 2
     else
         do i=1,Ant(PRN)%nazi
             dazi=Azi-Ant(PRN)%Azimuth(i)
