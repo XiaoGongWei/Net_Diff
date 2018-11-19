@@ -638,60 +638,56 @@ implicit none
                         end if
                     end if
                 end if
+                
+                Phase=0.d0
                 if ( (index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0) )then
                     if (iontype<=2) then
-                        Ion=Ion*(154.d0*10.23d6)**2/f1**2
+                        Ion1=Ion*(154.d0*10.23d6)**2/f1**2
+                    else
+                        Ion1=Ion
                     end if
-                    if (P1 /=0.0d0) Range=P1-Ion  ! only use P1 and L1
+                    if (P1 /=0.0d0) Range=P1-Ion1  ! use P1 rather than %P1(i), because P1 have corrected by DCB
                     if (L1 /=0.0d0) then
                         if (index(ObsCombine,"G1")/=0) then
-                            Phase=(ObsData%L1(i)*c/f1+P1)/2.d0   ! GRAPHIC combination, (P1+L1)/2
+                            Phase=(L1*c/f1+P1)/2.d0   ! GRAPHIC combination, (P1+L1)/2
                         elseif (index(ObsCombine,"P1")/=0) then
-                            Phase=ObsData%L1(i)*c/f1+Ion
+                            Phase=L1*c/f1+Ion1
                         end if
-                    else
-                        Phase=0.d0
                     end if
                 elseif ( (index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0) )then
                     ! B2ÆµµãµÄµçÀë²ãÑÓ³Ù
                     if (iontype<=2) then
-                    Ion=Ion*(154.d0*10.23d6)**2/f2**2
+                        Ion1=Ion*(154.d0*10.23d6)**2/f2**2
                     else
-                    Ion=Ion*f1**2/f2**2
+                        Ion1=Ion*f1**2/f2**2
                     end if
-                    if (ObsData%P2(i) /=0.0d0) Range=ObsData%P2(i)-Ion  ! only use P2 and L2
+                    if (ObsData%P2(i) /=0.0d0) Range=ObsData%P2(i)-Ion1  ! If L2L3 combination, frequency is wrong
                     if (ObsData%L2(i) /=0.0d0) then
                         if (index(ObsCombine,"G2")/=0) then
                             Phase=(ObsData%L2(i)*c/f2+P2)/2.d0   ! GRAPHIC combination, (P2+L2)/2
                         elseif (index(ObsCombine,"P2")/=0) then
-                            Phase=ObsData%L2(i)*c/f2+Ion
+                            Phase=ObsData%L2(i)*c/f2+Ion1
                         end if
-                    else
-                        Phase=0.d0
                     end if
                 elseif ( (index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0) )then
                     ! B3ÆµµãµÄµçÀë²ãÑÓ³Ù
                     if (iontype<=2) then
-                    Ion=Ion*(154.d0*10.23d6)**2/f2**2
+                        Ion1=Ion*(154.d0*10.23d6)**2/f2**2
                     else
-                    Ion=Ion*f1**2/f2**2
+                        Ion1=Ion*f1**2/f2**2
                     end if
-                    if (P2 /=0.0d0) Range=P2-Ion  ! only use P3 and L3
+                    if (P2 /=0.0d0) Range=P2-Ion1
                     if (L2/=0.0d0) then   ! L2=ObsData%L3(i), P2=ObsData%P3(i)
                         if (index(ObsCombine,"G3")/=0) then
-                            Phase=(ObsData%L3(i)*c/f2+P2)/2.d0   ! GRAPHIC combination, (P3+L3)/2
+                            Phase=(L2*c/f2+P2)/2.d0   ! GRAPHIC combination, (P3+L3)/2
                         elseif (index(ObsCombine,"P3")/=0) then
-                            Phase=ObsData%L3(i)*c/f2+Ion
+                            Phase=L2*c/f2+Ion1
                         end if
-                    else
-                        Phase=0.d0
                     end if
                 elseif (index(ObsCombine,"PC")/=0) then
                     if ((L1 /=0.0d0) .and. (L2 /=0.0d0)) then
                         ! Ionospheric-free combination, in meter
                         Phase=(f1*L1-f2*L2)/(f1+f2)/(f1-f2)*c    ! IF=(f1*L1-f2*L2)/(f1^2-f2^2)*c
-                    else
-                        Phase=0.d0
                     end if
                 end if
 
@@ -883,7 +879,7 @@ implicit none
                 if (ADmethod=='LS') then
                     call Elimi_Para(Nbb,U,SatNum+ParaNum,5)
                     if ( (ParaNum>5) .and. ((index(isb_mode,"WN") /=0) .or. (index(isb_mode,"wn") /=0)) )then  ! ISB estimated, white noise
-                        do i=6, ParaNum
+                        do i=6, ParaNum-IonoNum
                             call Elimi_Para(Nbb,U,SatNum+ParaNum,i)
                             CuParaNUm=CuParaNUm+1
                         end do
@@ -901,7 +897,7 @@ implicit none
                                 cycle
                             elseif (SystemUsed(1)==.false. .and. GLOIFB==14 .and. i<=19) then ! if frequency depended of GLONASS-only IFB
                                 N=N+1
-                                A(N, 6:ParaNum)=1.d2  ! Tight constraint of Sum(IFB)=0.0
+                                A(N, 6:ParaNum-IonoNum)=1.d2  ! Tight constraint of Sum(IFB)=0.0
                                 L(N)=0.d0
                                 PP(N)=1.d0
                                 if (InvN(i,i)==0.d0)    InvN(i,i)= 10.d0**2  ! GLONASS IFB frequency depend
@@ -938,7 +934,13 @@ implicit none
                                 end if
                             end if
                         elseif (any(A(1:N, ParaNum-SatNum+i)/=0.d0)) then
-                            InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=0.5d0**2
+                            if (iontype==2 .and. Ion>0.d0) then
+                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=0.5d0**2
+                            elseif (Ion==0.d0) then
+                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=2.d0**2
+                            else  ! Broascast
+                                InvN(ParaNum-SatNum+i,ParaNum-SatNum+i)=5.d0**2
+                            end if
                         end if
                     end do
                 end if
@@ -954,7 +956,7 @@ implicit none
                 PDOP=PDOP+invN2(i,i)
             end do
             PDOP=dsqrt(PDOP)
-            if (PDOP>MaxPDOP .or. isnan(PDOP)) then
+            if ((PDOP>MaxPDOP .or. isnan(PDOP)) .and. MaxPDOP>0.d0) then
                 write(unit=LogID,fmt='(5X,A5,F5.1,A15)') 'PDOP=', PDOP, '>maxPDOP, skip'
                 cycle
             end if
@@ -964,7 +966,7 @@ implicit none
                 L(i)=L(i)*PP(i)
             end do
                 
-            do i=6,ParaNum
+            do i=6,ParaNum-IonoNum
                 if (all(A(1:N,5)-A(1:N,i)==0.d0)) then ! Only one system
                     A(1:N,i)=0.d0
                 end if

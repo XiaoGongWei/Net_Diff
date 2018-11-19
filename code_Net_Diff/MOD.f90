@@ -44,9 +44,7 @@ implicit none
     real(8), parameter :: f_E5b=10.23e6*118.d0   ! L7X
     real(8), parameter :: f_E5=10.23e6*116.5d0   ! L8X
     real(8), parameter :: f_S=10.23e6*243.6d0   ! S Band
-!    f1=10.23d6*152.6d0
-!                        f2=10.23d6*118.0d0
-!!                        f3=10.23d6*124.0d0
+
     real(8),parameter :: csGFmax=0.08d0, csGFmin=0.034d0, csGFdt=60.d0
     real(8),parameter :: csMWmax=10.d0, csMWmin=0.9d0, csMWslope=9.d0
     real(8),parameter :: csL1P1maxLength=300.d0,csL1P1max=15.d0, csL1P1init=1.d0, csL1P1slope=5.d0
@@ -386,7 +384,7 @@ use MOD_constant
         real(8) :: LastSow
         real(8) :: L1P1mean, L1P1mean2
         real(8) :: OMC(4)=0.d0
-        integer(1)  :: Slip        =  0
+!        integer(1)  :: Slip        =  0
     end type
    type type_CycleSlip
 !       real(8) :: GF(2,GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=9999.0d0
@@ -396,7 +394,7 @@ use MOD_constant
 !       real(8) :: P1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0, P2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
 !       real(8) :: PreL1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0, PreL2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
        real(8) :: OMC(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,4) = 0.d0  ! For satellite difference cyccle slip detection
-       integer(1)  :: Slip(GNum0+RNum0+CNum0+NumE0+JNum0+INum0) =  0  ! For satellite difference cyccle slip detection
+       integer(1)  :: Slip(GNum0+RNum0+CNum0+NumE0+JNum0+INum0) =  1   ! Cycle slip is initialized as 0, in case of only use LLI method
        integer(1) :: CScount=99  ! For satellite difference cyccle slip detection
        type(type_CS) :: CS(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)   ! Cycle slip
    end type

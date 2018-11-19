@@ -168,25 +168,31 @@ implicit none
     if (index(CSmethod,"LLI")/=0) then
         if (index(ObsCombine,"PC")/=0) then
             if ( (mod(LLI1,2)==1) .or. (mod(LLI2,2)==1) ) then
-    !        if ( (LLI1>0) .or. (LLI2>0) ) then
                 Slip=1
-                write(CSID,"(2I3,F6.2,2I5,I3)")  sta, PRN, ele, LLI1, LLI2, Slip
             end if
-        elseif ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0)) then
+        end if
+        if ((index(ObsCombine,"P1")/=0) .or. (index(ObsCombine,"G1")/=0)) then
             if (mod(LLI1,2)==1)  then
                 Slip=1
-                write(CSID,"(2I3,F6.2,2I5,I3)")  sta, PRN, ele, LLI1, LLI2, Slip
             end if
-        elseif ( ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) .and. (freq_comb=='L2L3')) then
+        end if
+        if ( ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) .and. (freq_comb=='L2L3')) then
             if (mod(LLI1,2)==1)  then
                 Slip=1
-                write(CSID,"(2I3,F6.2,2I5,I3)")  sta, PRN, ele, LLI1, LLI2, Slip
             end if
-        else
+        end if
+        if ( ((index(ObsCombine,"P2")/=0) .or. (index(ObsCombine,"G2")/=0)) .and. (freq_comb=='L1L2')) then
             if (mod(LLI2,2)==1)  then
                 Slip=1
-                write(CSID,"(2I3,F6.2,2I5,I3)")  sta, PRN, ele, LLI1, LLI2, Slip
             end if        
+        end if
+        if ((index(ObsCombine,"P3")/=0) .or. (index(ObsCombine,"G3")/=0)) then
+            if (mod(LLI2,2)==1)  then
+                Slip=1
+            end if
+        end if
+        if (Slip==1) then
+            write(CSID,"(2I3,F6.2,2I5,I3)")  sta, PRN, ele, LLI1, LLI2, Slip
         end if
     end if
 
