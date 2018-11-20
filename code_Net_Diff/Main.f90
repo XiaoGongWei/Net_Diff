@@ -210,9 +210,9 @@ implicit none
         call Get_Ant(MJD)
     end if
     if (JNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0) then
-        Ant(2+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0 ! QZSS PCO of gbm product, maybe not true
-        Ant(3+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0
-        Ant(7+GNum+RNum+CNum+NumE)%PCO(3,1:2)=5.d0
+        Ant(2+GNum+RNum+CNum+NumE)%PCO(3,1:2)=4.2d0 ! QZSS PCO of gbm product, maybe not true
+        Ant(3+GNum+RNum+CNum+NumE)%PCO(3,1:2)=4.2d0
+        Ant(7+GNum+RNum+CNum+NumE)%PCO(3,1:2)=3.5d0
     end if
     if (CNum>0 .and. index(sp3dir(len_trim(sp3dir)-2:len_trim(sp3dir)),'gbm') /=0 .and. int_year*1000+int_doy>2014197) then
         call Get_BDS_PCO_gbmwum(int_year,int_doy, 1)
