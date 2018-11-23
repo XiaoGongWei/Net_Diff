@@ -37,11 +37,15 @@ implicit none
     else
         return
     end if
+    if (dabs(Dp)>5000.d0) then
+        STA%STA(k)%Pre(PRN)%Dp=0.d0
+        return
+    end if
     DP_Previous=STA%STA(k)%Pre(PRN)%Dp
     STA%STA(k)%Pre(PRN)%Dp=Dp
-    if (DP_Previous/=0.d0) then
-        Dp=(DP_Previous+DP)/2.d0   ! Average of previous epoch and current epoch
-    end if
+!    if (DP_Previous/=0.d0) then
+!        Dp=(DP_Previous+DP)/2.d0   ! Average of previous epoch and current epoch
+!    end if
     if (STA%STA(k)%Pre(PRN)%Sow1<=0.d0 .or. STA%STA(k)%Pre(PRN)%Sow2<=0.d0 ) then
         STA%STA(k)%Pre(PRN)%Sow1=Sow   ! First epoch
         STA%STA(k)%Pre(PRN)%Sow2=Sow

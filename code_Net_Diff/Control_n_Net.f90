@@ -176,8 +176,17 @@ implicit none
             read(line,*) temp, delay0
             delay=delay*60.d0  ! minute to second
         elseif (index(line,"smooth") /= 0)   then
-            read(line,*) temp, Var_smooth, Smooth_Method, Smooth_Combine, Smooth_Time
-            if (Smooth_Time>Interval*59) Smooth_Time=Interval*59
+            read(line,*) temp, Var_smooth
+            if ( (index(Var_smooth,"Y") /=0) .or.  (index(Var_smooth,"y") /=0) )then
+                read(line,*) temp, Var_smooth, Smooth_Method
+                if ( (index(Smooth_Method,"Hatch") /=0) .or.  (index(Smooth_Method,"hatch") /=0) )then
+                    read(line,*) temp, Var_smooth, Smooth_Method, Smooth_Combine
+                    if ( (index(Smooth_Combine,"PC") ==0) .and.  (index(Smooth_Combine,"P1P2") ==0) )then
+                        read(line,*) temp, Var_smooth, Smooth_Method, Smooth_Combine, Smooth_Time
+                        if (Smooth_Time>Interval*59) Smooth_Time=Interval*59
+                    end if
+                end if
+            end if
        elseif (index(line,"combination") /= 0)   then
             read(line,*) temp, str_Combination,sigPC
             Combination(1)=.true.

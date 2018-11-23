@@ -41,7 +41,7 @@ implicit none
     integer :: i, N, NN, Num,j, k, freq, GLOIFB=0
     integer :: PRN, PRN_S, PRNPRN(MaxPRN*2), PRNOUT(10), PRNOUTn=0, ObsNum
     character(1) :: System
-    real(8) :: P1,P2,P3, C1, C2, L1,L2,Range, Phase
+    real(8) :: P1,P2,P3, C1, C2, L1,L2,Range, Phase, DP1, DP2
     integer(1) :: LLI1, LLI2
     real(8) ::Amb(SatNum,STA%Num)
     real(8) :: RecPCO(3),SatPCO(3)
@@ -443,6 +443,8 @@ implicit none
                         L2=ObsData%L2C(i)
                         LLI2=ObsData%LLI2C(i)
                     end if
+                    DP1=ObsData%D1(i)
+                    DP2=ObsData%D2(i)
                 elseif (freq_comb=='L1L3') then
                     P1=ObsData%P1(i)
                     P2=ObsData%P3(i)
@@ -454,6 +456,8 @@ implicit none
                     L2=ObsData%L3(i)
                     LLI1=ObsData%LLI1(i)
                     LLI2=ObsData%LLI3(i)
+                    DP1=ObsData%D1(i)
+                    DP2=ObsData%D3(i)
                 elseif (freq_comb=='L2L3') then
                     P1=ObsData%P2(i)
                     P2=ObsData%P3(i)
@@ -469,6 +473,8 @@ implicit none
                         L1=ObsData%L2C(i)
                         LLI1=ObsData%LLI2C(i)
                     end if
+                    DP1=ObsData%D2(i)
+                    DP2=ObsData%D3(i)
                 end if
                 if ((P1 /=0.0d0) .and. (P2 /=0.0d0)) then
                     Range=(f1*f1*P1-f2*f2*P2)/(f1+f2)/(f1-f2) ! Ionospheric-free combination
@@ -574,6 +580,8 @@ implicit none
                         elseif (index(Smooth_Method,"SMT") /=0) then
                             ! RNX Smoothing
                             call RNXSMT(epoch, PRN, Range, L1*c/f1, L2*c/f2)
+                        elseif ((index(Smooth_Method,"Dop") /=0)) then
+                            call Doppler_Filter(Obssec, PRN, P1, P2, Range, DP1, DP2,k)
                         end if
                     end if
 !                    end if
