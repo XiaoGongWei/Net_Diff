@@ -12,4 +12,10 @@ To use this program:
 3). Start debug.
 
 If any questions, please contact me: zhyize@163.com
+
+*****************************************************************************
+Note:
+2018/11/23
+Sorry, due to some copyright reason, I have deleted the main part of processing subroutine. But you may still refer to some useful functions.
+I will add the subroutine back oneday.
  
