@@ -495,13 +495,13 @@ implicit none
 !    call Process_BRD_Sp3  ! navigation
 !      call Process_Net
     if (proc_mod==0 .or. proc_mod==6) then  
-        call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
+!        call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
-        call Process_Corr    ! 加分区改正数或等效钟差
+!        call Process_Corr    ! 加分区改正数或等效钟差
     elseif (proc_mod==4) then
 !        call Process_AR      ! PPP ambiguity resolution
     elseif (proc_mod==5) then
-        call Process_DD    ! RTK
+!        call Process_DD    ! RTK
     else
         write(*,*) "proc_mod error"
         pause 
