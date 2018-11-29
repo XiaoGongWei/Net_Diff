@@ -28,7 +28,6 @@ real(8) :: Qahat(n,n)
 real(8) :: L(n,n), D(n)
 ! Local variables:
 integer :: i, j
-real(8) :: sum
 
 do i = n, 1, -1
 
@@ -43,11 +42,7 @@ do i = n, 1, -1
 
 end do
 
-do i= 1, n
-    sum=sum+D(i)
-end do
-
-if (sum < 1D-10) then
+if (any(D < 1D-10)) then
 
   write (log,'(4X,A)') 'Matrix on input is not positive definite!'
 
