@@ -196,7 +196,7 @@ implicit none
             end if
             Sys=4
         elseif (System=="I") then   ! IRNSS
-            f1=f_L1
+            f1=f_L5
             f2=f_S
             Sys=5
         else

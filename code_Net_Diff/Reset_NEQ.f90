@@ -235,7 +235,7 @@ implicit none
         elseif (RefSys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 ref_f1=f_E1
-                ref_f2=f_E5
+                ref_f2=f_E5a
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 ref_f1=f_E1
@@ -246,7 +246,7 @@ implicit none
             end if
             Ref_NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
         elseif (RefSys==5) then   ! IRNSS
-            ref_f1=f_L1
+            ref_f1=f_L5
             ref_f2=f_S
             Ref_NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
         end if
@@ -279,7 +279,7 @@ implicit none
                 NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4 ! End index of DISB
                 if (freq_comb=='L1L2') then   ! E1 E5a
                     f1=f_E1
-                    f2=f_E5
+                    f2=f_E5a
                     f3=f_E5b
                 elseif (freq_comb=='L1L3') then   ! E1 E5b
                     f1=f_E1
@@ -291,7 +291,7 @@ implicit none
             elseif (sys==5) then   ! IRNSS
                 if (.not.(SystemUsed(6))) cycle   ! If no IRNSS
                 NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
-                f1=f_L1
+                f1=f_L5
                 f2=f_S
             end if
             if (sys/=2) then  ! If not GLONASS

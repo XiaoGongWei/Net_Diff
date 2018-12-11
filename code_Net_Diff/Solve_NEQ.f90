@@ -659,7 +659,7 @@ implicit none
                 f2=f_E5b
             end if
         elseif (sys==5) then   ! IRNSS
-            f1=f_L1
+            f1=f_L5
             f2=f_S
         else
             cycle

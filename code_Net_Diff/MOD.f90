@@ -732,9 +732,9 @@ use MOD_constant
      character(5) :: cztd='SAAS'     ! Zenith dry and wet delay model
      character(5) :: cmap='NMF'    ! Mapping function
      character(20) :: CSmethod="GF+MW"   ! cycle slip detect method
-     character(5) :: Smooth_Method
+     character(5) :: Smooth_Method='Hatch'
      character(4) :: Smooth_Combine='P1P2'
-     real(8) :: Smooth_Time
+     real(8) :: Smooth_Time=0.d0
      character(3) :: ObsType='RNX'
      integer(1) :: clktype=1
      integer(1) :: IorQ=0   ! only for X71

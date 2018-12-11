@@ -73,7 +73,7 @@ implicit none
         elseif  (sys==4) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 f1=f_E1
-                f2=f_E5
+                f2=f_E5a
                 f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 f1=f_E1
@@ -83,7 +83,7 @@ implicit none
                 f2=f_E5b
             end if
         elseif (sys==5) then   ! IRNSS
-            f1=f_L1
+            f1=f_L5
             f2=f_S
         end if
         if (RefSat<=GNum) then
@@ -109,7 +109,7 @@ implicit none
         elseif  (RefSat<=GNum+RNum+CNum+NumE) then ! GALILEO
             if (freq_comb=='L1L2') then   ! E1 E5a
                 ref_f1=f_E1
-                ref_f2=f_E5
+                ref_f2=f_E5a
                 ref_f3=f_E5b
             elseif (freq_comb=='L1L3') then   ! E1 E5b
                 ref_f1=f_E1
@@ -123,7 +123,7 @@ implicit none
             ref_f2=f_L2
             ref_f3=f_L5
         elseif (RefSat<=GNum+RNum+CNum+NumE+JNum+INum) then   ! IRNSS
-            ref_f1=f_L1
+            ref_f1=f_L5
             ref_f2=f_S
         end if
         DD%L1(i)=DD%L1(i)-damb_rov(1)*c/f1 + damb_ref(1)*c/ref_f1   ! Reset DD ambiguity, in meter

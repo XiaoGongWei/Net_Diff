@@ -39,7 +39,7 @@ implicit none
                 NavData(PRN)%Nav(Flag(PRN))%GPSsec=GPSsec
                 read(line,"(22X,3D19.12)") NavData(PRN)%Nav(Flag(PRN))%a0, NavData(PRN)%Nav(Flag(PRN))%a1, NavData(PRN)%Nav(Flag(PRN))%a2
             read(NavID,fmt="(A)",end=200) line ! Line2
-                read(line,"(3X,19X,3D19.12)") NavData(PRN)%Nav(Flag(PRN))%Crs, NavData(PRN)%Nav(Flag(PRN))%delN, NavData(PRN)%Nav(Flag(PRN))%M0
+                read(line,"(3X,4D19.12)") NavData(PRN)%Nav(Flag(PRN))%IODE, NavData(PRN)%Nav(Flag(PRN))%Crs, NavData(PRN)%Nav(Flag(PRN))%delN, NavData(PRN)%Nav(Flag(PRN))%M0
             read(NavID,fmt="(A)",end=200) line ! Line3
                 read(line,"(3X,4D19.12)") NavData(PRN)%Nav(Flag(PRN))%Cuc, NavData(PRN)%Nav(Flag(PRN))%e, NavData(PRN)%Nav(Flag(PRN))%Cus, NavData(PRN)%Nav(Flag(PRN))%sqrtA
             read(NavID,fmt="(A)",end=200) line ! Line4
@@ -70,7 +70,7 @@ implicit none
                 NavData(PRN)%Nav(Flag(PRN))%GPSsec=GPSsec
                 read(line,"(23X,3D19.12)") NavData(PRN)%Nav(Flag(PRN))%a0, NavData(PRN)%Nav(Flag(PRN))%a1, NavData(PRN)%Nav(Flag(PRN))%a2
                 read(NavID,fmt="(A)",end=200) line ! Line2
-                    read(line,"(4X,19X,3D19.12)") NavData(PRN)%Nav(Flag(PRN))%Crs, NavData(PRN)%Nav(Flag(PRN))%delN, NavData(PRN)%Nav(Flag(PRN))%M0
+                    read(line,"(4X,4D19.12)") NavData(PRN)%Nav(Flag(PRN))%IODE, NavData(PRN)%Nav(Flag(PRN))%Crs, NavData(PRN)%Nav(Flag(PRN))%delN, NavData(PRN)%Nav(Flag(PRN))%M0
                 read(NavID,fmt="(A)",end=200) line ! Line3
                     read(line,"(4X,4D19.12)") NavData(PRN)%Nav(Flag(PRN))%Cuc, NavData(PRN)%Nav(Flag(PRN))%e, NavData(PRN)%Nav(Flag(PRN))%Cus, NavData(PRN)%Nav(Flag(PRN))%sqrtA
                 read(NavID,fmt="(A)",end=200) line ! Line4
@@ -96,7 +96,7 @@ implicit none
                 NavData_J(PRN)%Nav(Flag_J(PRN))%GPSsec=GPSsec
                 read(line,"(23X,3D19.12)") NavData_J(PRN)%Nav(Flag_J(PRN))%a0, NavData_J(PRN)%Nav(Flag_J(PRN))%a1, NavData_J(PRN)%Nav(Flag_J(PRN))%a2
                 read(NavID,fmt="(A)",end=200) line ! Line2
-                    read(line,"(4X,19X,3D19.12)") NavData_J(PRN)%Nav(Flag_J(PRN))%Crs, NavData_J(PRN)%Nav(Flag_J(PRN))%delN, NavData_J(PRN)%Nav(Flag_J(PRN))%M0
+                    read(line,"(4X,4D19.12)") NavData_J(PRN)%Nav(Flag_J(PRN))%IODE, NavData_J(PRN)%Nav(Flag_J(PRN))%Crs, NavData_J(PRN)%Nav(Flag_J(PRN))%delN, NavData_J(PRN)%Nav(Flag_J(PRN))%M0
                 read(NavID,fmt="(A)",end=200) line ! Line3
                     read(line,"(4X,4D19.12)") NavData_J(PRN)%Nav(Flag_J(PRN))%Cuc, NavData_J(PRN)%Nav(Flag_J(PRN))%e, NavData_J(PRN)%Nav(Flag_J(PRN))%Cus, NavData_J(PRN)%Nav(Flag_J(PRN))%sqrtA
                 read(NavID,fmt="(A)",end=200) line ! Line4
@@ -125,7 +125,7 @@ implicit none
                 NavData_I(PRN)%Nav(Flag_I(PRN))%GPSsec=GPSsec
                 read(line,"(23X,3D19.12)") NavData_I(PRN)%Nav(Flag_I(PRN))%a0, NavData_I(PRN)%Nav(Flag_I(PRN))%a1, NavData_I(PRN)%Nav(Flag_I(PRN))%a2
                 read(NavID,fmt="(A)",end=200) line ! Line2
-                    read(line,"(4X,19X,3D19.12)") NavData_I(PRN)%Nav(Flag_I(PRN))%Crs, NavData_I(PRN)%Nav(Flag_I(PRN))%delN, NavData_I(PRN)%Nav(Flag_I(PRN))%M0
+                    read(line,"(4X,4D19.12)") NavData_I(PRN)%Nav(Flag_I(PRN))%IODE, NavData_I(PRN)%Nav(Flag_I(PRN))%Crs, NavData_I(PRN)%Nav(Flag_I(PRN))%delN, NavData_I(PRN)%Nav(Flag_I(PRN))%M0
                 read(NavID,fmt="(A)",end=200) line ! Line3
                     read(line,"(4X,4D19.12)") NavData_I(PRN)%Nav(Flag_I(PRN))%Cuc, NavData_I(PRN)%Nav(Flag_I(PRN))%e, NavData_I(PRN)%Nav(Flag_I(PRN))%Cus, NavData_I(PRN)%Nav(Flag_I(PRN))%sqrtA
                 read(NavID,fmt="(A)",end=200) line ! Line4

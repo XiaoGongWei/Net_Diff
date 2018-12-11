@@ -106,7 +106,8 @@ implicit none
             GFEst=meanGFPrev-meanTT*coe  ! a0
             sigma=sqrt(DOT_PRODUCT(CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3),CycleSlip(sta)%CS(PRN)%GFPrev(1:3)-GFEst-a1*TT(1:3)))
             GFThreshold=(csGFmax+(csGFmin-csGFmax)*exp(TT(3)/csGFdt))*sigLC/0.01d0  ! Default sigLC is 0.01m
-            if (abs(GF-GFEst)*c/f1>GFThreshold*0.8d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
+            dGF=(GF-GFEst)*c/f1
+            if (abs(dGF)>GFThreshold*0.8d0 .and. CycleSlip(sta)%CScount==99 ) Slip=1  ! in diatance, in case of 1 cycle jump in L1 and L2 in RTK
         end if
     end if
     
@@ -137,7 +138,7 @@ implicit none
         CycleSlip(sta)%CS(PRN)%GFPrev=0.d0
         CycleSlip(sta)%CS(PRN)%arcLengthGF=0
         CycleSlip(sta)%CS(PRN)%arcLengthMW=0
-        write(CSID,"(2I3,F6.2,I6,5F10.4,I3)")  sta, PRN, ele, int(-TT(3)), abs(GF-GFEst)*c/f1, GFThreshold,3.d0*sigma*c/f1, dMW, MWThreshold, Slip
+        write(CSID,"(2I3,F6.2,I6,4F10.4,I3)")  sta, PRN, ele, int(-TT(3)), dGF, GFThreshold, dMW, MWThreshold, Slip
     elseif (Slip==2) then
        Slip=1
     end if

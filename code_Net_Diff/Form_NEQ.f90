@@ -224,7 +224,7 @@ implicit none
             end if
             NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4  ! End index of DISB
         elseif (sys==5) then   ! IRNSS
-            f1=f_L1
+            f1=f_L5
             f2=f_S
             NDIFB=4+INT_SystemUsed(1)*4+INT_SystemUsed(3)*4+INT_SystemUsed(4)*4+INT_SystemUsed(6)*4 ! End index of DISB
         else
@@ -813,9 +813,9 @@ implicit none
                     end if
                 elseif (NEQ_DP%Flag_Sln(5)==3) then ! If not fixed
                     if (ADmethod=='LS') then
-                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/4.d0*NEQ_DP%dt   ! This is wrong for Nbb
+                        Epo_NEQ%Nbb(i,i)=Epo_NEQ%Nbb(i,i)+1.d0/1.d0*NEQ_DP%dt   ! This is wrong for Nbb
                     elseif (ADmethod=='KF') then
-                        Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+(sigDP*20.d0)*NEQ_DP%dt    ! (1/2.d0**2) ! 2m
+                        Epo_NEQ%InvN(i,i)=Epo_NEQ%InvN(i,i)+(sigDP*10.d0)**2*NEQ_DP%dt    ! (1/1.d0**2) ! 1m
                     end if
                 end if
             end do
