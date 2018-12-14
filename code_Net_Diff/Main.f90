@@ -419,7 +419,7 @@ implicit none
         if (proc_mod==3) then
             write(PosID,"(A1,A12,5X,A)") "%", 'zonecorrfile:  ', trim(zonecorrfile)
         end if
-        if (proc_mod==4 .or. proc_mod==5) then
+        if (proc_mod==4 .or. proc_mod==5 .or. proc_mod==7) then
             write(PosID,"(A1,A12,5X,4F5.1)") "%", 'dd_coe:  ', a1, a2, b1, b2
             if (ar_mode==0) then
                 write(PosID,"(A1,A12,5X,A15)") "%", 'ar_mode:  ', 'Float'
@@ -468,7 +468,7 @@ implicit none
     
     CSID=FileID_Mark
     FileID_Mark=FileID_Mark+1
-    open(unit=CSID, file=trim(OutDir)//"cs_"// str_day // ".txt",action="write",err=100)
+    open(unit=CSID, file=trim(OutDir)//"cs_"// str_day //"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name// ".txt",action="write",err=100)
 
     if ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
         ResO_CID=FileID_Mark   ! Correction error, used for smooth comparation
@@ -478,10 +478,10 @@ implicit none
         X38ID=FileID_Mark   ! Correction error, used for smooth comparation
         FileID_Mark=FileID_Mark+1
         open(unit=X38ID, file=trim(OutDir)//"X38_"// str_day // ".txt",action="write",err=100)
-    elseif (proc_mod==5) then    
+    elseif (proc_mod==4 .or. proc_mod==5 .or. proc_mod==7) then      ! PPPAR/RTK/PPP-RTK
         LambdaID=FileID_Mark
         FileID_Mark=FileID_Mark+1
-        open(unit=LambdaID, file=trim(OutDir)//"lambda_"// str_day // ".txt",action="write",err=100)
+        open(unit=LambdaID, file=trim(OutDir)//"lambda_"// str_day //"_"//STA%STA(1)%Name//"-"//STA%STA(STA%Num)%Name// ".txt",action="write",err=100)
         write(LambdaID,"(A19)")    "Lambda processing."
     end if
 
@@ -492,16 +492,30 @@ implicit none
     end if
     end if
 
-!    call Process_BRD_Sp3  ! navigation
-!      call Process_Net
+
     if (proc_mod==0 .or. proc_mod==6) then  
-!        call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
+!        if (len(trim(ObsCombine))>2) then
+!            if (len(trim(ObsCombine))==4) then
+!                FreqNum=2
+!            elseif (len(trim(ObsCombine))==6) then
+!                FreqNum=3
+!            else
+!                write(*,*) "******ERROR******: Observation combination input error"
+!                pause
+!                stop
+!            end if
+!            call Process_UU  ! Undifferenced Uncombined SPP/PPP
+!        else
+!            call Process  ! SPP(0)/PPP(0)/DSPP(6)/DPPP(6)
+!        end if
     elseif ( (proc_mod==1) .or. (proc_mod==2) .or. (proc_mod==3)) then
 !        call Process_Corr    ! 加分区改正数或等效钟差
     elseif (proc_mod==4) then
 !        call Process_AR      ! PPP ambiguity resolution
     elseif (proc_mod==5) then
 !        call Process_DD    ! RTK
+    elseif (proc_mod==7) then
+!        call Process_PPPRTK      ! PPP-RTK
     else
         write(*,*) "proc_mod error"
         pause 
