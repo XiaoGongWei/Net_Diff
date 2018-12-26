@@ -22,7 +22,7 @@ subroutine Get_BDS_PCO_gbmwum(year, doy, ac)
 use MOD_constant
 use MOD_Ant
     integer :: year, doy, ac
-    integer :: PRN
+    integer :: PRN, i
     real(8) :: PCO(14,3,2)=0.d0
 
     PCO(6:14,1,1)=0.549d0
@@ -38,8 +38,9 @@ use MOD_Ant
     end if
 
     do PRN=6,14
-        Ant(PRN+GNum+RNum)%PCO(:,1)=PCO(PRN, :, ac)
-        Ant(PRN+GNum+RNum)%PCO(:,2)=PCO(PRN, :, ac)
+        do i=1,Ubound(Ant(PRN+GNum+RNum)%PCO,dim=2)
+            Ant(PRN+GNum+RNum)%PCO(:,i)=PCO(PRN, :, ac)
+        end do
     end do
 
 

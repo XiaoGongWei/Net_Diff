@@ -9,6 +9,7 @@ implicit none
     integer :: ParaNum=4   ! Coordinate, Tropsphere parameter, and clock
     integer :: IonoNum=0    ! Ionosphere Number
     integer :: GloFreqNum=0   ! GLONASS frequency number, for GLONASS RTK
+    integer :: FreqNum=0   ! Frequency number, for unudifferenced uncombined PPP
     integer,parameter :: GNum0=32   ! max GPS satellite number, used for variables defination in MOD
     integer,parameter :: RNum0=27   ! max GLONASS satellite number
     integer,parameter :: CNum0=35   ! max BeiDou satellite number

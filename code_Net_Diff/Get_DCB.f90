@@ -111,7 +111,7 @@ implicit none
                     read(line(54:55), fmt="(I2)") year_end
                     read(line(57:59), fmt="(I3)") doy_end
                 end if
-                if ( ((int_year-2000-year_st)*365+int_doy-doy_st<300) .and. ((int_year-2000-year_st)*365+int_doy-doy_st>=0) ) then
+!                if ( ((int_year-2000-year_st)*365+int_doy-doy_st<300) .and. ((int_year-2000-year_st)*365+int_doy-doy_st>=0) ) then
                     read(line(13:14), fmt="(I2)") PRN
                     read(line(12:12), fmt="(A1)") System
                     read(line(81:92), fmt="(F12.4)") val
@@ -178,12 +178,12 @@ implicit none
                             DCBIQ(4,PRN)=val*1e-9
                         end if
                     end if
-                end if ! if ( ((int_year-20
+!                end if ! if ( ((int_year-20
             end if
         end do
         
         if (all(DCBBSX==0.d0)) then
-            write(*,*) "Date of Multi-GNSS DCB difference exceeds 100 days, it will set as 0."
+            write(*,*) "Multi-GNSS DCB not found, will default as 0."
 !            pause
         end if
 
