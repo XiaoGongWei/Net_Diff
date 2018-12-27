@@ -12,13 +12,13 @@ implicit none
     integer :: FreqNum=0   ! Frequency number, for unudifferenced uncombined PPP
     integer,parameter :: GNum0=32   ! max GPS satellite number, used for variables defination in MOD
     integer,parameter :: RNum0=27   ! max GLONASS satellite number
-    integer,parameter :: CNum0=35   ! max BeiDou satellite number
+    integer,parameter :: CNum0=37   ! max BeiDou satellite number
     integer,parameter :: NumE0=36   ! max GALILEO satellite number
     integer,parameter :: JNum0=7   ! max QZSS satellite number
     integer,parameter :: INum0=7   ! max IRNSS satellite number
     integer :: GNum=32   ! max GPS satellite number
     integer :: RNum=27   ! max GLONASS satellite number
-    integer :: CNum=35   ! max BeiDou satellite number
+    integer :: CNum=37   ! max BeiDou satellite number
     integer :: NumE=36   ! max GALILEO satellite number
     integer :: JNum=7   ! max QZSS satellite number
     integer :: INum=7   ! max IRNSS satellite number
@@ -79,6 +79,7 @@ implicit none
     character(200), save ::  PlanetFile
     character(200), save ::  GloFreFile
     character(200), save ::  P1C1File
+    character(200), save ::  FCBFile
     character(200), save ::  DCBFile
     character(200), save ::  GPT2GridDir
     character(200), save ::  IONFile
@@ -90,6 +91,9 @@ implicit none
     character(200), save ::  pcorfile
     character(200), save ::  orbcorrfile
     character(200), save ::  zonecorrfile
+    character(200), save ::  IFCBfile=''
+    character(200), save ::  OSRfile=''
+    character(200), save ::  SSRDir=''
     character(200), save ::  BEBFile
     character(200), save ::  IonDir
 end module
@@ -106,6 +110,7 @@ implicit none
     integer(2), save :: OLCID   ! Ocean Load Coefficient(Input)
     integer(2), save :: GPTID      ! GPT grid file (input)
     integer(2), save :: P1C1ID      ! P1C1 DCB file (input)
+    integer(2), save :: FCBID=0      ! FCB file (input)
     integer(2), save :: DCBID      ! DCB file (input)
     integer(1), save :: NavID
     integer(1), save :: IONID
@@ -129,6 +134,9 @@ implicit none
     integer(1), save :: pcorID     ! used in Process_Corr
     integer(1), save :: OrbCorrID   ! used in Process_Corr
     integer(1), save :: BEBID     ! BEB file ID
+    integer(1), save :: IFCBID     ! IFCB file ID
+    integer(1), save :: OSRID     ! OSR file ID
+    integer(1), save :: SSRID(6)     ! SSR file ID
     integer, save :: LAMBDAID     ! used in double difference
     integer :: amb_success=0, amb_success2=0
 end module
@@ -278,8 +286,14 @@ implicit none
         real(8) :: L1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
         real(8) :: L2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
         real(8) :: L3(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
-        real(8) :: WL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
-        real(8) :: EWL_amb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
+        real(8) :: dClk(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0       ! Clock Correction
+        real(8) :: dOrb(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)=0.d0   ! Orbit Correction
+        integer(1) :: inet=0, ngp=0
+        real(8) :: ZTD=0.d0        ! ZTD
+        real(8) :: STEC(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0      ! Slant TEC
+        real(8) :: Cbias(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)=0.d0  ! Code Bias
+        real(8) :: Pbias(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,3)=0.d0  ! Phase Bias
+        real(8) :: IODE(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0      ! Only for PPPRTK
     end type
     type(type_Bias), save :: Bias
 end module
@@ -385,7 +399,13 @@ use MOD_constant
         real(8) :: LastSow
         real(8) :: L1P1mean, L1P1mean2
         real(8) :: OMC(4)=0.d0
-!        integer(1)  :: Slip        =  0
+!        integer(1)  :: Slip        =  1
+        ! Cycle slip Information for triple frequency
+        integer(1) :: arcLengthMW3  =  0
+        real(8) :: nMWmean3=0.d0, nMWmean23=0.d0
+        integer(1) :: arcLengthGF3  =  0
+        integer :: WeekPrev3(3) = 0
+        real(8) :: SowPrev3(3) = 0.d0, GFPrev3(3)
     end type
    type type_CycleSlip
 !       real(8) :: GF(2,GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=9999.0d0
@@ -395,7 +415,7 @@ use MOD_constant
 !       real(8) :: P1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0, P2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
 !       real(8) :: PreL1(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0, PreL2(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)=0.d0
        real(8) :: OMC(GNum0+RNum0+CNum0+NumE0+JNum0+INum0,4) = 0.d0  ! For satellite difference cyccle slip detection
-       integer(1)  :: Slip(GNum0+RNum0+CNum0+NumE0+JNum0+INum0) =  1   ! Cycle slip is initialized as 0, in case of only use LLI method
+       integer(1)  :: Slip(GNum0+RNum0+CNum0+NumE0+JNum0+INum0) =  1  !  ! Cycle slip is initialized as 0, in case of only use LLI method
        integer(1) :: CScount=99  ! For satellite difference cyccle slip detection
        type(type_CS) :: CS(GNum0+RNum0+CNum0+NumE0+JNum0+INum0)   ! Cycle slip
    end type
@@ -713,7 +733,9 @@ use MOD_constant
      character(1) :: Pos_State="S"
      character(2) :: diffmod="DD"
      integer(1)  :: proc_mod=0
-     character(4) :: freq_comb="L1L2"
+     character(6) :: freq_comb="L1L2"
+     character(6) :: freq_comb_G="L1L2",freq_comb_R="L1L2", freq_comb_C="L1L2",freq_comb_E="L1L2"
+     character(6) :: freq_comb_J="L1L2",freq_comb_I="L1L2"
      logical :: Combination(3)=.false.   ! PC/LC/Doppler
      real(8)  ::  sigPC=1.d0,sigLC=0.01d0, sigDP=0.1d0
      logical :: SystemUsed(6)=.false.   ! G/R/C/E/J/I
@@ -726,7 +748,8 @@ use MOD_constant
      real(8) :: ISB_step=1.d0
      integer :: GPSweek_st=0, GPSweek_end=3000
      real(8) :: GPSsec_st=0.d0, GPSsec_end=0.d0
-     character(2) :: ObsCombine="PC"
+     character(6) :: ObsCombine="PC",ObsCombine_GIIR="PC",ObsCombine_GIIF="PC",ObsCombine_R="PC",ObsCombine_C="PC"
+     character(6) :: ObsCombine_E="PC", ObsCombine_J="PC",ObsCombine_I="PC"
      logical :: If_Est_Iono=.false.
      character(1) :: Var_smooth="n"
      character(7) :: cdattype='GPT'    ! meteorological parameter type
