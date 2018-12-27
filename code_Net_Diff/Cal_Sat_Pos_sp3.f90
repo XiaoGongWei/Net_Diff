@@ -61,6 +61,10 @@ implicit none
     
     do while(.true.)
         call Lagrange(TT,SP3Data%Eph(PRN)%Coor,-t1,Sat_Coor,10)  ! Lagrange Interpolation (10 points)
+        if (all(Sat_Coor==9999.d0)) then
+            Sat_Coor2=9999.d0
+            return
+        end if
         
         Sat_Coor=Sat_Coor*1000.0d0   ! Unit in meter
         ! Earth rotation correction
