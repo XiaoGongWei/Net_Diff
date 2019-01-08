@@ -13,7 +13,7 @@ use MOD_NavHead
 use MOD_constant
 implicit none
     character(80) :: line
-    integer ::PRN, year, mon, day, hour, min, GPSweek, GPSweek0, Flag(35)
+    integer ::PRN, year, mon, day, hour, min, GPSweek, GPSweek0, Flag(36)
     real(8) :: sec, GPSsec, GPSsec0, dGPST
     
 !    NavData(:,1)=NavData(:,2)
